@@ -56,3 +56,25 @@ export interface EditorAction {
   payload: unknown;
   timestamp: number;
 }
+
+// ─── Virtual File System ──────────────────────────────────────────────────────
+export type FileNodeType = 'file' | 'folder';
+
+export interface FileNode {
+  id: string;
+  type: 'file';
+  name: string;
+  content: string;
+  language: Language;
+  parentId: string | null;
+}
+
+export interface FolderNode {
+  id: string;
+  type: 'folder';
+  name: string;
+  parentId: string | null;
+  isOpen: boolean;
+}
+
+export type FSNode = FileNode | FolderNode;
