@@ -1,48 +1,50 @@
-import { GraduationCap } from 'lucide-react';
+import { GraduationCap, ArrowLeft, LogOut } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
 import { Button } from '../shared/Button';
-import type { Language } from '../../types';
 
-const LANGUAGES: { value: Language; label: string }[] = [
-  { value: 'javascript', label: 'JavaScript' },
-  { value: 'python', label: 'Python' },
-  { value: 'java', label: 'Java' },
-  { value: 'cpp', label: 'C++' },
-];
+const LANG_BADGE: Record<string, string> = {
+  javascript: 'text-yellow-400 bg-yellow-400/10',
+  typescript: 'text-blue-400 bg-blue-400/10',
+  python: 'text-green-400 bg-green-400/10',
+  java: 'text-orange-400 bg-orange-400/10',
+  cpp: 'text-blue-300 bg-blue-300/10',
+};
 
-export function TopBar() {
-  const { state, setLanguage, newProject } = useAppContext();
+interface Props { onBackToDashboard: () => void; }
+
+export function TopBar({ onBackToDashboard }: Props) {
+  const { state } = useAppContext();
+  const { user, logout } = useAuth();
+  const lang = state.currentProject?.programmingLanguage;
 
   return (
     <header className="flex items-center justify-between px-5 py-3 bg-[#16162a] border-b border-[#2a2a3e] shrink-0">
-      {/* Brand */}
-      <div className="flex items-center gap-2">
-        <GraduationCap className="w-6 h-6 text-indigo-400" />
-        <span className="text-lg font-semibold bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
+      <div className="flex items-center gap-3">
+        <button onClick={onBackToDashboard} className="text-gray-500 hover:text-gray-300 transition-colors cursor-pointer" title="Back to Dashboard">
+          <ArrowLeft className="w-4 h-4" />
+        </button>
+        <GraduationCap className="w-5 h-5 text-indigo-400" />
+        <span className="text-base font-semibold bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
           CodeTutor
         </span>
       </div>
 
-      {/* Center: project name */}
-      <span className="text-sm text-gray-400 truncate max-w-xs">
-        {state.currentProject?.name ?? 'No project open'}
-      </span>
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-gray-300 truncate max-w-xs">
+          {state.currentProject?.name ?? 'No project'}
+        </span>
+        {lang && (
+          <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${LANG_BADGE[lang] ?? 'text-gray-400 bg-gray-400/10'}`}>
+            {lang}
+          </span>
+        )}
+      </div>
 
-      {/* Controls */}
       <div className="flex items-center gap-3">
-        <select
-          value={state.language}
-          onChange={(e) => setLanguage(e.target.value as Language)}
-          className="bg-[#2a2a3e] border border-[#3a3a5c] text-gray-200 text-sm rounded-md px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
-          aria-label="Select programming language"
-        >
-          {LANGUAGES.map((l) => (
-            <option key={l.value} value={l.value}>{l.label}</option>
-          ))}
-        </select>
-
-        <Button variant="secondary" size="sm" onClick={newProject}>
-          New Project
+        <span className="text-xs text-gray-500">{user?.username}</span>
+        <Button variant="ghost" size="sm" onClick={logout}>
+          <LogOut className="w-3.5 h-3.5" /> Sign out
         </Button>
       </div>
     </header>
