@@ -45,6 +45,7 @@ type Action =
   | { type: 'ADD_CHAT_MESSAGE'; payload: ChatMessage }
   | { type: 'SET_CHAT_LOADING'; payload: boolean }
   | { type: 'FS_ADD_NODE'; payload: FSNode }
+  | { type: 'FS_IMPORT_FILE'; payload: FileNode }
   | { type: 'FS_DELETE_NODE'; payload: string }
   | { type: 'FS_RENAME_NODE'; payload: { id: string; name: string } }
   | { type: 'FS_TOGGLE_FOLDER'; payload: string }
@@ -118,6 +119,16 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, isChatLoading: action.payload };
     case 'FS_ADD_NODE':
       return { ...state, fsNodes: [...state.fsNodes, action.payload] };
+    case 'FS_IMPORT_FILE': {
+      const node = action.payload;
+      return {
+        ...state,
+        fsNodes: [...state.fsNodes, node],
+        activeFileId: node.id,
+        code: node.content,
+        language: node.language,
+      };
+    }
     case 'FS_DELETE_NODE': {
       const remaining = deleteNodeAndChildren(state.fsNodes, action.payload);
       const activeStillExists = remaining.some((n) => n.id === state.activeFileId);
@@ -161,6 +172,8 @@ interface AppContextValue {
   renameNode: (id: string, name: string) => void;
   toggleFolder: (id: string) => void;
   openFile: (id: string) => void;
+  importFile: (node: FileNode) => void;
+  importFolder: (node: FolderNode) => void;
   explanationMap: HashMap<string, FunctionExplanation>;
 }
 
@@ -276,12 +289,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const openFile = (id: string) => dispatch({ type: 'FS_SET_ACTIVE', payload: id });
 
+  const importFile = (node: FileNode) => dispatch({ type: 'FS_IMPORT_FILE', payload: node });
+
+  const importFolder = (node: FolderNode) => dispatch({ type: 'FS_ADD_NODE', payload: node });
+
   return (
     <AppContext.Provider value={{
       state, setCode, setLanguage, generateGuide, triggerAnalysis,
       toggleStepComplete, dismissSuggestion, saveSnapshot, undoLastAction,
       newProject, sendChatMessage,
       createFile, createFolder, deleteNode, renameNode, toggleFolder, openFile,
+      importFile, importFolder,
       explanationMap: explanationMap.current,
     }}>
       {children}
