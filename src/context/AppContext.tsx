@@ -2,7 +2,7 @@ import { createContext, useContext, useReducer, useRef, useCallback } from 'reac
 import type { ReactNode } from 'react';
 import type { Project, AnalysisHistory, CodeSnapshot, GuideStep, ChatMessage, EditorAction, FSNode, FileNode, FolderNode, Language } from '../types';
 import { Stack, Queue, LinkedList, HashMap, DoublyLinkedList, CircularLinkedList, Graph, NaryTree, NaryNode } from '../dataStructures';
-import { analyzeCode as apiAnalyzeCode, generateGuide as apiGenerateGuide, saveSnapshot as apiSaveSnapshot, getLatestSnapshot, getRecentAnalysis } from '../services/api';
+import { analyzeCode as apiAnalyzeCode, generateGuide as apiGenerateGuide, saveSnapshot as apiSaveSnapshot, loadEditor } from '../services/api';
 
 // ─── State ────────────────────────────────────────────────────────────────────
 interface AppState {
@@ -212,18 +212,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // Cargar el último snapshot guardado
     try {
-      const snapshot = await getLatestSnapshot(project.id);
-      dispatch({ type: 'SET_CODE', payload: snapshot.content });
-      // Agregar el snapshot inicial al historial de versiones (lista simple)
-      codeHistory.current.append(snapshot.content);
+      const data = await loadEditor(project.id);
+      dispatch({ type: 'SET_CODE', payload: data.currentCode ?? '' });
+      codeHistory.current.append(data.currentCode ?? '');
     } catch { /* sin snapshot aún */ }
 
-    // Cargar historial reciente de análisis
+    // Historial de análisis — se carga desde el panel de feedback
     try {
-      const recent = await getRecentAnalysis(project.id);
-      dispatch({ type: 'SET_RECENT_ANALYSIS', payload: recent });
-      // Poblar la lista doblemente enlazada con el historial de análisis
-      recent.forEach((a) => analysisHistory.current.append(a));
+      dispatch({ type: 'SET_RECENT_ANALYSIS', payload: [] });
     } catch { /* ignorar */ }
   }, []);
 
