@@ -86,8 +86,14 @@ interface Props {
 export function FilesSidebar({ userId, nodes, setNodes, activeId, setActiveId, onOpenFile }: Props) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectsOpen, setProjectsOpen] = useState(false);
+  const [newFileName, setNewFileName] = useState('');
+  const [creatingFile, setCreatingFile] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [creatingFolder, setCreatingFolder] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
+  const newFileInputRef = useRef<HTMLInputElement>(null);
+  const newFolderInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (projectsOpen && projects.length === 0) {
@@ -117,16 +123,35 @@ export function FilesSidebar({ userId, nodes, setNodes, activeId, setActiveId, o
   const renameNode = (id: string, name: string) =>
     setNodes(prev => prev.map(n => n.id === id ? { ...n, name } : n));
 
-  const createFile = (parentId: string | null = null) => {
-    const node: VFile = { id: uid(), type: 'file', name: 'newFile.js', content: '', language: 'javascript', parentId };
-    setNodes(prev => [...prev, node]);
-    setActiveId(node.id);
-    onOpenFile('newFile.js', '', 'javascript');
+  const createFile = () => {
+    setCreatingFile(true);
+    setNewFileName('');
+    setTimeout(() => newFileInputRef.current?.focus(), 0);
   };
 
-  const createFolder = (parentId: string | null = null) => {
-    const node: VFolder = { id: uid(), type: 'folder', name: 'newFolder', parentId, open: true };
+  const confirmCreateFile = () => {
+    const name = newFileName.trim() || 'newFile.js';
+    const lang = detectLang(name);
+    const node: VFile = { id: uid(), type: 'file', name, content: '', language: lang, parentId: null };
     setNodes(prev => [...prev, node]);
+    setActiveId(node.id);
+    onOpenFile(name, '', lang);
+    setCreatingFile(false);
+    setNewFileName('');
+  };
+
+  const createFolder = () => {
+    setCreatingFolder(true);
+    setNewFolderName('');
+    setTimeout(() => newFolderInputRef.current?.focus(), 0);
+  };
+
+  const confirmCreateFolder = () => {
+    const name = newFolderName.trim() || 'newFolder';
+    const node: VFolder = { id: uid(), type: 'folder', name, parentId: null, open: true };
+    setNodes(prev => [...prev, node]);
+    setCreatingFolder(false);
+    setNewFolderName('');
   };
 
   const handleOpenFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -201,12 +226,39 @@ export function FilesSidebar({ userId, nodes, setNodes, activeId, setActiveId, o
       </div>
 
       <div className="flex-1 overflow-y-auto py-1">
-        {roots.length === 0 && (
+        {roots.length === 0 && !creatingFile && !creatingFolder && (
           <div className="px-4 py-6 text-center text-xs text-[#858585]">
             <p>No files yet.</p>
             <p className="mt-1">Open or create a file to start.</p>
           </div>
         )}
+
+        {/* Input para nuevo archivo */}
+        {creatingFile && (
+          <div className="flex items-center gap-1 px-3 py-0.5">
+            <File className="w-4 h-4 text-[#519aba] shrink-0" />
+            <input ref={newFileInputRef} value={newFileName}
+              onChange={e => setNewFileName(e.target.value)}
+              onBlur={() => confirmCreateFile()}
+              onKeyDown={e => { if (e.key === 'Enter') confirmCreateFile(); if (e.key === 'Escape') setCreatingFile(false); }}
+              placeholder="filename.js"
+              className="flex-1 bg-[#3c3c3c] border border-[#569cd6] rounded px-1 text-xs text-[#cccccc] outline-none" />
+          </div>
+        )}
+
+        {/* Input para nueva carpeta */}
+        {creatingFolder && (
+          <div className="flex items-center gap-1 px-3 py-0.5">
+            <Folder className="w-4 h-4 text-[#dcb67a] shrink-0" />
+            <input ref={newFolderInputRef} value={newFolderName}
+              onChange={e => setNewFolderName(e.target.value)}
+              onBlur={() => confirmCreateFolder()}
+              onKeyDown={e => { if (e.key === 'Enter') confirmCreateFolder(); if (e.key === 'Escape') setCreatingFolder(false); }}
+              placeholder="folder name"
+              className="flex-1 bg-[#3c3c3c] border border-[#569cd6] rounded px-1 text-xs text-[#cccccc] outline-none" />
+          </div>
+        )}
+
         {roots.map(n => (
           <TreeNode key={n.id} node={n} depth={0} nodes={nodes} activeId={activeId}
             onOpen={openFile} onToggle={toggleFolder} onDelete={deleteNode} onRename={renameNode} />
