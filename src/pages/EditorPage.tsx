@@ -8,6 +8,7 @@ import { CodeEditor } from '../components/editor/CodeEditor';
 import { ExercisePanel } from '../components/editor/ExercisePanel';
 import { AIPanel } from '../components/ai/AIPanel';
 import type { LearnTopic, Language } from '../types';
+import type { VNode } from '../types/vfs';
 
 interface StoredUser { id: number; username: string; email: string; }
 
@@ -22,6 +23,9 @@ export function EditorPage() {
   const [openFile, setOpenFile] = useState<OpenFile | null>(null);
   const [code, setCode] = useState('');
   const [activeTopic, setActiveTopic] = useState<LearnTopic | null>(null);
+  // Estado del sistema de archivos virtual — vive aquí para que persista entre re-renders
+  const [fsNodes, setFsNodes] = useState<VNode[]>([]);
+  const [fsActiveId, setFsActiveId] = useState<string | null>(null);
 
   // Cuando el sidebar abre un archivo (virtual o del disco o del backend)
   const handleOpenFile = (name: string, content: string, language: Language) => {
@@ -58,7 +62,14 @@ export function EditorPage() {
         {/* Sidebar */}
         <div className="w-56 bg-[#252526] border-r border-[#1e1e1e] flex flex-col overflow-hidden shrink-0">
           {activity === 'files' && (
-            <FilesSidebar userId={user.id} onOpenFile={handleOpenFile} />
+            <FilesSidebar
+              userId={user.id}
+              nodes={fsNodes}
+              setNodes={setFsNodes}
+              activeId={fsActiveId}
+              setActiveId={setFsActiveId}
+              onOpenFile={handleOpenFile}
+            />
           )}
           {activity === 'learn' && (
             <LearnSidebar onSelectTopic={handleSelectTopic} activeTopicId={activeTopic?.id ?? null} />

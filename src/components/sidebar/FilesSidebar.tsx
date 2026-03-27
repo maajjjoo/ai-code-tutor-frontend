@@ -6,20 +6,9 @@ import {
 } from 'lucide-react';
 import { getProjectsByUser, loadEditor, getErrorMessage } from '../../services/api';
 import type { Project, Language } from '../../types';
+import type { VNode, VFile, VFolder } from '../../types/vfs';
+import { uid, detectLang } from '../../types/vfs';
 
-// ─── Tipos del sistema de archivos virtual ────────────────────────────────────
-interface VFile { id: string; type: 'file'; name: string; content: string; language: Language; parentId: string | null; }
-interface VFolder { id: string; type: 'folder'; name: string; parentId: string | null; open: boolean; }
-type VNode = VFile | VFolder;
-
-function uid() { return `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`; }
-function detectLang(name: string): Language {
-  if (name.endsWith('.py')) return 'python';
-  if (name.endsWith('.java')) return 'java';
-  if (name.endsWith('.ts') || name.endsWith('.tsx')) return 'typescript';
-  if (name.endsWith('.cpp') || name.endsWith('.h')) return 'cpp';
-  return 'javascript';
-}
 const LANG_ICON: Record<string, string> = { javascript: '🟨', typescript: '🔷', python: '🐍', java: '☕', cpp: '⚙️' };
 
 // ─── Nodo del árbol ───────────────────────────────────────────────────────────
@@ -84,21 +73,22 @@ function TreeNode({ node, depth, nodes, activeId, onOpen, onToggle, onDelete, on
   );
 }
 
-// ─── Sidebar principal ────────────────────────────────────────────────────────
+// ─── Props — el estado de nodos viene del padre para que persista ─────────────
 interface Props {
   userId: number;
+  nodes: VNode[];
+  setNodes: React.Dispatch<React.SetStateAction<VNode[]>>;
+  activeId: string | null;
+  setActiveId: React.Dispatch<React.SetStateAction<string | null>>;
   onOpenFile: (name: string, content: string, language: Language) => void;
 }
 
-export function FilesSidebar({ userId, onOpenFile }: Props) {
-  const [nodes, setNodes] = useState<VNode[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
+export function FilesSidebar({ userId, nodes, setNodes, activeId, setActiveId, onOpenFile }: Props) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectsOpen, setProjectsOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
 
-  // Cargar proyectos del backend al abrir la sección
   useEffect(() => {
     if (projectsOpen && projects.length === 0) {
       getProjectsByUser(userId).then(setProjects).catch(() => {});
@@ -128,11 +118,10 @@ export function FilesSidebar({ userId, onOpenFile }: Props) {
     setNodes(prev => prev.map(n => n.id === id ? { ...n, name } : n));
 
   const createFile = (parentId: string | null = null) => {
-    const name = 'newFile.js';
-    const node: VFile = { id: uid(), type: 'file', name, content: '', language: 'javascript', parentId };
+    const node: VFile = { id: uid(), type: 'file', name: 'newFile.js', content: '', language: 'javascript', parentId };
     setNodes(prev => [...prev, node]);
     setActiveId(node.id);
-    onOpenFile(name, '', 'javascript');
+    onOpenFile('newFile.js', '', 'javascript');
   };
 
   const createFolder = (parentId: string | null = null) => {
@@ -140,7 +129,6 @@ export function FilesSidebar({ userId, onOpenFile }: Props) {
     setNodes(prev => [...prev, node]);
   };
 
-  // Abrir archivos del disco
   const handleOpenFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     for (const file of Array.from(e.target.files ?? [])) {
       const content = await file.text();
@@ -153,7 +141,6 @@ export function FilesSidebar({ userId, onOpenFile }: Props) {
     e.target.value = '';
   };
 
-  // Abrir carpeta del disco
   const handleOpenFolder = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
@@ -181,15 +168,13 @@ export function FilesSidebar({ userId, onOpenFile }: Props) {
     e.target.value = '';
   };
 
-  // Cargar proyecto del backend en el editor
   const handleLoadProject = async (p: Project) => {
     try {
       const data = await loadEditor(p.id);
-      const lang = data.language;
-      const node: VFile = { id: uid(), type: 'file', name: p.name + '.' + lang, content: data.currentCode ?? '', language: lang, parentId: null };
+      const node: VFile = { id: uid(), type: 'file', name: p.name + '.' + data.language, content: data.currentCode ?? '', language: data.language, parentId: null };
       setNodes(prev => [...prev, node]);
       setActiveId(node.id);
-      onOpenFile(node.name, node.content, lang);
+      onOpenFile(node.name, node.content, data.language);
     } catch (err) { console.error(getErrorMessage(err)); }
   };
 
@@ -197,32 +182,29 @@ export function FilesSidebar({ userId, onOpenFile }: Props) {
 
   return (
     <div className="flex flex-col h-full text-[#cccccc] overflow-hidden">
-      {/* Hidden inputs */}
       <input ref={fileInputRef} type="file" multiple className="hidden"
         accept=".js,.ts,.jsx,.tsx,.py,.java,.cpp,.h,.json,.md,.txt,.css,.html"
         onChange={handleOpenFiles} />
       <input ref={folderInputRef} type="file" multiple className="hidden"
-        // @ts-expect-error webkitdirectory no está en los tipos TS pero funciona en todos los browsers modernos
+        // @ts-expect-error webkitdirectory no está en los tipos TS
         webkitdirectory="" onChange={handleOpenFolder} />
 
-      {/* Toolbar */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-[#1e1e1e] shrink-0">
         <span className="text-xs font-semibold uppercase tracking-widest text-[#bbbbbb]">Explorer</span>
         <div className="flex items-center gap-1.5">
-          <button onClick={() => fileInputRef.current?.click()} title="Open file from disk" className="text-[#858585] hover:text-white cursor-pointer"><FileInput className="w-3.5 h-3.5" /></button>
-          <button onClick={() => folderInputRef.current?.click()} title="Open folder from disk" className="text-[#858585] hover:text-white cursor-pointer"><FolderInput className="w-3.5 h-3.5" /></button>
+          <button onClick={() => fileInputRef.current?.click()} title="Open file" className="text-[#858585] hover:text-white cursor-pointer"><FileInput className="w-3.5 h-3.5" /></button>
+          <button onClick={() => folderInputRef.current?.click()} title="Open folder" className="text-[#858585] hover:text-white cursor-pointer"><FolderInput className="w-3.5 h-3.5" /></button>
           <div className="w-px h-3 bg-[#3c3c3c]" />
           <button onClick={() => createFile()} title="New file" className="text-[#858585] hover:text-white cursor-pointer"><FilePlus className="w-3.5 h-3.5" /></button>
           <button onClick={() => createFolder()} title="New folder" className="text-[#858585] hover:text-white cursor-pointer"><FolderPlus className="w-3.5 h-3.5" /></button>
         </div>
       </div>
 
-      {/* File tree */}
       <div className="flex-1 overflow-y-auto py-1">
         {roots.length === 0 && (
           <div className="px-4 py-6 text-center text-xs text-[#858585]">
             <p>No files yet.</p>
-            <p className="mt-1">Open a file or create a new one.</p>
+            <p className="mt-1">Open or create a file to start.</p>
           </div>
         )}
         {roots.map(n => (
@@ -231,7 +213,6 @@ export function FilesSidebar({ userId, onOpenFile }: Props) {
         ))}
       </div>
 
-      {/* Projects section (backend) */}
       <div className="border-t border-[#1e1e1e] shrink-0">
         <button onClick={() => setProjectsOpen(o => !o)}
           className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#858585] hover:text-[#cccccc] cursor-pointer">
