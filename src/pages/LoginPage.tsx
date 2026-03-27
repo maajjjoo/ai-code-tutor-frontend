@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { GraduationCap } from 'lucide-react';
-import { getUserByEmail } from '../services/api';
+import { loginUser } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/shared/Button';
 
@@ -8,7 +8,7 @@ interface Props { onGoRegister: () => void; }
 
 export function LoginPage({ onGoRegister }: Props) {
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
+  const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -17,10 +17,14 @@ export function LoginPage({ onGoRegister }: Props) {
     setError('');
     setLoading(true);
     try {
-      const user = await getUserByEmail(email);
-      login(user);
-    } catch {
-      setError('No account found with that email.');
+      const res = await loginUser(form);
+      login({ id: res.id, username: res.username, email: res.email, createdAt: '' });
+    } catch (err: unknown) {
+      if (axios_isAxiosError(err) && err.response?.data) {
+        setError(String(err.response.data));
+      } else {
+        setError('Email o contraseña incorrectos');
+      }
     } finally {
       setLoading(false);
     }
@@ -43,10 +47,19 @@ export function LoginPage({ onGoRegister }: Props) {
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-gray-400">Email</label>
             <input
-              type="email" required value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="email" required value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
               placeholder="you@example.com"
               className="bg-[#16162a] border border-[#2a2a3e] rounded-md px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs text-gray-400">Password</label>
+            <input
+              type="password" required value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              className="bg-[#16162a] border border-[#2a2a3e] rounded-md px-3 py-2 text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
           </div>
 
@@ -62,4 +75,9 @@ export function LoginPage({ onGoRegister }: Props) {
       </div>
     </div>
   );
+}
+
+// inline helper to avoid importing axios in the component
+function axios_isAxiosError(err: unknown): err is { response?: { data?: unknown } } {
+  return typeof err === 'object' && err !== null && 'response' in err;
 }

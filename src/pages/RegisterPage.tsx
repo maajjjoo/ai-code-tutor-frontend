@@ -6,6 +6,10 @@ import { Button } from '../components/shared/Button';
 
 interface Props { onGoLogin: () => void; }
 
+function isAxiosError(err: unknown): err is { response?: { data?: unknown } } {
+  return typeof err === 'object' && err !== null && 'response' in err;
+}
+
 export function RegisterPage({ onGoLogin }: Props) {
   const { login } = useAuth();
   const [form, setForm] = useState({ username: '', email: '', password: '' });
@@ -20,8 +24,18 @@ export function RegisterPage({ onGoLogin }: Props) {
       const user = await registerUser(form);
       login(user);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Registration failed';
-      setError(msg);
+      if (isAxiosError(err) && err.response?.data) {
+        const msg = String(err.response.data);
+        if (msg.toLowerCase().includes('email')) {
+          setError('Este email ya está registrado');
+        } else if (msg.toLowerCase().includes('username') || msg.toLowerCase().includes('usuario')) {
+          setError('Este nombre de usuario ya está en uso');
+        } else {
+          setError(msg);
+        }
+      } else {
+        setError('Error al crear la cuenta. Intenta de nuevo.');
+      }
     } finally {
       setLoading(false);
     }

@@ -45,6 +45,18 @@ export interface RegisterRequest {
   password: string;
 }
 
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  id: number;
+  username: string;
+  email: string;
+  message: string;
+}
+
 export interface CreateProjectRequest {
   name: string;
   description: string;

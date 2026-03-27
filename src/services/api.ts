@@ -2,6 +2,7 @@ import axios from 'axios';
 import type {
   User, Project, CodeSnapshot, AnalysisHistory,
   RegisterRequest, CreateProjectRequest, AnalyzeCodeRequest, SaveSnapshotRequest,
+  LoginRequest, LoginResponse,
 } from '../types';
 
 const client = axios.create({
@@ -12,6 +13,9 @@ const client = axios.create({
 // ─── Users ────────────────────────────────────────────────────────────────────
 export const registerUser = (body: RegisterRequest) =>
   client.post<User>('/users', body).then((r) => r.data);
+
+export const loginUser = (body: LoginRequest) =>
+  client.post<LoginResponse>('/users/login', body).then((r) => r.data);
 
 export const getUserById = (id: number) =>
   client.get<User>(`/users/${id}`).then((r) => r.data);
