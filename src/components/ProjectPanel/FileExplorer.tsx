@@ -115,7 +115,7 @@ export function FileExplorer() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
 
-  // ── Open single file(s) from disk ─────────────────────────────────────────
+  // ── Abrir archivos del disco ───────────────────────────────────────────────
   const handleOpenFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     for (const file of files) {
@@ -126,7 +126,8 @@ export function FileExplorer() {
     e.target.value = '';
   };
 
-  // ── Open folder from disk ─────────────────────────────────────────────────
+  // ── Abrir carpeta del disco ────────────────────────────────────────────────
+  // Usa el árbol N-ario internamente en AppContext para representar la jerarquía
   const handleOpenFolder = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
