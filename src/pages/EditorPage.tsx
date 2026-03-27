@@ -7,46 +7,47 @@ import { LearnSidebar } from '../components/sidebar/LearnSidebar';
 import { CodeEditor } from '../components/editor/CodeEditor';
 import { ExercisePanel } from '../components/editor/ExercisePanel';
 import { AIPanel } from '../components/ai/AIPanel';
-import { loadEditor, getErrorMessage } from '../services/api';
-import type { Project, EditorData, LearnTopic } from '../types';
+import type { LearnTopic, Language } from '../types';
 
 interface StoredUser { id: number; username: string; email: string; }
+
+// Datos mínimos del archivo abierto para el editor y status bar
+interface OpenFile { name: string; content: string; language: Language; }
 
 export function EditorPage() {
   const navigate = useNavigate();
   const user: StoredUser = JSON.parse(localStorage.getItem('user') ?? '{}');
 
   const [activity, setActivity] = useState<ActivityView>('files');
-  const [editorData, setEditorData] = useState<EditorData | null>(null);
+  const [openFile, setOpenFile] = useState<OpenFile | null>(null);
   const [code, setCode] = useState('');
-  const [activeProjectId, setActiveProjectId] = useState<number | null>(null);
   const [activeTopic, setActiveTopic] = useState<LearnTopic | null>(null);
-  const [loadingProject, setLoadingProject] = useState(false);
 
-  const handleSelectProject = async (p: Project) => {
-    setLoadingProject(true);
+  // Cuando el sidebar abre un archivo (virtual o del disco o del backend)
+  const handleOpenFile = (name: string, content: string, language: Language) => {
+    setOpenFile({ name, content, language });
+    setCode(content);
     setActiveTopic(null);
-    try {
-      const data = await loadEditor(p.id);
-      setEditorData(data);
-      setCode(data.currentCode ?? '');
-      setActiveProjectId(p.id);
-    } catch (err) {
-      console.error(getErrorMessage(err));
-    } finally {
-      setLoadingProject(false);
-    }
   };
 
   const handleSelectTopic = (topic: LearnTopic) => {
     setActiveTopic(topic);
-    setEditorData(null); // ocultar editor de proyecto
+    setOpenFile(null);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('user');
     navigate('/login');
   };
+
+  // EditorData mínimo para el CodeEditor y AIPanel (sin projectId real cuando es archivo local)
+  const editorData = openFile ? {
+    projectId: 0,
+    projectName: openFile.name,
+    language: openFile.language,
+    currentCode: openFile.content,
+    versionNumber: 0,
+  } : null;
 
   return (
     <div className="flex flex-col h-screen bg-[#1e1e1e] text-[#cccccc] overflow-hidden font-mono">
@@ -57,7 +58,7 @@ export function EditorPage() {
         {/* Sidebar */}
         <div className="w-56 bg-[#252526] border-r border-[#1e1e1e] flex flex-col overflow-hidden shrink-0">
           {activity === 'files' && (
-            <FilesSidebar userId={user.id} activeProjectId={activeProjectId} onSelectProject={handleSelectProject} />
+            <FilesSidebar userId={user.id} onOpenFile={handleOpenFile} />
           )}
           {activity === 'learn' && (
             <LearnSidebar onSelectTopic={handleSelectTopic} activeTopicId={activeTopic?.id ?? null} />
@@ -77,9 +78,7 @@ export function EditorPage() {
 
         {/* Editor area */}
         <div className="flex flex-1 overflow-hidden">
-          {loadingProject ? (
-            <div className="flex-1 flex items-center justify-center text-[#858585] text-sm">Loading project...</div>
-          ) : activeTopic ? (
+          {activeTopic ? (
             <ExercisePanel topic={activeTopic} userId={user.id} />
           ) : (
             <CodeEditor editorData={editorData} code={code} onChange={setCode} />
@@ -90,9 +89,9 @@ export function EditorPage() {
 
       {/* Status Bar */}
       <StatusBar
-        language={editorData?.language ?? activeTopic?.category ?? '—'}
-        projectName={editorData?.projectName ?? activeTopic?.name ?? 'No project open'}
-        version={editorData?.versionNumber ?? 0}
+        language={openFile?.language ?? activeTopic?.category ?? '—'}
+        projectName={openFile?.name ?? activeTopic?.name ?? 'No file open'}
+        version={0}
         username={user.username ?? ''}
       />
     </div>
