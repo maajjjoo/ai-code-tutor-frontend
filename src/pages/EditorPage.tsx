@@ -77,14 +77,38 @@ export function EditorPage() {
             <LearnSidebar userId={user.id} onSelectTopic={handleSelectTopic} activeTopicId={activeTopic?.id ?? null} />
           )}
           {activity === 'settings' && (
-            <div className="flex flex-col gap-2 p-4">
-              <p className="text-xs text-[#858585] uppercase tracking-wider mb-2">Settings</p>
-              <p className="text-xs text-[#cccccc]">User: {user.username}</p>
-              <p className="text-xs text-[#cccccc]">Email: {user.email}</p>
-              <button onClick={handleLogout}
-                className="mt-4 text-xs text-[#f48771] hover:text-white text-left cursor-pointer">
-                Sign out
-              </button>
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="px-3 py-2 border-b border-[#1e1e1e] shrink-0">
+                <p className="text-xs font-semibold uppercase tracking-widest text-[#bbbbbb]">Settings</p>
+              </div>
+
+              {/* User card */}
+              <div className="p-4 flex flex-col gap-4">
+                <div className="flex flex-col items-center gap-3 py-4 px-3 bg-[#2d2d2d] rounded-lg border border-[#3c3c3c]">
+                  {/* Avatar con inicial */}
+                  <div className="w-14 h-14 rounded-full bg-[#0e639c] flex items-center justify-center text-white text-2xl font-bold select-none">
+                    {user.username?.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-semibold text-white">{user.username}</p>
+                    <p className="text-xs text-[#858585] mt-0.5">{user.email}</p>
+                  </div>
+                  <div className="w-full h-px bg-[#3c3c3c]" />
+                  <div className="w-full flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-[#858585]">User ID</span>
+                      <span className="text-[#cccccc] font-mono">#{user.id}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sign out */}
+                <button onClick={handleLogout}
+                  className="w-full flex items-center justify-center gap-2 py-2 text-xs text-[#f48771] border border-[#f48771]/30 rounded hover:bg-[#f48771]/10 transition-colors cursor-pointer">
+                  Sign out
+                </button>
+              </div>
             </div>
           )}
         </div>
