@@ -13,6 +13,11 @@ interface ChatMessage {
 
 function uid() { return `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`; }
 
+// Elimina emojis de las respuestas de la IA
+function stripEmojis(text: string): string {
+  return text.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}\u{FE00}-\u{FEFF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA9F}]/gu, '').replace(/\s{2,}/g, ' ').trim();
+}
+
 // ─── Burbuja de mensaje ───────────────────────────────────────────────────────
 function MessageBubble({ msg }: { msg: ChatMessage }) {
   const isUser = msg.role === 'user';
@@ -86,7 +91,7 @@ export function AIPanel({ editorData, code }: Props) {
         currentCode: code,
         language: editorData.language,
       });
-      addMessage('ai', res.message);
+      addMessage('ai', stripEmojis(res.message));
     } catch (err) {
       addMessage('ai', `Error: ${getErrorMessage(err)}`);
     } finally {
@@ -110,7 +115,7 @@ export function AIPanel({ editorData, code }: Props) {
         currentCode: code,
         language: editorData?.language,
       });
-      addMessage('ai', res.message);
+      addMessage('ai', stripEmojis(res.message));
     } catch (err) {
       addMessage('ai', `Error: ${getErrorMessage(err)}`);
     } finally {
