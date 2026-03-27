@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Bot } from 'lucide-react';
-import { analyzeCode, generateGuide, getErrorMessage } from '../../services/api';
+import { sendChatMessage, getErrorMessage } from '../../services/api';
 import type { EditorData } from '../../types';
 
 // ─── Estructura de mensaje de chat ────────────────────────────────────────────
@@ -68,18 +68,25 @@ export function AIPanel({ editorData, code }: Props) {
     setMessages(prev => [...prev, { id: uid(), role, content, timestamp: new Date() }]);
   };
 
+  // Construye el historial para enviar al backend
+  const buildHistory = (msgs: ChatMessage[]) =>
+    msgs.map(m => ({ role: m.role, content: m.content }));
+
   // Analizar el código actual del editor
   const handleAnalyze = async () => {
     if (!editorData || !code.trim() || loading) return;
-    addMessage('user', 'Analizando código actual...');
+    const userMsg: ChatMessage = { id: uid(), role: 'user', content: 'Analizando código actual...', timestamp: new Date() };
+    const updated = [...messages, userMsg];
+    setMessages(updated);
     setLoading(true);
     try {
-      const res = await analyzeCode({
-        code,
+      const res = await sendChatMessage({
+        message: 'Analiza el código que tengo en el editor y explícame qué hace y cómo puedo mejorarlo',
+        history: buildHistory(updated),
+        currentCode: code,
         language: editorData.language,
-        projectId: editorData.projectId,
       });
-      addMessage('ai', `${res.explanation}\n\n${res.suggestions ?? ''}`);
+      addMessage('ai', res.message);
     } catch (err) {
       addMessage('ai', `Error: ${getErrorMessage(err)}`);
     } finally {
@@ -92,11 +99,18 @@ export function AIPanel({ editorData, code }: Props) {
     const text = input.trim();
     if (!text || loading) return;
     setInput('');
-    addMessage('user', text);
+    const userMsg: ChatMessage = { id: uid(), role: 'user', content: text, timestamp: new Date() };
+    const updated = [...messages, userMsg];
+    setMessages(updated);
     setLoading(true);
     try {
-      const res = await generateGuide(text);
-      addMessage('ai', res);
+      const res = await sendChatMessage({
+        message: text,
+        history: buildHistory(updated),
+        currentCode: code,
+        language: editorData?.language,
+      });
+      addMessage('ai', res.message);
     } catch (err) {
       addMessage('ai', `Error: ${getErrorMessage(err)}`);
     } finally {
