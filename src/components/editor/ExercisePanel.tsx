@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import MonacoEditor from '@monaco-editor/react';
 import { generateExercise, evaluateSolution, getErrorMessage } from '../../services/api';
 import type { LearnTopic, Language, Exercise, ExerciseEvaluation } from '../../types';
@@ -23,6 +23,14 @@ export function ExercisePanel({ topic, language, userId, onAskHelp }: Props) {
   const [generating, setGenerating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Resetear ejercicio cuando cambia el lenguaje o el tópico
+  useEffect(() => {
+    setExercise(null);
+    setCode('');
+    setEvaluation(null);
+    setError('');
+  }, [language, topic.id]);
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -65,7 +73,7 @@ export function ExercisePanel({ topic, language, userId, onAskHelp }: Props) {
       <div className="flex items-center gap-3 px-4 py-2.5 bg-[#080810] border-b border-[#ffffff06] shrink-0 flex-wrap">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <span className="text-sm font-semibold text-white truncate">{topic.name}</span>
-          <span className="text-[10px] px-2 py-0.5 rounded-full border border-[#a78bfa]/30 bg-[#a78bfa]/10 text-[#a78bfa] font-mono shrink-0">
+          <span className="text-[10px] px-2 py-0.5 rounded-full border border-[#a78bfa]/30 bg-[#a78bfa]/10 text-[#a78bfa] font-mono shrink-0 capitalize">
             {language}
           </span>
         </div>
