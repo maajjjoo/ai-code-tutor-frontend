@@ -48,6 +48,10 @@ export function EditorPage() {
     setOpenFile(null);
   };
 
+  const handleLangChange = (language: Language) => {
+    setActiveTopicLang(language);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('user');
     navigate('/login');
@@ -81,7 +85,13 @@ export function EditorPage() {
             />
           )}
           {activity === 'learn' && (
-            <LearnSidebar userId={user.id} onSelectTopic={handleSelectTopic} activeTopicId={activeTopic?.id ?? null} />
+            <LearnSidebar
+              userId={user.id}
+              onSelectTopic={handleSelectTopic}
+              activeTopicId={activeTopic?.id ?? null}
+              selectedLang={activeTopicLang}
+              onLangChange={handleLangChange}
+            />
           )}
           {activity === 'settings' && (
             <div className="flex flex-col h-full">

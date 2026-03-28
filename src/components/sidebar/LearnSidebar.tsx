@@ -20,14 +20,15 @@ interface Props {
   userId: number;
   onSelectTopic: (topic: LearnTopic, language: Language) => void;
   activeTopicId: number | null;
+  selectedLang: Language;
+  onLangChange: (lang: Language) => void;
 }
 
-export function LearnSidebar({ userId, onSelectTopic, activeTopicId }: Props) {
+export function LearnSidebar({ userId, onSelectTopic, activeTopicId, selectedLang, onLangChange }: Props) {
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [topics, setTopics] = useState<Record<string, LearnTopic[]>>({});
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [selectedLang, setSelectedLang] = useState<Language>('javascript');
   const [progress, setProgress] = useState<UserProgress[]>([]);
   const [progressLoaded, setProgressLoaded] = useState(false);
 
@@ -69,7 +70,7 @@ export function LearnSidebar({ userId, onSelectTopic, activeTopicId }: Props) {
         {/* Selector de lenguaje */}
         <div className="flex gap-1 flex-wrap">
           {LANGUAGES.map(l => (
-            <button key={l.value} onClick={() => setSelectedLang(l.value)}
+            <button key={l.value} onClick={() => onLangChange(l.value)}
               className={`px-2 py-0.5 text-[10px] font-mono rounded border transition-all cursor-pointer
                 ${selectedLang === l.value ? l.color : 'bg-transparent text-[#555] border-[#3c3c3c] hover:text-[#858585]'}`}>
               {l.label}
@@ -100,8 +101,7 @@ export function LearnSidebar({ userId, onSelectTopic, activeTopicId }: Props) {
                   const pct = prog ? Math.round((prog.completedExercises / Math.max(prog.totalExercises, 1)) * 100) : 0;
                   const isActive = activeTopicId === topic.id;
                   return (
-                    <button key={topic.id} onClick={() => onSelectTopic(topic, selectedLang)}
-                      className={`w-full text-left px-3 py-2 text-xs transition-colors cursor-pointer group
+                    <button key={topic.id} onClick={() => onSelectTopic(topic, selectedLang)}                      className={`w-full text-left px-3 py-2 text-xs transition-colors cursor-pointer group
                         ${isActive ? 'bg-[#37373d] text-white' : 'hover:bg-[#2a2d2e] text-[#cccccc]'}`}>
                       <div className="flex items-center justify-between gap-2">
                         <span className="truncate">{topic.name}</span>
