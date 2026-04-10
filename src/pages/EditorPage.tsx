@@ -6,9 +6,11 @@ import { FilesSidebar } from '../components/sidebar/FilesSidebar';
 import { LearnSidebar } from '../components/sidebar/LearnSidebar';
 import { CodeEditor } from '../components/editor/CodeEditor';
 import { ExercisePanel } from '../components/editor/ExercisePanel';
+import { TerminalPanel, type TerminalLine } from '../components/editor/TerminalPanel';
 import { AIPanel } from '../components/ai/AIPanel';
 import type { LearnTopic, Language } from '../types';
 import type { VNode } from '../types/vfs';
+import { Terminal } from 'lucide-react';
 
 interface StoredUser { id: number; username: string; email: string; }
 
@@ -31,6 +33,9 @@ export function EditorPage() {
   const [errorCount, setErrorCount] = useState(0);
   const [canValidate, setCanValidate] = useState(false);
   const [hasAiWarning, setHasAiWarning] = useState(false);
+  const [terminalOpen, setTerminalOpen] = useState(false);
+  const [terminalLines, setTerminalLines] = useState<TerminalLine[]>([]);
+  const [terminalRunning, setTerminalRunning] = useState(false);
 
   // Cuando el sidebar abre un archivo (virtual o del disco o del backend)
   const handleOpenFile = (name: string, content: string, language: Language) => {
@@ -124,24 +129,57 @@ export function EditorPage() {
 
         {/* Editor area */}
         <div className="flex flex-1 overflow-hidden">
-          {activeTopic ? (
-            <ExercisePanel
-              topic={activeTopic}
-              language={activeTopicLang}
-              userId={user.id}
-              onAskHelp={(statement, code) => setExerciseContext({ statement, code })}
-            />
-          ) : (
-            <CodeEditor
-              editorData={editorData}
-              code={code}
-              onChange={setCode}
-              onErrorCountChange={(count, validate) => {
-                setErrorCount(count);
-                setCanValidate(validate);
-              }}
-            />
-          )}
+          <div className="flex flex-col flex-1 overflow-hidden">
+            {/* Editor / Exercise */}
+            <div className="flex flex-1 overflow-hidden">
+              {activeTopic ? (
+                <ExercisePanel
+                  topic={activeTopic}
+                  language={activeTopicLang}
+                  userId={user.id}
+                  onAskHelp={(statement, code) => setExerciseContext({ statement, code })}
+                />
+              ) : (
+                <CodeEditor
+                  editorData={editorData}
+                  code={code}
+                  onChange={setCode}
+                  onErrorCountChange={(count, validate) => {
+                    setErrorCount(count);
+                    setCanValidate(validate);
+                  }}
+                />
+              )}
+            </div>
+
+            {/* Terminal toggle button */}
+            {!terminalOpen && (
+              <div className="flex items-center px-3 py-1 bg-[#080810] border-t border-[#ffffff06] shrink-0">
+                <button
+                  onClick={() => setTerminalOpen(true)}
+                  className="flex items-center gap-1.5 text-xs text-[#6b7280] hover:text-[#cccccc] cursor-pointer transition-colors"
+                >
+                  <Terminal className="w-3.5 h-3.5" /> Consola
+                </button>
+              </div>
+            )}
+
+            {/* Terminal panel */}
+            {terminalOpen && (
+              <div className="h-48 shrink-0">
+                <TerminalPanel
+                  code={code}
+                  language={openFile?.language ?? activeTopicLang}
+                  lines={terminalLines}
+                  running={terminalRunning}
+                  onLines={setTerminalLines}
+                  onRunning={setTerminalRunning}
+                  onClose={() => setTerminalOpen(false)}
+                />
+              </div>
+            )}
+          </div>
+
           <AIPanel
             editorData={editorData}
             code={code}
