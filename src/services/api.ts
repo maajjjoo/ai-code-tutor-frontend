@@ -73,3 +73,7 @@ export const sendChatMessage = (body: {
   currentCode?: string;
   language?: string;
 }) => client.post<{ message: string }>('/chat', body).then(r => r.data);
+
+// ─── Terminal ─────────────────────────────────────────────────────────────────
+export const runCode = (body: { code: string; language: string; stdin?: string }) =>
+  client.post<{ stdout: string; stderr: string; exitCode: number }>('/terminal/run', body).then(r => r.data);
