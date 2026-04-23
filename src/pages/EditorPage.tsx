@@ -180,17 +180,20 @@ export function EditorPage() {
             )}
           </div>
 
-          <AIPanel
-            editorData={editorData}
-            code={code}
-            exerciseContext={exerciseContext}
-            onAiResponse={(msg) => {
-              const lower = msg.toLowerCase();
-              if (['error', 'falta', 'incorrecto', 'problema', 'fallo'].some(w => lower.includes(w))) {
-                setHasAiWarning(true);
-              }
-            }}
-          />
+          {/* AI Panel — hidden when exercise is active to give full space to the exercise layout */}
+          {!activeTopic && (
+            <AIPanel
+              editorData={editorData}
+              code={code}
+              exerciseContext={exerciseContext}
+              onAiResponse={(msg) => {
+                const lower = msg.toLowerCase();
+                if (['error', 'falta', 'incorrecto', 'problema', 'fallo'].some(w => lower.includes(w))) {
+                  setHasAiWarning(true);
+                }
+              }}
+            />
+          )}
         </div>
       </div>
 

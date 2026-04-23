@@ -8,6 +8,14 @@ import {
   ChevronRight, Loader2
 } from 'lucide-react';
 
+// Simple markdown renderer — bold, inline code, line breaks
+function renderMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
+    .replace(/`(.*?)`/g, '<code class="bg-[#1e1e1e] text-[#ce9178] px-1 py-0.5 rounded text-[11px] font-mono">$1</code>')
+    .replace(/\n/g, '<br />');
+}
+
 interface Props {
   topic: LearnTopic;
   language: Language;
@@ -240,7 +248,10 @@ export function ExercisePanel({ topic, language, userId, onAskHelp }: Props) {
               </div>
               <p className="text-[10px] font-semibold text-[#6b7280] uppercase tracking-wider">Enunciado</p>
             </div>
-            <p className="text-sm text-[#e5e7eb] leading-relaxed whitespace-pre-wrap">{exercise.statement}</p>
+            <div
+              className="text-sm text-[#e5e7eb] leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: renderMarkdown(exercise.statement) }}
+            />
           </div>
 
           {/* Hint section */}
