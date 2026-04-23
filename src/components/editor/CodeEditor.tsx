@@ -1,8 +1,13 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import MonacoEditor from '@monaco-editor/react';
 import type * as Monaco from 'monaco-editor';
 import { saveSnapshot, getErrorMessage } from '../../services/api';
 import type { EditorData } from '../../types';
+import { useEditorPersistence } from '../../hooks/useEditorPersistence';
+import { SaveIndicatorBar } from './SaveIndicatorBar';
+import { AutosaveRecoveryBanner } from './AutosaveRecoveryBanner';
+import { VersionHistoryPanel } from './VersionHistoryPanel';
+import { Clock } from 'lucide-react';
 
 interface Props {
   editorData: EditorData | null;
@@ -11,109 +16,217 @@ interface Props {
   onErrorCountChange?: (count: number, canValidate: boolean) => void;
 }
 
-const MONACO_LANG: Record<string, string> = {
+const MONACO_LANGUAGE_MAP: Record<string, string> = {
   javascript: 'javascript', typescript: 'typescript',
   python: 'python', java: 'java', cpp: 'cpp',
 };
 
-function getMonacoLang(language: string, fileName: string): string {
-  const hasKnownExt = /\.(js|jsx|ts|tsx|py|java|cpp|h|cc)$/.test(fileName);
-  if (!hasKnownExt) return 'plaintext';
-  return MONACO_LANG[language] ?? 'plaintext';
+function resolveMonacoLanguage(language: string, fileName: string): string {
+  const hasKnownExtension = /\.(js|jsx|ts|tsx|py|java|cpp|h|cc)$/.test(fileName);
+  if (!hasKnownExtension) return 'plaintext';
+  return MONACO_LANGUAGE_MAP[language] ?? 'plaintext';
 }
 
 export function CodeEditor({ editorData, code, onChange, onErrorCountChange }: Props) {
-  const saving = useRef(false);
-  const disposeRef = useRef<Monaco.IDisposable | null>(null);
+  const isSavingToBackend          = useRef(false);
+  const monacoDisposableRef        = useRef<Monaco.IDisposable | null>(null);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
 
-  const handleMount = (_editor: Monaco.editor.IStandaloneCodeEditor, monaco: typeof Monaco) => {
-    // Habilitar validación JS/TS
+  const projectId = editorData?.projectId ?? 0;
+  const fileName  = editorData?.projectName ?? 'untitled';
+
+  const {
+    hasUnsavedChanges,
+    saveIndicatorState,
+    lastSavedAt,
+    saveManually,
+    versionHistory,
+    autosaveContent,
+    autosaveTimestamp,
+    dismissAutosaveBanner,
+    restoreVersion,
+  } = useEditorPersistence({ projectId, fileName, currentContent: code });
+
+  // Update browser tab title with unsaved indicator
+  useEffect(() => {
+    const baseTitle = `${fileName} — CodeLearnAI`;
+    document.title = hasUnsavedChanges ? `• ${baseTitle}` : baseTitle;
+    return () => { document.title = 'CodeLearnAI'; };
+  }, [hasUnsavedChanges, fileName]);
+
+  const handleEditorMount = (_editor: Monaco.editor.IStandaloneCodeEditor, monaco: typeof Monaco) => {
+    // Enable JS/TS diagnostics
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ts = (monaco.languages as any).typescript;
-    if (ts) {
-      ts.javascriptDefaults.setDiagnosticsOptions({ noSemanticValidation: false, noSyntaxValidation: false });
-      ts.typescriptDefaults.setDiagnosticsOptions({ noSemanticValidation: false, noSyntaxValidation: false });
+    const typescriptLanguageService = (monaco.languages as any).typescript;
+    if (typescriptLanguageService) {
+      typescriptLanguageService.javascriptDefaults.setDiagnosticsOptions({ noSemanticValidation: false, noSyntaxValidation: false });
+      typescriptLanguageService.typescriptDefaults.setDiagnosticsOptions({ noSemanticValidation: false, noSyntaxValidation: false });
     }
 
-    // Escuchar markers de error
-    disposeRef.current?.dispose();
-    disposeRef.current = monaco.editor.onDidChangeMarkers((uris) => {
-      const errors = uris.flatMap(uri =>
+    monacoDisposableRef.current?.dispose();
+    monacoDisposableRef.current = monaco.editor.onDidChangeMarkers(uris => {
+      const errorMarkers = uris.flatMap(uri =>
         monaco.editor.getModelMarkers({ resource: uri })
-          .filter(m => m.severity === monaco.MarkerSeverity.Error)
+          .filter(marker => marker.severity === monaco.MarkerSeverity.Error)
       );
-      const lang = editorData?.language ?? '';
-      const canValidate = lang === 'javascript' || lang === 'typescript';
-      onErrorCountChange?.(errors.length, canValidate);
+      const currentLanguage = editorData?.language ?? '';
+      const canValidate = currentLanguage === 'javascript' || currentLanguage === 'typescript';
+      onErrorCountChange?.(errorMarkers.length, canValidate);
     });
   };
 
-  // Cleanup on unmount
-  useEffect(() => () => { disposeRef.current?.dispose(); }, []);
+  useEffect(() => () => { monacoDisposableRef.current?.dispose(); }, []);
 
-  // Ctrl+S para guardar snapshot
+  // Ctrl+S — save locally and sync to backend
   useEffect(() => {
-    const handler = async (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        if (!editorData || saving.current || editorData.projectId === 0) return;
-        saving.current = true;
+    const handleKeyDown = async (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+        event.preventDefault();
+        await saveManually();
+
+        // Also sync to backend if project is real
+        if (!editorData || isSavingToBackend.current || editorData.projectId === 0) return;
+        isSavingToBackend.current = true;
         try {
-          await saveSnapshot({ content: code, versionLabel: 'autosave', projectId: editorData.projectId });
+          await saveSnapshot({ content: code, versionLabel: 'manual_save', projectId: editorData.projectId });
         } catch (err) {
-          console.error(getErrorMessage(err));
+          console.error('Backend sync failed:', getErrorMessage(err));
         } finally {
-          saving.current = false;
+          isSavingToBackend.current = false;
         }
       }
     };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [code, editorData]);
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [code, editorData, saveManually]);
+
+  const handleKeepAutosave = () => {
+    dismissAutosaveBanner();
+  };
+
+  const handleDiscardAutosave = () => {
+    dismissAutosaveBanner();
+    // Revert to last manually saved content if available
+    const manualSaveKey = `saved-project-${projectId}-file-${fileName}`;
+    const manualSaveRaw = localStorage.getItem(manualSaveKey);
+    if (manualSaveRaw) {
+      try {
+        const parsed = JSON.parse(manualSaveRaw);
+        onChange(parsed.fileContent ?? '');
+      } catch { /* ignore */ }
+    }
+  };
 
   if (!editorData) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#0d0d14] text-[#374151] text-sm select-none">
+      <div className="flex-1 flex items-center justify-center bg-[#0d0d14] select-none">
         <div className="text-center">
-          <p className="text-5xl mb-4 opacity-20">{'</>'}</p>
-          <p className="text-[#6b7280]">Abre un archivo del explorador para empezar</p>
-          <p className="text-xs mt-2 text-[#374151]">Ctrl+S para guardar un snapshot</p>
+          <p className="text-5xl mb-4 opacity-20" style={{ color: '#585b70' }}>{'</>'}</p>
+          <p className="text-sm" style={{ color: '#585b70' }}>Abre un archivo del explorador para empezar</p>
+          <p className="text-xs mt-2" style={{ color: '#45475a' }}>Ctrl+S para guardar</p>
         </div>
       </div>
     );
   }
 
-  const lang = getMonacoLang(editorData.language, editorData.projectName);
+  const monacoLanguage = resolveMonacoLanguage(editorData.language, editorData.projectName);
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden relative">
+
       {/* Tab bar */}
-      <div className="flex items-center bg-[#080810] border-b border-[#ffffff06] shrink-0">
-        <div className="flex items-center gap-2 px-4 py-2 bg-[#0d0d14] border-t-2 border-[#0e639c] text-sm text-[#e5e7eb]">
-          <span className="text-xs">{editorData.projectName}</span>
+      <div className="flex items-center bg-[#080810] border-b border-[#1e1e2e] shrink-0" style={{ height: 36 }}>
+        <div
+          className="flex items-center gap-2 px-4 h-full border-t-2"
+          style={{ borderColor: '#89b4fa', background: '#0d0d14' }}
+        >
+          <span className="text-xs" style={{ color: '#cdd6f4' }}>{editorData.projectName}</span>
+
+          {/* Unsaved dot */}
+          {hasUnsavedChanges && (
+            <div
+              className="w-1.5 h-1.5 rounded-full shrink-0"
+              style={{ background: '#f9e2af' }}
+              title="Cambios sin guardar"
+            />
+          )}
+        </div>
+
+        {/* Save status */}
+        <div className="ml-auto flex items-center gap-3 px-3">
+          {lastSavedAt && !hasUnsavedChanges && (
+            <span className="text-[10px]" style={{ color: '#45475a' }}>
+              Guardado {lastSavedAt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+
+          {/* Version history button */}
+          {versionHistory.length > 0 && (
+            <button
+              onClick={() => setShowVersionHistory(previous => !previous)}
+              className="flex items-center gap-1 text-[10px] px-2 py-1 rounded cursor-pointer transition-colors hover:bg-[#1e1e2e]"
+              style={{ color: '#585b70' }}
+              aria-label="Ver historial de versiones"
+            >
+              <Clock className="w-3 h-3" />
+              {versionHistory.length}
+            </button>
+          )}
         </div>
       </div>
 
-      <MonacoEditor
-        height="100%"
-        language={lang}
-        value={code}
-        theme="vs-dark"
-        onMount={handleMount}
-        onChange={v => onChange(v ?? '')}
-        options={{
-          fontSize: 14,
-          fontFamily: "'Cascadia Code', 'Fira Code', 'Consolas', monospace",
-          minimap: { enabled: false },
-          scrollBeyondLastLine: false,
-          wordWrap: 'on',
-          lineNumbers: 'on',
-          renderLineHighlight: 'line',
-          tabSize: 2,
-          automaticLayout: true,
-          padding: { top: 12 },
-        }}
-      />
+      {/* Autosave recovery banner */}
+      {autosaveContent && autosaveTimestamp && (
+        <AutosaveRecoveryBanner
+          autosaveTimestamp={autosaveTimestamp}
+          onKeep={handleKeepAutosave}
+          onDiscard={handleDiscardAutosave}
+        />
+      )}
+
+      {/* Save indicator bar */}
+      <SaveIndicatorBar state={saveIndicatorState} />
+
+      {/* Monaco Editor */}
+      <div className="flex-1 overflow-hidden">
+        <MonacoEditor
+          height="100%"
+          language={monacoLanguage}
+          value={code}
+          theme="vs-dark"
+          onMount={handleEditorMount}
+          onChange={value => onChange(value ?? '')}
+          aria-label="Editor de código"
+          options={{
+            fontSize: 14,
+            fontFamily: "'Cascadia Code', 'Fira Code', 'Consolas', monospace",
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            wordWrap: 'on',
+            lineNumbers: 'on',
+            renderLineHighlight: 'line',
+            tabSize: 2,
+            automaticLayout: true,
+            padding: { top: 12 },
+            cursorBlinking: 'smooth',
+          }}
+        />
+      </div>
+
+      {/* Version history panel */}
+      {showVersionHistory && (
+        <VersionHistoryPanel
+          versions={versionHistory}
+          currentContent={code}
+          onRestore={restoredContent => {
+            onChange(restoredContent);
+            restoreVersion(restoredContent);
+            setShowVersionHistory(false);
+          }}
+          onClose={() => setShowVersionHistory(false)}
+        />
+      )}
     </div>
   );
 }
