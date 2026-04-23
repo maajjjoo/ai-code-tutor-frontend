@@ -55,19 +55,45 @@ export function RegisterPage() {
           )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {[
-              { key: 'username', label: 'Usuario', type: 'text', placeholder: 'tunombre' },
-              { key: 'email', label: 'Email', type: 'email', placeholder: 'tu@email.com' },
-              { key: 'password', label: 'Contraseña', type: 'password', placeholder: '••••••••' },
-            ].map(f => (
-              <div key={f.key} className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-[#9ca3af]">{f.label}</label>
-                <input type={f.type} required placeholder={f.placeholder}
-                  value={form[f.key as keyof typeof form]}
-                  onChange={e => setForm({ ...form, [f.key]: e.target.value })}
-                  className="bg-[#0d0d14] border border-[#ffffff12] rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#6f42c1] focus:ring-1 focus:ring-[#6f42c1]/30 transition-all" />
-              </div>
-            ))}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="register-username" className="text-xs font-medium text-[#9ca3af]">Usuario</label>
+              <input
+                id="register-username"
+                name="username"
+                type="text"
+                required
+                placeholder="tunombre"
+                autoComplete="username"
+                value={form.username}
+                onChange={e => setForm({ ...form, username: e.target.value })}
+                className="bg-[#0d0d14] border border-[#ffffff12] rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#6f42c1] focus:ring-1 focus:ring-[#6f42c1]/30 transition-all" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="register-email" className="text-xs font-medium text-[#9ca3af]">Email</label>
+              <input
+                id="register-email"
+                name="email"
+                type="email"
+                required
+                placeholder="tu@email.com"
+                autoComplete="email"
+                value={form.email}
+                onChange={e => setForm({ ...form, email: e.target.value })}
+                className="bg-[#0d0d14] border border-[#ffffff12] rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#6f42c1] focus:ring-1 focus:ring-[#6f42c1]/30 transition-all" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="register-password" className="text-xs font-medium text-[#9ca3af]">Contraseña</label>
+              <input
+                id="register-password"
+                name="password"
+                type="password"
+                required
+                placeholder="••••••••"
+                autoComplete="new-password"
+                value={form.password}
+                onChange={e => setForm({ ...form, password: e.target.value })}
+                className="bg-[#0d0d14] border border-[#ffffff12] rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#6f42c1] focus:ring-1 focus:ring-[#6f42c1]/30 transition-all" />
+            </div>
             <button type="submit" disabled={loading}
               className="mt-1 w-full py-2.5 rounded-lg bg-gradient-to-r from-[#6f42c1] to-[#0e639c] hover:from-[#0e639c] hover:to-[#6f42c1] text-white text-sm font-semibold disabled:opacity-50 transition-all shadow-lg shadow-[#6f42c1]/20 cursor-pointer">
               {loading ? 'Creando cuenta...' : 'Crear cuenta'}

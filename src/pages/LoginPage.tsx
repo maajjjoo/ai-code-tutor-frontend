@@ -56,17 +56,29 @@ export function LoginPage() {
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-[#9ca3af]">Email</label>
-              <input type="email" required value={form.email}
+              <label htmlFor="login-email" className="text-xs font-medium text-[#9ca3af]">Email</label>
+              <input
+                id="login-email"
+                name="email"
+                type="email"
+                required
+                value={form.email}
                 onChange={e => setForm({ ...form, email: e.target.value })}
                 placeholder="tu@email.com"
+                autoComplete="email"
                 className="bg-[#0d0d14] border border-[#ffffff12] rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#0e639c] focus:ring-1 focus:ring-[#0e639c]/30 transition-all" />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-[#9ca3af]">Contraseña</label>
-              <input type="password" required value={form.password}
+              <label htmlFor="login-password" className="text-xs font-medium text-[#9ca3af]">Contraseña</label>
+              <input
+                id="login-password"
+                name="password"
+                type="password"
+                required
+                value={form.password}
                 onChange={e => setForm({ ...form, password: e.target.value })}
                 placeholder="••••••••"
+                autoComplete="current-password"
                 className="bg-[#0d0d14] border border-[#ffffff12] rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#0e639c] focus:ring-1 focus:ring-[#0e639c]/30 transition-all" />
             </div>
             <button type="submit" disabled={loading}
