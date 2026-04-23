@@ -5,22 +5,16 @@ import type { LearnTopic, LearnCategory, Language, UserProgress } from '../../ty
 
 const SECTIONS: { category: LearnCategory; label: string; icon: React.ReactNode }[] = [
   { category: 'DATA_STRUCTURE', label: 'Estructuras de Datos', icon: <Layers className="w-3.5 h-3.5" /> },
-  { category: 'DESIGN_PATTERN', label: 'Patrones de Diseño', icon: <BookOpen className="w-3.5 h-3.5" /> },
-  { category: 'ALGORITHM', label: 'Algoritmos', icon: <Zap className="w-3.5 h-3.5" /> },
+  { category: 'DESIGN_PATTERN', label: 'Patrones de Diseño',  icon: <BookOpen className="w-3.5 h-3.5" /> },
+  { category: 'ALGORITHM',      label: 'Algoritmos',          icon: <Zap className="w-3.5 h-3.5" /> },
 ];
 
 const LANGUAGES: { value: Language; label: string; activeStyle: string }[] = [
   { value: 'javascript', label: 'JS', activeStyle: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' },
-  { value: 'typescript', label: 'TS', activeStyle: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-  { value: 'python', label: 'PY', activeStyle: 'bg-green-500/20 text-green-400 border-green-500/30' },
-  { value: 'java', label: 'JV', activeStyle: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
+  { value: 'typescript', label: 'TS', activeStyle: 'bg-blue-500/20 text-blue-400 border-blue-500/30'      },
+  { value: 'python',     label: 'PY', activeStyle: 'bg-green-500/20 text-green-400 border-green-500/30'   },
+  { value: 'java',       label: 'JV', activeStyle: 'bg-orange-500/20 text-orange-400 border-orange-500/30'},
 ];
-
-const DIFFICULTY_DOT: Record<string, string> = {
-  BEGINNER: 'bg-green-400',
-  INTERMEDIATE: 'bg-orange-400',
-  ADVANCED: 'bg-red-400',
-};
 
 interface Props {
   userId: number;
@@ -31,11 +25,11 @@ interface Props {
 }
 
 export function LearnSidebar({ userId, onSelectTopic, activeTopicId, selectedLang, onLangChange }: Props) {
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const [openSections, setOpenSections]         = useState<Record<string, boolean>>({});
   const [topicsByCategory, setTopicsByCategory] = useState<Record<string, LearnTopic[]>>({});
   const [loadingCategories, setLoadingCategories] = useState<Record<string, boolean>>({});
-  const [categoryErrors, setCategoryErrors] = useState<Record<string, string>>({});
-  const [progressList, setProgressList] = useState<UserProgress[]>([]);
+  const [categoryErrors, setCategoryErrors]     = useState<Record<string, string>>({});
+  const [progressList, setProgressList]         = useState<UserProgress[]>([]);
   const [hasLoadedProgress, setHasLoadedProgress] = useState(false);
 
   const loadStudentProgress = async () => {
@@ -71,38 +65,30 @@ export function LearnSidebar({ userId, onSelectTopic, activeTopicId, selectedLan
     progressList.find(progressItem => progressItem.topicId === topicId);
 
   return (
-    <div className="flex flex-col h-full text-[#cccccc] overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden" style={{ background: '#0d0d14' }}>
 
       {/* Header */}
-      <div className="px-3 py-2.5 border-b border-[#1e1e1e] shrink-0">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b7280] mb-2.5">Aprende</p>
-
-        {/* Language selector */}
+      <div className="px-3 py-2.5 border-b shrink-0" style={{ borderColor: '#1e1e2e' }}>
+        <p className="text-[10px] font-semibold uppercase tracking-widest mb-2.5" style={{ color: '#585b70' }}>
+          Aprende
+        </p>
         <div className="flex gap-1">
           {LANGUAGES.map(lang => (
             <button
               key={lang.value}
               onClick={() => onLangChange(lang.value)}
-              className={`flex-1 py-1 text-[10px] font-mono rounded border transition-all cursor-pointer
+              className={`flex-1 py-1 text-[10px] font-mono rounded border transition-colors cursor-pointer
                 ${selectedLang === lang.value
                   ? lang.activeStyle
-                  : 'bg-transparent text-[#555] border-[#3c3c3c] hover:text-[#858585] hover:border-[#555]'
+                  : 'bg-transparent border-[#313244] hover:border-[#45475a]'
                 }`}
+              style={selectedLang !== lang.value ? { color: '#585b70' } : {}}
+              aria-label={`Seleccionar lenguaje ${lang.label}`}
             >
               {lang.label}
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Difficulty legend */}
-      <div className="flex items-center gap-3 px-3 py-1.5 border-b border-[#1e1e1e] shrink-0">
-        {[['BEGINNER', 'Básico'], ['INTERMEDIATE', 'Medio'], ['ADVANCED', 'Avanzado']].map(([level, label]) => (
-          <div key={level} className="flex items-center gap-1">
-            <div className={`w-1.5 h-1.5 rounded-full ${DIFFICULTY_DOT[level]}`} />
-            <span className="text-[9px] text-[#555]">{label}</span>
-          </div>
-        ))}
       </div>
 
       {/* Topic sections */}
@@ -113,62 +99,62 @@ export function LearnSidebar({ userId, onSelectTopic, activeTopicId, selectedLan
             {/* Section header */}
             <button
               onClick={() => toggleSection(category)}
-              className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[#2a2d2e] transition-colors cursor-pointer"
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs cursor-pointer transition-colors hover:bg-[#1e1e2e]"
+              aria-label={`${openSections[category] ? 'Colapsar' : 'Expandir'} ${label}`}
             >
               {openSections[category]
-                ? <ChevronDown className="w-3 h-3 text-[#858585] shrink-0" />
-                : <ChevronRight className="w-3 h-3 text-[#858585] shrink-0" />}
-              <span className="text-[#858585]">{icon}</span>
-              <span className="font-medium text-[#cccccc]">{label}</span>
+                ? <ChevronDown className="w-3 h-3 shrink-0" style={{ color: '#585b70' }} />
+                : <ChevronRight className="w-3 h-3 shrink-0" style={{ color: '#585b70' }} />}
+              <span style={{ color: '#585b70' }}>{icon}</span>
+              <span className="font-medium uppercase text-[10px] tracking-wider" style={{ color: '#585b70' }}>
+                {label}
+              </span>
               {loadingCategories[category] && (
-                <span className="ml-auto text-[10px] text-[#555] animate-pulse">cargando...</span>
+                <span className="ml-auto text-[10px] animate-pulse" style={{ color: '#45475a' }}>...</span>
               )}
             </button>
 
             {/* Topic list */}
             {openSections[category] && (
-              <div className="pl-2 pb-1">
+              <div className="pb-1">
                 {categoryErrors[category] && (
-                  <p className="text-xs text-[#f48771] px-3 py-1">{categoryErrors[category]}</p>
+                  <p className="text-xs px-3 py-1" style={{ color: '#f38ba8' }}>{categoryErrors[category]}</p>
                 )}
 
                 {(topicsByCategory[category] ?? []).map(topic => {
                   const topicProgress = getTopicProgress(topic.id);
                   const isActive = activeTopicId === topic.id;
+                  const isCompleted = topicProgress && topicProgress.completedExercises > 0;
 
                   return (
                     <button
                       key={topic.id}
                       onClick={() => onSelectTopic(topic, selectedLang)}
-                      className={`w-full text-left px-3 py-2 text-xs transition-colors cursor-pointer rounded-sm
-                        ${isActive ? 'bg-[#37373d] text-white' : 'hover:bg-[#2a2d2e] text-[#cccccc]'}`}
+                      className="w-full text-left px-3 py-1.5 text-xs cursor-pointer transition-colors"
+                      style={{
+                        background: isActive ? '#313244' : 'transparent',
+                        color: isActive ? '#cdd6f4' : '#a6adc8',
+                      }}
+                      onMouseEnter={event => { if (!isActive) event.currentTarget.style.background = '#1e1e2e'; }}
+                      onMouseLeave={event => { if (!isActive) event.currentTarget.style.background = 'transparent'; }}
+                      aria-label={`Seleccionar tema ${topic.name}`}
                     >
                       <div className="flex items-center gap-2">
-                        {/* Difficulty dot */}
-                        <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${DIFFICULTY_DOT[topic.difficulty] ?? 'bg-[#555]'}`} />
-
+                        {/* Status dot */}
+                        <div
+                          className="w-1.5 h-1.5 rounded-full shrink-0"
+                          style={{
+                            background: isActive ? '#89b4fa' : isCompleted ? '#a6e3a1' : '#45475a',
+                          }}
+                        />
                         <span className="truncate flex-1">{topic.name}</span>
-
-                        {/* Completed count */}
                         {topicProgress && topicProgress.completedExercises > 0 && (
-                          <span className="flex items-center gap-0.5 text-[10px] text-[#4ec9b0] shrink-0">
+                          <span className="flex items-center gap-0.5 text-[10px] shrink-0" style={{ color: '#a6e3a1' }}>
                             <Trophy className="w-2.5 h-2.5" />
                             {topicProgress.completedExercises}
                           </span>
                         )}
                       </div>
-
-                      {/* Progress bar */}
-                      {topicProgress && topicProgress.totalExercises > 0 && (
-                        <div className="mt-1.5 h-0.5 bg-[#3c3c3c] rounded-full overflow-hidden ml-3.5">
-                          <div
-                            className="h-full bg-[#4ec9b0] transition-all duration-500"
-                            style={{
-                              width: `${Math.round((topicProgress.completedExercises / topicProgress.totalExercises) * 100)}%`
-                            }}
-                          />
-                        </div>
-                      )}
                     </button>
                   );
                 })}
