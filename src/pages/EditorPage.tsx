@@ -209,14 +209,19 @@ export function EditorPage() {
           {/* AI Panel — hidden when exercise is active */}
           {!activeTopic && (
             <>
-              {/* Resizer */}
+              {/* Resizer — wider hit area with visual indicator on hover */}
               <div
                 ref={aiPanelResizerRef}
                 onMouseDown={handleAiPanelResizerMouseDown}
-                className="w-1 shrink-0 cursor-col-resize transition-colors hover:bg-[#89b4fa]/30"
-                style={{ background: isResizingAiPanel ? 'rgba(137,180,250,0.3)' : 'transparent' }}
+                className="relative shrink-0 cursor-col-resize group"
+                style={{ width: 8 }}
                 aria-label="Redimensionar panel de IA"
-              />
+              >
+                <div
+                  className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-0.5 transition-colors group-hover:bg-[#89b4fa]/50"
+                  style={{ background: isResizingAiPanel ? 'rgba(137,180,250,0.6)' : 'transparent' }}
+                />
+              </div>
               <AIPanel
                 editorData={editorData}
                 code={code}
