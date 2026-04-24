@@ -1,4 +1,4 @@
-import { GitBranch, User, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { GitBranch as _GitBranch, User, AlertTriangle, CheckCircle, Info } from 'lucide-react';
 
 interface Props {
   language: string;

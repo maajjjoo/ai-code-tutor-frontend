@@ -159,7 +159,7 @@ function ContextBlock({ text }: { text: string }) {
   );
 }
 
-function HintsTab({ exerciseId, hasAttempted }: { exerciseId: number; hasAttempted: boolean }) {
+function HintsTab({ exerciseId }: { exerciseId: number }) {
   const [revealedHints, setRevealedHints] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -262,7 +262,7 @@ interface Props {
 
 type ActiveTab = 'statement' | 'hints' | 'solution';
 
-export function ExercisePanel({ topic, language, userId, onAskHelp }: Props) {
+export function ExercisePanel({ topic, language, userId }: Props) {
   const [exercise, setExercise]               = useState<Exercise | null>(null);
   const [studentCode, setStudentCode]         = useState('');
   const [evaluation, setEvaluation]           = useState<ExerciseEvaluation | null>(null);
@@ -488,7 +488,7 @@ export function ExercisePanel({ topic, language, userId, onAskHelp }: Props) {
             )}
 
             {activeTab === 'hints' && (
-              <HintsTab exerciseId={exercise.id} hasAttempted={hasAttempted} />
+              <HintsTab exerciseId={exercise.id} />
             )}
 
             {activeTab === 'solution' && (
@@ -579,7 +579,6 @@ export function ExercisePanel({ topic, language, userId, onAskHelp }: Props) {
           <InlineAiPanel
             currentCode={studentCode}
             language={language}
-            exerciseStatement={exercise.statement}
           />
         </div>
       </div>
