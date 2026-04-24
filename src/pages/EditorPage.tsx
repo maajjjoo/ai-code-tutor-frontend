@@ -37,20 +37,34 @@ export function EditorPage() {
   const [terminalLines, setTerminalLines] = useState<TerminalLine[]>([]);
   const [terminalRunning, setTerminalRunning] = useState(false);
   const [aiPanelWidth, setAiPanelWidth] = useState(288);
+  const [isSaved, setIsSaved] = useState(false);
   const [isResizingAiPanel, setIsResizingAiPanel] = useState(false);
   const aiPanelResizerRef = useRef<HTMLDivElement>(null);
 
   // Warn before closing if there is unsaved code
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (code.trim()) {
+      if (code.trim() && !isSaved) {
         event.preventDefault();
         event.returnValue = '';
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [code]);
+  }, [code, isSaved]);
+
+  // Load saved content from localStorage for a given file
+  const loadSavedContent = (fileName: string, defaultContent: string): string => {
+    const storageKey = `saved-project-0-file-${fileName}`;
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.fileContent ?? defaultContent;
+      } catch { /* ignore */ }
+    }
+    return defaultContent;
+  };
 
   const handleSaveCode = () => {
     if (!openFile || !code.trim()) return;
@@ -61,12 +75,15 @@ export function EditorPage() {
       savedAt: new Date().toISOString(),
       projectId: 0,
     }));
+    setIsSaved(true);
   };
 
-  // Cuando el sidebar abre un archivo (virtual o del disco o del backend)
+  // Cuando el sidebar abre un archivo — recupera contenido guardado si existe
   const handleOpenFile = (name: string, content: string, language: Language) => {
-    setOpenFile({ name, content, language });
-    setCode(content);
+    const restoredContent = loadSavedContent(name, content);
+    setOpenFile({ name, content: restoredContent, language });
+    setCode(restoredContent);
+    setIsSaved(true); // content matches what's in localStorage
     setActiveTopic(null);
     setErrorCount(0);
     setCanValidate(false);
@@ -192,7 +209,7 @@ export function EditorPage() {
                 <CodeEditor
                   editorData={editorData}
                   code={code}
-                  onChange={setCode}
+                  onChange={newCode => { setCode(newCode); setIsSaved(false); }}
                   onErrorCountChange={(count, validate) => {
                     setErrorCount(count);
                     setCanValidate(validate);
@@ -281,6 +298,7 @@ export function EditorPage() {
         errorCount={errorCount}
         canValidate={canValidate}
         hasAiWarning={hasAiWarning}
+        hasUnsavedChanges={!!openFile && !isSaved}
       />
     </div>
   );

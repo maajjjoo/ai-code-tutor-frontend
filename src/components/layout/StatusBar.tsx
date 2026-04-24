@@ -36,11 +36,11 @@ export function StatusBar({ language, projectName, version, username, errorCount
           {language || 'plaintext'}
         </span>
 
-        {/* Save status */}
-        {hasUnsavedChanges ? (
-          <span style={{ color: '#f9e2af' }}>Sin guardar</span>
-        ) : (
-          <span style={{ color: '#a6e3a1' }}>✓ Guardado</span>
+        {/* Save status — only show when a file is open */}
+        {projectName && projectName !== 'No file open' && projectName !== '—' && (
+          hasUnsavedChanges
+            ? <span style={{ color: '#f9e2af' }}>Sin guardar</span>
+            : <span style={{ color: '#a6e3a1' }}>✓ Guardado</span>
         )}
 
         {projectName !== 'No file open' && projectName && (
