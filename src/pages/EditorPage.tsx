@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ActivityBar, type ActivityView } from '../components/layout/ActivityBar';
 import { StatusBar } from '../components/layout/StatusBar';
@@ -10,7 +10,7 @@ import { TerminalPanel, type TerminalLine } from '../components/editor/TerminalP
 import { AIPanel } from '../components/ai/AIPanel';
 import type { LearnTopic, Language } from '../types';
 import type { VNode } from '../types/vfs';
-import { Terminal } from 'lucide-react';
+import { Terminal, Save } from 'lucide-react';
 
 interface StoredUser { id: number; username: string; email: string; }
 
@@ -36,9 +36,32 @@ export function EditorPage() {
   const [terminalOpen, setTerminalOpen] = useState(false);
   const [terminalLines, setTerminalLines] = useState<TerminalLine[]>([]);
   const [terminalRunning, setTerminalRunning] = useState(false);
-  const [aiPanelWidth, setAiPanelWidth] = useState(288); // default w-72
+  const [aiPanelWidth, setAiPanelWidth] = useState(288);
   const [isResizingAiPanel, setIsResizingAiPanel] = useState(false);
   const aiPanelResizerRef = useRef<HTMLDivElement>(null);
+
+  // Warn before closing if there is unsaved code
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (code.trim()) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [code]);
+
+  const handleSaveCode = () => {
+    if (!openFile || !code.trim()) return;
+    const storageKey = `saved-project-0-file-${openFile.name}`;
+    localStorage.setItem(storageKey, JSON.stringify({
+      fileName: openFile.name,
+      fileContent: code,
+      savedAt: new Date().toISOString(),
+      projectId: 0,
+    }));
+  };
 
   // Cuando el sidebar abre un archivo (virtual o del disco o del backend)
   const handleOpenFile = (name: string, content: string, language: Language) => {
@@ -178,15 +201,25 @@ export function EditorPage() {
               )}
             </div>
 
-            {/* Terminal toggle button */}
+            {/* Bottom bar — save button + terminal toggle */}
             {!terminalOpen && (
-              <div className="flex items-center px-3 py-1 bg-[#080810] border-t border-[#ffffff06] shrink-0">
+              <div className="flex items-center justify-between px-3 py-1 bg-[#080810] border-t border-[#1e1e2e] shrink-0">
                 <button
                   onClick={() => setTerminalOpen(true)}
-                  className="flex items-center gap-1.5 text-xs text-[#6b7280] hover:text-[#cccccc] cursor-pointer transition-colors"
+                  className="flex items-center gap-1.5 text-xs text-[#585b70] hover:text-[#cdd6f4] cursor-pointer transition-colors"
                 >
                   <Terminal className="w-3.5 h-3.5" /> Consola
                 </button>
+
+                {openFile && code.trim() && (
+                  <button
+                    onClick={handleSaveCode}
+                    className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded border border-[#89b4fa]/30 text-[#89b4fa] hover:bg-[#89b4fa]/10 cursor-pointer transition-colors"
+                    aria-label="Guardar código"
+                  >
+                    <Save className="w-3 h-3" /> Guardar
+                  </button>
+                )}
               </div>
             )}
 
