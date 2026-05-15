@@ -14,10 +14,7 @@ interface Props {
   sections: LessonSection[];
   currentSectionIndex: number;
   isLoadingLesson: boolean;
-<<<<<<< HEAD
-=======
   lessonError: string | null;
->>>>>>> 2e88757 (feat: replace AI lesson loading with JSON-based content & add error UI)
   bookmarked: boolean;
   revealedHints: Record<number, number>;
   scrollRef: RefObject<HTMLDivElement | null>;
@@ -38,11 +35,7 @@ interface Props {
 
 export function LessonView({
   course, selectedLevel, currentLessonNumber, currentLesson, sections,
-<<<<<<< HEAD
-  currentSectionIndex, isLoadingLesson, bookmarked,
-=======
   currentSectionIndex, isLoadingLesson, lessonError, bookmarked,
->>>>>>> 2e88757 (feat: replace AI lesson loading with JSON-based content & add error UI)
   revealedHints, scrollRef, displayTitle, levelsDone,
   onLevelTabClick, onPrevious, onNext, onComplete, onStepClick,
   onHintReveal, onOpenInEditor, onBookmarkToggle, onPracticeClick,
@@ -98,9 +91,6 @@ export function LessonView({
             <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25"/>
             <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75"/>
           </svg>
-<<<<<<< HEAD
-          <span className="text-[12px] text-[#3C3489]">Loading lesson content...</span>
-=======
           <span className="text-[12px] text-[#3C3489]">Loading lesson...</span>
         </div>
       )}

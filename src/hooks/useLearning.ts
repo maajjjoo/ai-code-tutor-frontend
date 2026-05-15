@@ -25,10 +25,7 @@ export function useLearning() {
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [isLoadingLesson, setIsLoadingLesson] = useState(false);
-<<<<<<< HEAD
-=======
   const [lessonError, setLessonError] = useState<string | null>(null);
->>>>>>> 2e88757 (feat: replace AI lesson loading with JSON-based content & add error UI)
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
   const [bookmarkState, setBookmarkState] = useState(false);
   const [revealedHints, setRevealedHints] = useState<Record<number, number>>({});
@@ -97,14 +94,6 @@ export function useLearning() {
     return 1;
   }, []);
 
-<<<<<<< HEAD
-  const preloadLevel = useCallback(async (courseId: string, level: Level, targetLessonNumber: number) => {
-    const course = COURSES.find(c => c.id === courseId);
-    if (!course) { setIsLoadingLesson(false); return; }
-    const topicId = topicMap[course.name];
-    if (!topicId) { setIsLoadingLesson(false); return; }
-
-=======
   const preloadLevel = useCallback(async (courseId: string, level: Level) => {
     const course = COURSES.find(c => c.id === courseId);
     if (!course) return;
@@ -143,99 +132,6 @@ export function useLearning() {
     }
     setIsLoadingLesson(true);
     setViewState('lessonView');
->>>>>>> 2e88757 (feat: replace AI lesson loading with JSON-based content & add error UI)
-    try {
-      const token = localStorage.getItem('codetutor_token');
-      const headers: Record<string, string> = {};
-      if (token) headers.Authorization = `Bearer ${token}`;
-
-      const res = await fetch(
-<<<<<<< HEAD
-        `${API_BASE}/lessons/topic/${topicId}/level/${level}`,
-        { headers },
-      );
-
-      if (res.status === 503) {
-        setTimeout(() => preloadLevel(courseId, level, targetLessonNumber), 5000);
-        return;
-      }
-
-      if (!res.ok) throw new Error('Failed to load lessons');
-
-      const lessons: Lesson[] = await res.json();
-      lessons.forEach(lesson => {
-        setCachedLesson(courseId, level, lesson.lessonNumber, lesson);
-      });
-
-      const cached = getCachedLesson(courseId, level, targetLessonNumber);
-      if (cached) {
-        setCurrentLesson(cached);
-        setCurrentLessonNumber(targetLessonNumber);
-        setCurrentSectionIndex(0);
-        setRevealedHints({});
-        setBookmarkState(s => !s);
-        setTimeout(() => setBookmarkState(s => !s), 0);
-      }
-    } catch {
-      const cached = getCachedLesson(courseId, level, targetLessonNumber);
-      if (cached) {
-        setCurrentLesson(cached);
-        setCurrentLessonNumber(targetLessonNumber);
-        setCurrentSectionIndex(0);
-      }
-=======
-        `${API_BASE}/lessons/topic/${topicId}?level=${encodeURIComponent(level)}&lessonNumber=${lessonNumber}`,
-        { headers },
-      );
-      if (res.status === 503) {
-        setLessonError('Preparing content...');
-        return;
-      }
-      if (!res.ok) {
-        setLessonError('Could not load. Try again.');
-        return;
-      }
-      const lesson: Lesson = await res.json();
-      setCachedLesson(courseId, level, lessonNumber, lesson);
-      setCurrentLesson(lesson);
-      setCurrentLessonNumber(lessonNumber);
-      setCurrentSectionIndex(0);
-      setRevealedHints({});
-    } catch {
-      setLessonError('Could not load. Try again.');
-      setCurrentLesson(null);
->>>>>>> 2e88757 (feat: replace AI lesson loading with JSON-based content & add error UI)
-    } finally {
-      setIsLoadingLesson(false);
-    }
-  }, [topicMap]);
-
-  const handleCourseSelect = useCallback((courseId: string) => {
-    if (selectedCourseId === courseId) {
-      setSelectedCourseId(null);
-      setViewState('idle');
-      setCurrentLesson(null);
-      return;
-    }
-    setSelectedCourseId(courseId);
-    const courseLevelsDone = levelsDone[courseId] ?? [];
-    const next = LEVELS.find(l => !courseLevelsDone.includes(l)) ?? 'advanced';
-    setSelectedLevel(next);
-    setCurrentLesson(null);
-    setViewState('levelSelection');
-  }, [selectedCourseId, levelsDone]);
-
-  const handleLevelSelect = useCallback((level: Level) => {
-    if (!selectedCourseId) return;
-    setSelectedLevel(level);
-    setCurrentLesson(null);
-    const nextLesson = getNextLessonNumber(selectedCourseId, level);
-    setCurrentLessonNumber(nextLesson);
-<<<<<<< HEAD
-    setCurrentSectionIndex(0);
-    setRevealedHints({});
-    setIsLoadingLesson(true);
-    setViewState('lessonView');
     try {
       const course = COURSES.find(c => c.id === courseId);
       if (!course) throw new Error('Course not found');
@@ -266,14 +162,31 @@ export function useLearning() {
     } finally {
       setIsLoadingLesson(false);
     }
+  }, [topicMap]);
 
-    preloadLevel(selectedCourseId, level, nextLesson);
-  }, [selectedCourseId, getNextLessonNumber, preloadLevel]);
-=======
+  const handleCourseSelect = useCallback((courseId: string) => {
+    if (selectedCourseId === courseId) {
+      setSelectedCourseId(null);
+      setViewState('idle');
+      setCurrentLesson(null);
+      return;
+    }
+    setSelectedCourseId(courseId);
+    const courseLevelsDone = levelsDone[courseId] ?? [];
+    const next = LEVELS.find(l => !courseLevelsDone.includes(l)) ?? 'advanced';
+    setSelectedLevel(next);
+    setCurrentLesson(null);
+    setViewState('levelSelection');
+  }, [selectedCourseId, levelsDone]);
+
+  const handleLevelSelect = useCallback((level: Level) => {
+    if (!selectedCourseId) return;
+    setSelectedLevel(level);
+    const nextLesson = getNextLessonNumber(selectedCourseId, level);
+    setCurrentLessonNumber(nextLesson);
     preloadLevel(selectedCourseId, level);
     loadLesson(selectedCourseId, level, nextLesson);
   }, [selectedCourseId, getNextLessonNumber, loadLesson, preloadLevel]);
->>>>>>> 2e88757 (feat: replace AI lesson loading with JSON-based content & add error UI)
 
   const handleLevelTabClick = useCallback((level: Level) => {
     if (!selectedCourseId) return;
@@ -284,22 +197,9 @@ export function useLearning() {
     setIsLoadingLesson(true);
     const nextLesson = getNextLessonNumber(selectedCourseId, level);
     setCurrentLessonNumber(nextLesson);
-<<<<<<< HEAD
-    setRevealedHints({});
-
-    const cached = getCachedLesson(selectedCourseId, level, nextLesson);
-    if (cached) {
-      setCurrentLesson(cached);
-      setIsLoadingLesson(false);
-    }
-
-    preloadLevel(selectedCourseId, level, nextLesson);
-  }, [selectedCourseId, selectedLevel, getNextLessonNumber, preloadLevel]);
-=======
     preloadLevel(selectedCourseId, level);
     loadLesson(selectedCourseId, level, nextLesson);
   }, [selectedCourseId, selectedLevel, getNextLessonNumber, loadLesson, preloadLevel]);
->>>>>>> 2e88757 (feat: replace AI lesson loading with JSON-based content & add error UI)
 
   const handleLessonComplete = useCallback(() => {
     if (!selectedCourseId) return;
@@ -347,11 +247,7 @@ export function useLearning() {
   return {
     viewState, selectedCourseId, selectedCourse, selectedLevel,
     currentLessonNumber, currentLesson, currentSectionIndex,
-<<<<<<< HEAD
-    isLoadingLesson, isCompletionModalOpen,
-=======
     isLoadingLesson, lessonError, isCompletionModalOpen,
->>>>>>> 2e88757 (feat: replace AI lesson loading with JSON-based content & add error UI)
     bookmarked, revealedHints, sections, scrollRef,
     doneLessons, completionCounts, levelsDone, isLastLevel,
     displayTitle,

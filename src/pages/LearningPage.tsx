@@ -9,11 +9,7 @@ export function LearningPage() {
   const navigate = useNavigate();
   const {
     viewState, selectedCourse, selectedLevel, currentLessonNumber,
-<<<<<<< HEAD
-    currentLesson, currentSectionIndex, isLoadingLesson,
-=======
     currentLesson, currentSectionIndex, isLoadingLesson, lessonError,
->>>>>>> 2e88757 (feat: replace AI lesson loading with JSON-based content & add error UI)
     isCompletionModalOpen, bookmarked, revealedHints, sections, scrollRef,
     doneLessons, completionCounts, levelsDone, isLastLevel, displayTitle,
     handleCourseSelect, handleLevelSelect, handleLevelTabClick,
@@ -64,10 +60,7 @@ export function LearningPage() {
             sections={sections}
             currentSectionIndex={currentSectionIndex}
             isLoadingLesson={isLoadingLesson}
-<<<<<<< HEAD
-=======
             lessonError={lessonError}
->>>>>>> 2e88757 (feat: replace AI lesson loading with JSON-based content & add error UI)
             bookmarked={bookmarked}
             revealedHints={revealedHints}
             scrollRef={scrollRef}
