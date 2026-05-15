@@ -9,9 +9,9 @@ import { CompletionModal } from '../components/learning/modals/CompletionModal';
 export function LearningPage() {
   const navigate = useNavigate();
   const {
-    viewState, selectedCourse, selectedLevel, selectedLessonNumber,
-    currentLesson, currentSectionIndex, isLoadingLesson, isGeneratingLesson,
-    isCompletionModalOpen, isBookmarked, revealedHints, sections, scrollRef,
+    viewState, selectedCourse, selectedLevel,
+    currentLesson, currentSectionIndex, isGeneratingLesson,
+    isCompletionModalOpen, revealedHints, sections, scrollRef,
     doneLessons, completionCounts, levelsDone, isLastLevel,
     handleCourseSelect, handleLevelSelect, handleLessonSelect,
     handleBackToLevels, handleBackToLessons,
@@ -88,8 +88,6 @@ export function LearningPage() {
             sections={sections}
             currentSectionIndex={currentSectionIndex}
             selectedLanguage={selectedCourse?.language ?? ''}
-            selectedLevel={selectedLevel}
-            isBookmarked={isBookmarked}
             isGeneratingLesson={isGeneratingLesson}
             revealedHints={revealedHints}
             scrollRef={scrollRef}

@@ -1,5 +1,5 @@
 import type { RefObject } from 'react';
-import type { Lesson, LessonSection, Level } from '../../../types/learning.types';
+import type { Lesson, LessonSection } from '../../../types/learning.types';
 import { LessonHero } from './LessonHero';
 import { StepProgress } from './StepProgress';
 import { SectionCard } from '../sections/SectionCard';
@@ -10,8 +10,6 @@ interface Props {
   sections: LessonSection[];
   currentSectionIndex: number;
   selectedLanguage: string;
-  selectedLevel: Level;
-  isBookmarked: boolean;
   isGeneratingLesson: boolean;
   revealedHints: Record<number, number>;
   scrollRef: RefObject<HTMLDivElement | null>;
@@ -28,8 +26,8 @@ interface Props {
 }
 
 export function LessonView({
-  lesson, sections, currentSectionIndex, selectedLanguage, selectedLevel,
-  isBookmarked, isGeneratingLesson, revealedHints, scrollRef, courseId,
+  lesson, sections, currentSectionIndex, selectedLanguage,
+  isGeneratingLesson, revealedHints, scrollRef, courseId,
   onBack, onPrevious, onNext, onComplete, onStepClick, onHintReveal,
   onOpenInEditor, onBookmarkToggle, onPracticeClick,
 }: Props) {

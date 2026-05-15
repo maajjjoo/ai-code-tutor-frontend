@@ -7,7 +7,6 @@ import {
   getDoneLessons, setDoneLesson,
 } from '../utils/lessonCache';
 import { COURSES } from '../data/courses';
-import { LESSON_TITLES } from '../data/lessonTitles';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8080/api';
 const LEVELS: Level[] = ['beginner', 'intermediate', 'advanced'];
@@ -59,11 +58,6 @@ export function useLearning() {
     });
     return done;
   }, [refreshKey]);
-
-  const topicNames = useMemo(
-    () => COURSES.map(c => c.language),
-    [],
-  );
 
   useEffect(() => {
     const token = localStorage.getItem('codetutor_token');

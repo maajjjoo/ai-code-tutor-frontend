@@ -22,12 +22,6 @@ export function LessonListScreen({ course, level, doneLessons, onBack, onLessonC
   const style = LANG_STYLES[course.language] ?? LANG_STYLES.Python;
   const allDone = doneLessons.length >= 10;
 
-  let lastDone = 0;
-  for (let i = 1; i <= 10; i++) {
-    if (doneLessons.includes(i)) lastDone = i;
-    else break;
-  }
-
   const isUnlocked = (n: number) => n === 1 || doneLessons.includes(n - 1) || allDone;
 
   return (
