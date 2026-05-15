@@ -83,13 +83,15 @@ export function LessonView({
         onLevelTabClick={onLevelTabClick}
       />
 
-      {isGeneratingLesson && !currentLesson && (
+      {isLoading && (
         <div className="flex items-center gap-2 bg-[#EEEDFE] mx-6 mt-3 rounded-lg px-[14px] py-[10px]">
           <svg className="w-4 h-4 text-[#534AB7] animate-spin" viewBox="0 0 24 24" fill="none">
             <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25"/>
             <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75"/>
           </svg>
-          <span className="text-[12px] text-[#3C3489]">Generating with AI...</span>
+          <span className="text-[12px] text-[#3C3489]">
+            {isGeneratingLesson ? 'Generating with AI...' : 'Loading lesson content...'}
+          </span>
         </div>
       )}
 
