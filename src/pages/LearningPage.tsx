@@ -1,20 +1,18 @@
 import { useNavigate } from 'react-router-dom';
 import { useLearning } from '../hooks/useLearning';
 import { LearningSidebar } from '../components/learning/sidebar/LearningSidebar';
-import { LevelSelectionScreen } from '../components/learning/LevelSelectionScreen';
-import { LessonListScreen } from '../components/learning/LessonListScreen';
+import { LevelSelectionScreen } from '../components/learning/screens/LevelSelectionScreen';
 import { LessonView } from '../components/learning/lesson/LessonView';
 import { CompletionModal } from '../components/learning/modals/CompletionModal';
 
 export function LearningPage() {
   const navigate = useNavigate();
   const {
-    viewState, selectedCourse, selectedLevel,
-    currentLesson, currentSectionIndex, isGeneratingLesson,
-    isCompletionModalOpen, revealedHints, sections, scrollRef,
-    doneLessons, completionCounts, levelsDone, isLastLevel,
-    handleCourseSelect, handleLevelSelect, handleLessonSelect,
-    handleBackToLevels, handleBackToLessons,
+    viewState, selectedCourse, selectedLevel, currentLessonNumber,
+    currentLesson, currentSectionIndex, isLoadingLesson, isGeneratingLesson,
+    isCompletionModalOpen, bookmarked, revealedHints, sections, scrollRef,
+    doneLessons, completionCounts, levelsDone, isLastLevel, displayTitle,
+    handleCourseSelect, handleLevelSelect, handleLevelTabClick,
     handleLessonComplete, handlePrevious, handleNext,
     handleNextLevel, handleBookmarkToggle, handleHintReveal,
     handleOpenInEditor, handleStepClick, setIsCompletionModalOpen,
@@ -27,9 +25,10 @@ export function LearningPage() {
         completionCounts={completionCounts}
         levelsDone={levelsDone}
         onSelect={handleCourseSelect}
+        onHome={() => navigate('/')}
       />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {viewState === 'idle' && (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
@@ -46,53 +45,28 @@ export function LearningPage() {
           <LevelSelectionScreen
             course={selectedCourse}
             levelsDone={levelsDone[selectedCourse.id] ?? []}
+            doneLessons={doneLessons}
             onLevelSelect={handleLevelSelect}
           />
         )}
 
-        {viewState === 'lessonList' && selectedCourse && (
-          <LessonListScreen
-            course={selectedCourse}
-            level={selectedLevel}
-            doneLessons={doneLessons}
-            onBack={handleBackToLevels}
-            onLessonClick={handleLessonSelect}
-          />
-        )}
-
-        {viewState === 'lessonView' && !currentLesson && (
-          <div className="flex-1 flex flex-col">
-            <div className="h-12 bg-white border-b border-[#E5E7EB] flex items-center px-5 shrink-0">
-              <button onClick={handleBackToLessons} className="p-1 hover:bg-[#F3F4F6] rounded-lg cursor-pointer transition-colors">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
-                </svg>
-              </button>
-              <span className="text-[12px] text-[#111827] font-medium ml-1.5">Loading lesson...</span>
-            </div>
-            <div className="flex-1 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-3">
-                <svg className="w-6 h-6 text-[#534AB7] animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25"/>
-                  <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75"/>
-                </svg>
-                <span className="text-[13px] text-[#4B5563]">Generating lesson with AI...</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {currentLesson && (
+        {viewState === 'lessonView' && selectedCourse && (
           <LessonView
-            lesson={currentLesson}
+            course={selectedCourse}
+            selectedLevel={selectedLevel}
+            currentLessonNumber={currentLessonNumber}
+            currentLesson={currentLesson}
             sections={sections}
             currentSectionIndex={currentSectionIndex}
-            selectedLanguage={selectedCourse?.language ?? ''}
+            isLoadingLesson={isLoadingLesson}
             isGeneratingLesson={isGeneratingLesson}
+            bookmarked={bookmarked}
             revealedHints={revealedHints}
             scrollRef={scrollRef}
-            courseId={selectedCourse?.id ?? ''}
-            onBack={handleBackToLessons}
+            displayTitle={displayTitle}
+            doneLessons={doneLessons}
+            levelsDone={levelsDone[selectedCourse.id] ?? []}
+            onLevelTabClick={handleLevelTabClick}
             onPrevious={handlePrevious}
             onNext={handleNext}
             onComplete={handleLessonComplete}
@@ -100,7 +74,7 @@ export function LearningPage() {
             onHintReveal={handleHintReveal}
             onOpenInEditor={handleOpenInEditor}
             onBookmarkToggle={handleBookmarkToggle}
-            onPracticeClick={() => navigate(`/practice?language=${encodeURIComponent(selectedCourse?.language ?? '')}`)}
+            onPracticeClick={() => navigate(`/practice?language=${encodeURIComponent(selectedCourse.name)}`)}
           />
         )}
       </div>
@@ -111,7 +85,7 @@ export function LearningPage() {
         isOpen={isCompletionModalOpen}
         isLastLevel={isLastLevel}
         onClose={() => setIsCompletionModalOpen(false)}
-        onPractice={() => navigate(`/practice?language=${encodeURIComponent(selectedCourse?.language ?? '')}`)}
+        onPractice={() => navigate(`/practice?language=${encodeURIComponent(selectedCourse?.name ?? '')}`)}
         onNextLevel={handleNextLevel}
       />
     </div>

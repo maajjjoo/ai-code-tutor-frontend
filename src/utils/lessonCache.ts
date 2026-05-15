@@ -2,6 +2,7 @@ import type { Lesson } from '../types/learning.types';
 
 const LESSON_PREFIX = 'aict_lesson_';
 const DONE_PREFIX = 'aict_done_';
+const BOOKMARK_PREFIX = 'aict_bookmark_';
 
 export function getCachedLesson(courseId: string, level: string, lessonNumber: number): Lesson | null {
   try {
@@ -35,5 +36,19 @@ export function setDoneLesson(courseId: string, level: string, lessonNumber: num
       current.push(lessonNumber);
       localStorage.setItem(key, JSON.stringify(current));
     }
+  } catch {}
+}
+
+export function isBookmarked(courseId: string, level: string, lessonNumber: number): boolean {
+  try {
+    return localStorage.getItem(`${BOOKMARK_PREFIX}${courseId}_${level}_${lessonNumber}`) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export function setBookmark(courseId: string, level: string, lessonNumber: number, value: boolean): void {
+  try {
+    localStorage.setItem(`${BOOKMARK_PREFIX}${courseId}_${level}_${lessonNumber}`, String(value));
   } catch {}
 }

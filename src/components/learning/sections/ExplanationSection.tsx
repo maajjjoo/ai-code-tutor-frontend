@@ -1,4 +1,4 @@
 interface Props { content?: string; }
 export function ExplanationSection({ content }: Props) {
-  return <p className="text-[12px] text-[#4B5563] leading-[1.7]">{content}</p>;
+  return <p className="text-[13px] text-[#4B5563] leading-relaxed">{content}</p>;
 }

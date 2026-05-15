@@ -1,41 +1,39 @@
-import type { Level } from '../../types/learning.types';
-import type { Course } from '../../data/courses';
-import { LANG_STYLES } from '../../data/courses';
+import type { Level } from '../../../types/learning.types';
+import type { Course } from '../../../data/courses';
 
 const LEVELS: Level[] = ['beginner', 'intermediate', 'advanced'];
 
-const LEVEL_META: Record<Level, { icon: string; title: string; subtitle: string; color: string }> = {
-  beginner:     { icon: '🌱', title: 'Beginner',     subtitle: 'Start from zero. No experience needed.', color: '#0F6E56' },
-  intermediate: { icon: '🔥', title: 'Intermediate', subtitle: 'Take your skills to the next level.',    color: '#D97706' },
-  advanced:     { icon: '🚀', title: 'Advanced',     subtitle: 'Master complex concepts and patterns.',  color: '#7E22CE' },
+const LEVEL_META: Record<Level, { icon: string; label: string; desc: string }> = {
+  beginner:     { icon: '🌱', label: 'Beginner',     desc: 'Start from zero. No experience needed.' },
+  intermediate: { icon: '🔥', label: 'Intermediate', desc: 'Take your skills to the next level.' },
+  advanced:     { icon: '🚀', label: 'Advanced',     desc: 'Master complex concepts and patterns.' },
 };
 
 interface Props {
   course: Course;
   levelsDone: string[];
+  doneLessons: number[];
   onLevelSelect: (level: Level) => void;
 }
 
 export function LevelSelectionScreen({ course, levelsDone, onLevelSelect }: Props) {
-  const style = LANG_STYLES[course.language] ?? LANG_STYLES.Python;
-
   return (
     <div className="flex-1 flex items-start justify-center overflow-y-auto">
       <div className="max-w-[480px] w-full px-10 py-10">
         <div className="flex items-center gap-4 mb-6">
           <div
-            className="w-14 h-14 rounded-xl flex items-center justify-center text-lg font-bold shrink-0"
-            style={{ backgroundColor: style.bg, color: style.color }}
+            className="w-[52px] h-[52px] rounded-xl flex items-center justify-center text-lg font-bold shrink-0"
+            style={{ backgroundColor: course.bgColor, color: course.color }}
           >
-            {course.icon}
+            {course.letters}
           </div>
           <div>
-            <h1 className="text-[24px] font-medium text-[#111827]">{course.name}</h1>
-            <p className="text-[14px] text-[#9CA3AF] mt-0.5">Choose where to start</p>
+            <h1 className="text-[22px] font-semibold text-[#111827]">{course.name}</h1>
+            <p className="text-[13px] text-[#9CA3AF] mt-1">Choose your level</p>
           </div>
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-[10px]">
           {LEVELS.map((level, idx) => {
             const isComplete = levelsDone.includes(level);
             const prevDone = idx === 0 || levelsDone.includes(LEVELS[idx - 1]);
@@ -55,14 +53,15 @@ export function LevelSelectionScreen({ course, levelsDone, onLevelSelect }: Prop
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <div className="text-[14px] font-medium text-[#9CA3AF]">{meta.title}</div>
+                    <div className="text-[14px] font-medium text-[#9CA3AF]">{meta.label}</div>
                     <div className="text-[12px] text-[#9CA3AF]">Complete {LEVELS[idx - 1]} first</div>
                   </div>
                 </div>
               );
             }
 
-            const buttonText = isComplete ? 'Review' : 'Start';
+            const doneCount = 0;
+            const buttonText = isComplete ? 'Review' : doneCount > 0 ? 'Continue' : 'Start';
             const cardBorder = isComplete ? 'border-[#9FE1CB] bg-[#E1F5EE]' : 'border-[#E5E7EB]';
             const btnStyle = isComplete
               ? 'border border-[#0F6E56] text-[#0F6E56] hover:bg-[#D1FAE5]'
@@ -72,7 +71,7 @@ export function LevelSelectionScreen({ course, levelsDone, onLevelSelect }: Prop
               <button
                 key={level}
                 onClick={() => onLevelSelect(level)}
-                className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors text-left ${cardBorder} ${isComplete ? '' : 'hover:bg-[#F8F9FA]'}`}
+                className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all text-left ${cardBorder}`}
               >
                 <div
                   className="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0"
@@ -81,13 +80,15 @@ export function LevelSelectionScreen({ course, levelsDone, onLevelSelect }: Prop
                   {meta.icon}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[14px] font-medium text-[#111827]">{meta.title}</div>
-                  <div className="text-[12px] text-[#4B5563]">{meta.subtitle}</div>
+                  <div className="text-[14px] font-medium text-[#111827]">{meta.label}</div>
+                  <div className="text-[12px] text-[#4B5563]">{meta.desc}</div>
+                  <div className="text-[11px] text-[#9CA3AF] mt-0.5">10 lessons</div>
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
                   {isComplete && <span className="text-[12px] text-[#0F6E56] font-medium">Completed ✓</span>}
-                  <span className={`text-[11px] font-medium px-3 py-1 rounded-lg ${btnStyle}`}>
+                  <span className={`text-[12px] font-medium px-4 py-1.5 rounded-lg ${btnStyle}`}>
                     {buttonText}
+                    {!isComplete && <span className="ml-1">→</span>}
                   </span>
                 </div>
               </button>
