@@ -25,7 +25,6 @@ export function useLearning() {
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [isLoadingLesson, setIsLoadingLesson] = useState(false);
-  const [isGeneratingLesson, setIsGeneratingLesson] = useState(false);
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
   const [bookmarkState, setBookmarkState] = useState(false);
   const [revealedHints, setRevealedHints] = useState<Record<number, number>>({});
@@ -94,51 +93,52 @@ export function useLearning() {
     return 1;
   }, []);
 
-  const loadLesson = useCallback(async (courseId: string, level: Level, lessonNumber: number) => {
-    const cached = getCachedLesson(courseId, level, lessonNumber);
-    if (cached) {
-      setCurrentLesson(cached);
-      setCurrentLessonNumber(lessonNumber);
-      setCurrentSectionIndex(0);
-      setRevealedHints({});
-      setBookmarkState(s => !s);
-      setTimeout(() => setBookmarkState(s => !s), 0);
-      setViewState('lessonView');
-      return;
-    }
-    setIsLoadingLesson(true);
-    setViewState('lessonView');
-    const t = setTimeout(() => setIsGeneratingLesson(true), 1500);
+  const preloadLevel = useCallback(async (courseId: string, level: Level, targetLessonNumber: number) => {
+    const course = COURSES.find(c => c.id === courseId);
+    if (!course) { setIsLoadingLesson(false); return; }
+    const topicId = topicMap[course.name];
+    if (!topicId) { setIsLoadingLesson(false); return; }
+
     try {
-      const course = COURSES.find(c => c.id === courseId);
-      if (!course) throw new Error('Course not found');
-      const topicId = topicMap[course.name];
-      if (!topicId) throw new Error('Topic not loaded');
       const token = localStorage.getItem('codetutor_token');
       const headers: Record<string, string> = {};
       if (token) headers.Authorization = `Bearer ${token}`;
+
       const res = await fetch(
-        `${API_BASE}/lessons/topic/${topicId}?language=${encodeURIComponent(course.name)}&level=${encodeURIComponent(level)}&lessonNumber=${lessonNumber}`,
+        `${API_BASE}/lessons/topic/${topicId}/level/${level}`,
         { headers },
       );
-      if (!res.ok) throw new Error();
-      const lesson: Lesson = await res.json();
-      setCachedLesson(courseId, level, lessonNumber, lesson);
-      setCurrentLesson(lesson);
-      setCurrentLessonNumber(lessonNumber);
-      setCurrentSectionIndex(0);
-      setRevealedHints({});
-    } catch {
-      setCurrentLesson(null);
+
+      if (res.status === 503) {
+        setTimeout(() => preloadLevel(courseId, level, targetLessonNumber), 5000);
+        return;
+      }
+
+      if (!res.ok) throw new Error('Failed to load lessons');
+
+      const lessons: Lesson[] = await res.json();
+      lessons.forEach(lesson => {
+        setCachedLesson(courseId, level, lesson.lessonNumber, lesson);
+      });
+
+      const cached = getCachedLesson(courseId, level, targetLessonNumber);
       if (cached) {
         setCurrentLesson(cached);
-        setCurrentLessonNumber(lessonNumber);
+        setCurrentLessonNumber(targetLessonNumber);
+        setCurrentSectionIndex(0);
+        setRevealedHints({});
+        setBookmarkState(s => !s);
+        setTimeout(() => setBookmarkState(s => !s), 0);
+      }
+    } catch {
+      const cached = getCachedLesson(courseId, level, targetLessonNumber);
+      if (cached) {
+        setCurrentLesson(cached);
+        setCurrentLessonNumber(targetLessonNumber);
         setCurrentSectionIndex(0);
       }
     } finally {
-      clearTimeout(t);
       setIsLoadingLesson(false);
-      setIsGeneratingLesson(false);
     }
   }, [topicMap]);
 
@@ -160,10 +160,22 @@ export function useLearning() {
   const handleLevelSelect = useCallback((level: Level) => {
     if (!selectedCourseId) return;
     setSelectedLevel(level);
+    setCurrentLesson(null);
     const nextLesson = getNextLessonNumber(selectedCourseId, level);
     setCurrentLessonNumber(nextLesson);
-    loadLesson(selectedCourseId, level, nextLesson);
-  }, [selectedCourseId, getNextLessonNumber, loadLesson]);
+    setCurrentSectionIndex(0);
+    setRevealedHints({});
+    setIsLoadingLesson(true);
+    setViewState('lessonView');
+
+    const cached = getCachedLesson(selectedCourseId, level, nextLesson);
+    if (cached) {
+      setCurrentLesson(cached);
+      setIsLoadingLesson(false);
+    }
+
+    preloadLevel(selectedCourseId, level, nextLesson);
+  }, [selectedCourseId, getNextLessonNumber, preloadLevel]);
 
   const handleLevelTabClick = useCallback((level: Level) => {
     if (!selectedCourseId) return;
@@ -174,8 +186,16 @@ export function useLearning() {
     setIsLoadingLesson(true);
     const nextLesson = getNextLessonNumber(selectedCourseId, level);
     setCurrentLessonNumber(nextLesson);
-    loadLesson(selectedCourseId, level, nextLesson);
-  }, [selectedCourseId, selectedLevel, getNextLessonNumber, loadLesson]);
+    setRevealedHints({});
+
+    const cached = getCachedLesson(selectedCourseId, level, nextLesson);
+    if (cached) {
+      setCurrentLesson(cached);
+      setIsLoadingLesson(false);
+    }
+
+    preloadLevel(selectedCourseId, level, nextLesson);
+  }, [selectedCourseId, selectedLevel, getNextLessonNumber, preloadLevel]);
 
   const handleLessonComplete = useCallback(() => {
     if (!selectedCourseId) return;
@@ -223,7 +243,7 @@ export function useLearning() {
   return {
     viewState, selectedCourseId, selectedCourse, selectedLevel,
     currentLessonNumber, currentLesson, currentSectionIndex,
-    isLoadingLesson, isGeneratingLesson, isCompletionModalOpen,
+    isLoadingLesson, isCompletionModalOpen,
     bookmarked, revealedHints, sections, scrollRef,
     doneLessons, completionCounts, levelsDone, isLastLevel,
     displayTitle,
