@@ -14,7 +14,7 @@ const LESSONS_PER_LEVEL = 10;
 
 const LANGUAGE_MAP: Record<string, string> = {
   Python: 'Python', Java: 'Java', JavaScript: 'JavaScript',
-  TypeScript: 'TypeScript', 'C++': 'C++', Kotlin: 'Kotlin',
+  TypeScript: 'TypeScript',
 };
 
 export function useLearning() {

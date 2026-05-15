@@ -5,8 +5,6 @@ const LANG_STYLES: Record<string, { bg: string; color: string; label: string }> 
   Java:       { bg: '#FAEEDA', color: '#854F0B', label: 'Jv' },
   JavaScript: { bg: '#FEFCE8', color: '#854D0E', label: 'JS' },
   TypeScript: { bg: '#E6F1FB', color: '#1D4ED8', label: 'TS' },
-  'C++':      { bg: '#F0FDF4', color: '#166534', label: 'C++' },
-  Kotlin:     { bg: '#FDF4FF', color: '#7E22CE', label: 'Kt' },
 };
 
 interface Props {
