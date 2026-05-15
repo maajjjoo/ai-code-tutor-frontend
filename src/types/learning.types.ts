@@ -1,22 +1,5 @@
 export type Level = 'beginner' | 'intermediate' | 'advanced';
 
-export interface Category {
-  id: string;
-  name: string;
-  icon: string;
-  topicCount: number;
-  topics: Topic[];
-}
-
-export interface Topic {
-  id: string;
-  categoryId: string;
-  name: string;
-  description: string;
-  language: string;
-  orderIndex: number;
-}
-
 export interface LessonSection {
   type: 'explanation' | 'example' | 'tip' | 'exercise';
   title: string;

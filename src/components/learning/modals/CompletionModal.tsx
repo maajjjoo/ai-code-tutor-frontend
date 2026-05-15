@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { Level } from '../../../types/learning.types';
 
 interface Props {
-  topicName: string;
+  courseName: string;
   level: Level;
   isOpen: boolean;
   isLastLevel: boolean;
@@ -11,7 +11,7 @@ interface Props {
   onNextLevel: () => void;
 }
 
-export function CompletionModal({ topicName, level, isOpen, isLastLevel, onClose, onPractice, onNextLevel }: Props) {
+export function CompletionModal({ courseName, level, isOpen, isLastLevel, onClose, onPractice, onNextLevel }: Props) {
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,7 +49,7 @@ export function CompletionModal({ topicName, level, isOpen, isLastLevel, onClose
         </div>
 
         <h2 className="text-[15px] font-medium text-[#111827]">{levelLabel} complete!</h2>
-        <p className="text-[13px] text-[#4B5563] mt-1.5">You completed {levelLabel} {topicName}</p>
+        <p className="text-[13px] text-[#4B5563] mt-1.5">You completed all {levelLabel} lessons for {courseName}</p>
 
         <div className="mt-3.5 mb-4 inline-block bg-[#EEEDFE] text-[#3C3489] text-[12px] font-medium px-3.5 py-1 rounded-full">
           +100 XP
@@ -66,7 +66,7 @@ export function CompletionModal({ topicName, level, isOpen, isLastLevel, onClose
           </button>
           {isLastLevel ? (
             <p className="text-[13px] text-[#4B5563] font-medium py-2">
-              You've mastered {topicName}!
+              You've mastered {courseName}!
             </p>
           ) : (
             <button

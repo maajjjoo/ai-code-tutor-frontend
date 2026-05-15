@@ -11,37 +11,35 @@ interface Props {
   currentSectionIndex: number;
   selectedLanguage: string;
   selectedLevel: Level;
-  completedLevels: Level[];
-  completedLessons: number[];
   isBookmarked: boolean;
   isGeneratingLesson: boolean;
   revealedHints: Record<number, number>;
   scrollRef: RefObject<HTMLDivElement | null>;
-  topicName: string;
+  courseId: string;
+  onBack: () => void;
   onPrevious: () => void;
   onNext: () => void;
   onComplete: () => void;
   onStepClick: (i: number) => void;
   onHintReveal: (i: number) => void;
   onOpenInEditor: (prompt: string) => void;
-  onLevelChange: (level: Level) => void;
   onBookmarkToggle: () => void;
   onPracticeClick: () => void;
 }
 
-export function LessonView({ lesson, sections, currentSectionIndex, selectedLanguage, selectedLevel, completedLevels, completedLessons, isBookmarked, isGeneratingLesson, revealedHints, scrollRef, topicName, onPrevious, onNext, onComplete, onStepClick, onHintReveal, onOpenInEditor, onLevelChange, onBookmarkToggle, onPracticeClick }: Props) {
+export function LessonView({
+  lesson, sections, currentSectionIndex, selectedLanguage, selectedLevel,
+  isBookmarked, isGeneratingLesson, revealedHints, scrollRef, courseId,
+  onBack, onPrevious, onNext, onComplete, onStepClick, onHintReveal,
+  onOpenInEditor, onBookmarkToggle, onPracticeClick,
+}: Props) {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <LessonHero
         lesson={lesson}
-        topicName={topicName}
-        selectedLanguage={selectedLanguage}
-        selectedLevel={selectedLevel}
-        completedLevels={completedLevels}
-        completedLessons={completedLessons}
-        isBookmarked={isBookmarked}
+        courseId={courseId}
         isGeneratingLesson={isGeneratingLesson}
-        onLevelChange={onLevelChange}
+        onBack={onBack}
         onBookmarkToggle={onBookmarkToggle}
         onPracticeClick={onPracticeClick}
       />

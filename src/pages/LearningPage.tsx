@@ -2,44 +2,35 @@ import { useNavigate } from 'react-router-dom';
 import { useLearning } from '../hooks/useLearning';
 import { LearningSidebar } from '../components/learning/sidebar/LearningSidebar';
 import { LevelSelectionScreen } from '../components/learning/LevelSelectionScreen';
+import { LessonListScreen } from '../components/learning/LessonListScreen';
 import { LessonView } from '../components/learning/lesson/LessonView';
 import { CompletionModal } from '../components/learning/modals/CompletionModal';
-import type { Level } from '../types/learning.types';
 
 export function LearningPage() {
   const navigate = useNavigate();
   const {
-    categories, selectedTopic, selectedLevel, currentLesson,
-    currentSectionIndex, completedLevels, completedLessons,
-    isLoadingLesson, isGeneratingLesson, isCompletionModalOpen, isBookmarked,
-    revealedHints, toast, sections, scrollRef, isLoadingTopics, topicsError,
-    handleTopicSelect, handleLevelSelect, handleLessonComplete,
-    handlePrevious, handleNext, handleNextLevel, handleLevelChange,
-    handleBookmarkToggle, handleHintReveal, handleOpenInEditor,
-    handleStepClick, setIsCompletionModalOpen,
-    getCompletedCount, getTotalCompleted, fetchTopics,
+    viewState, selectedCourse, selectedLevel, selectedLessonNumber,
+    currentLesson, currentSectionIndex, isLoadingLesson, isGeneratingLesson,
+    isCompletionModalOpen, isBookmarked, revealedHints, sections, scrollRef,
+    doneLessons, completionCounts, levelsDone, isLastLevel,
+    handleCourseSelect, handleLevelSelect, handleLessonSelect,
+    handleBackToLevels, handleBackToLessons,
+    handleLessonComplete, handlePrevious, handleNext,
+    handleNextLevel, handleBookmarkToggle, handleHintReveal,
+    handleOpenInEditor, handleStepClick, setIsCompletionModalOpen,
   } = useLearning();
-
-  const languages = categories.length > 0 ? categories[0].topics : [];
-
-  const isLastLevel = selectedLevel === 'advanced';
 
   return (
     <div className="h-screen flex overflow-hidden bg-white">
       <LearningSidebar
-        languages={languages}
-        selectedTopicId={selectedTopic?.id ?? null}
-        completedLevels={completedLevels}
-        getCompletedCount={getCompletedCount}
-        getTotalCompleted={getTotalCompleted}
-        isLoading={isLoadingTopics}
-        error={topicsError}
-        onSelect={handleTopicSelect}
-        onRetry={fetchTopics}
+        selectedCourseId={selectedCourse?.id ?? null}
+        completionCounts={completionCounts}
+        levelsDone={levelsDone}
+        onSelect={handleCourseSelect}
       />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        {!selectedTopic && !isLoadingTopics && (
+        {viewState === 'idle' && (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#E5E7EB" strokeWidth="1" className="mx-auto mb-4">
@@ -51,29 +42,42 @@ export function LearningPage() {
           </div>
         )}
 
-        {selectedTopic && !currentLesson && !isLoadingLesson && (
+        {viewState === 'levelSelection' && selectedCourse && (
           <LevelSelectionScreen
-            topic={selectedTopic}
-            completedLevels={completedLevels[selectedTopic.id] ?? []}
-            completedLessons={completedLessons}
-            isLoading={isLoadingLesson}
+            course={selectedCourse}
+            levelsDone={levelsDone[selectedCourse.id] ?? []}
             onLevelSelect={handleLevelSelect}
           />
         )}
 
-        {isLoadingLesson && !currentLesson && selectedTopic && (
-          <div className="flex-1 p-5">
-            {isGeneratingLesson && (
-              <div className="flex items-center gap-2 bg-[#EEEDFE] rounded-lg px-[14px] py-[10px] mb-4">
-                <svg className="w-4 h-4 text-[#534AB7] animate-spin" viewBox="0 0 24 24" fill="none">
+        {viewState === 'lessonList' && selectedCourse && (
+          <LessonListScreen
+            course={selectedCourse}
+            level={selectedLevel}
+            doneLessons={doneLessons}
+            onBack={handleBackToLevels}
+            onLessonClick={handleLessonSelect}
+          />
+        )}
+
+        {viewState === 'lessonView' && !currentLesson && (
+          <div className="flex-1 flex flex-col">
+            <div className="h-12 bg-white border-b border-[#E5E7EB] flex items-center px-5 shrink-0">
+              <button onClick={handleBackToLessons} className="p-1 hover:bg-[#F3F4F6] rounded-lg cursor-pointer transition-colors">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+                </svg>
+              </button>
+              <span className="text-[12px] text-[#111827] font-medium ml-1.5">Loading lesson...</span>
+            </div>
+            <div className="flex-1 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-3">
+                <svg className="w-6 h-6 text-[#534AB7] animate-spin" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25"/>
                   <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75"/>
                 </svg>
-                <span className="text-[12px] text-[#3C3489]">Generating with AI...</span>
+                <span className="text-[13px] text-[#4B5563]">Generating lesson with AI...</span>
               </div>
-            )}
-            <div className="space-y-3">
-              {[1, 2, 3].map(i => <div key={i} className="h-24 bg-[#F3F4F6] rounded-xl animate-pulse" />)}
             </div>
           </div>
         )}
@@ -83,43 +87,35 @@ export function LearningPage() {
             lesson={currentLesson}
             sections={sections}
             currentSectionIndex={currentSectionIndex}
-            selectedLanguage={selectedTopic?.language ?? ''}
+            selectedLanguage={selectedCourse?.language ?? ''}
             selectedLevel={selectedLevel}
-            completedLevels={(completedLevels[selectedTopic?.id ?? ''] ?? []) as Level[]}
-            completedLessons={completedLessons[((selectedTopic?.id ?? '') + '_' + selectedLevel)] ?? []}
             isBookmarked={isBookmarked}
             isGeneratingLesson={isGeneratingLesson}
             revealedHints={revealedHints}
             scrollRef={scrollRef}
-            topicName={selectedTopic?.name ?? ''}
+            courseId={selectedCourse?.id ?? ''}
+            onBack={handleBackToLessons}
             onPrevious={handlePrevious}
             onNext={handleNext}
             onComplete={handleLessonComplete}
             onStepClick={handleStepClick}
             onHintReveal={handleHintReveal}
             onOpenInEditor={handleOpenInEditor}
-            onLevelChange={handleLevelChange}
             onBookmarkToggle={handleBookmarkToggle}
-            onPracticeClick={() => navigate(`/practice?language=${encodeURIComponent(selectedTopic?.language ?? '')}`)}
+            onPracticeClick={() => navigate(`/practice?language=${encodeURIComponent(selectedCourse?.language ?? '')}`)}
           />
         )}
       </div>
 
       <CompletionModal
-        topicName={selectedTopic?.name ?? ''}
+        courseName={selectedCourse?.name ?? ''}
         level={selectedLevel}
         isOpen={isCompletionModalOpen}
         isLastLevel={isLastLevel}
         onClose={() => setIsCompletionModalOpen(false)}
-        onPractice={() => navigate(`/practice?language=${encodeURIComponent(selectedTopic?.language ?? '')}`)}
+        onPractice={() => navigate(`/practice?language=${encodeURIComponent(selectedCourse?.language ?? '')}`)}
         onNextLevel={handleNextLevel}
       />
-
-      {toast && (
-        <div className="fixed bottom-6 right-6 bg-[#111827] text-white text-[13px] px-4 py-2.5 rounded-lg shadow-lg z-50">
-          {toast}
-        </div>
-      )}
     </div>
   );
 }
