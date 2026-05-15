@@ -79,6 +79,13 @@ export function useLearning() {
 
   useEffect(() => { fetchTopics(); }, [fetchTopics]);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetch(`${API_BASE}/topics`, { signal: AbortSignal.timeout(5000) }).catch(() => {});
+    }, 4 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const loadLesson = useCallback(async (topic: Topic, level: Level, lessonNumber: number) => {
     const cached = getCachedLesson(topic.id, level, lessonNumber);
     if (cached) {
