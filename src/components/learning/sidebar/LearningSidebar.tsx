@@ -21,7 +21,7 @@ interface Props {
   onRetry: () => void;
 }
 
-export function LearningSidebar({ languages, selectedTopicId, completedLevels, getCompletedCount, getTotalCompleted, isLoading, error, onSelect, onRetry }: Props) {
+export function LearningSidebar({ languages, selectedTopicId, completedLevels, getTotalCompleted, isLoading, error, onSelect, onRetry }: Props) {
   return (
     <div className="w-[260px] h-full flex flex-col bg-[#F9FAFB] border-r border-[#E5E7EB] shrink-0 overflow-hidden">
       <div className="p-4 border-b border-[#E5E7EB]">

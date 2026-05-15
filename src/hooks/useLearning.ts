@@ -33,7 +33,7 @@ export function useLearning() {
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [revealedHints, setRevealedHints] = useState<Record<number, number>>({});
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast] = useState<string | null>(null);
   const [isLoadingTopics, setIsLoadingTopics] = useState(true);
   const [topicsError, setTopicsError] = useState(false);
 

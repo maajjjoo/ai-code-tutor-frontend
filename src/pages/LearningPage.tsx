@@ -6,12 +6,10 @@ import { LessonView } from '../components/learning/lesson/LessonView';
 import { CompletionModal } from '../components/learning/modals/CompletionModal';
 import type { Level } from '../types/learning.types';
 
-const LEVELS: Level[] = ['beginner', 'intermediate', 'advanced'];
-
 export function LearningPage() {
   const navigate = useNavigate();
   const {
-    categories, selectedTopic, selectedLevel, currentLesson, currentLessonNumber,
+    categories, selectedTopic, selectedLevel, currentLesson,
     currentSectionIndex, completedLevels, completedLessons,
     isLoadingLesson, isGeneratingLesson, isCompletionModalOpen, isBookmarked,
     revealedHints, toast, sections, scrollRef, isLoadingTopics, topicsError,
@@ -87,7 +85,7 @@ export function LearningPage() {
             currentSectionIndex={currentSectionIndex}
             selectedLanguage={selectedTopic?.language ?? ''}
             selectedLevel={selectedLevel}
-            completedLevels={completedLevels[selectedTopic?.id ?? ''] ?? []}
+            completedLevels={(completedLevels[selectedTopic?.id ?? ''] ?? []) as Level[]}
             completedLessons={completedLessons[((selectedTopic?.id ?? '') + '_' + selectedLevel)] ?? []}
             isBookmarked={isBookmarked}
             isGeneratingLesson={isGeneratingLesson}

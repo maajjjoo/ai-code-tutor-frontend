@@ -10,7 +10,7 @@ interface Props {
   onLevelChange: (level: Level) => void;
 }
 
-export function LevelTabs({ selectedLevel, completedLevels, completedLessons, currentLessonNumber, onLevelChange }: Props) {
+export function LevelTabs({ selectedLevel, completedLevels, currentLessonNumber, onLevelChange }: Props) {
   const currentIdx = LEVELS.findIndex(l => !completedLevels.includes(l));
   const effectiveCurrent = currentIdx === -1 ? LEVELS.length : currentIdx;
 
