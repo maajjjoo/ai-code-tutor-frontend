@@ -24,6 +24,7 @@ export interface Lesson {
 export function parseSections(lesson: Lesson): LessonSection[] {
   try {
     const parsed = JSON.parse(lesson.contentJson);
+    if (Array.isArray(parsed)) return parsed;
     return parsed.sections ?? [];
   } catch {
     return [];

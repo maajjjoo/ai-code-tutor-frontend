@@ -236,10 +236,34 @@ export function useLearning() {
     setRevealedHints({});
     setIsLoadingLesson(true);
     setViewState('lessonView');
-
-    const cached = getCachedLesson(selectedCourseId, level, nextLesson);
-    if (cached) {
-      setCurrentLesson(cached);
+    try {
+      const course = COURSES.find(c => c.id === courseId);
+      if (!course) throw new Error('Course not found');
+      const topicId = topicMap[course.name];
+      if (!topicId) throw new Error('Topic not loaded');
+      const token = localStorage.getItem('codetutor_token');
+      const headers: Record<string, string> = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const res = await fetch(
+        `${API_BASE}/lessons/topic/${topicId}?level=${encodeURIComponent(level)}&lessonNumber=${lessonNumber}`,
+        { headers },
+      );
+      if (res.status === 503) {
+        setLessonError('Preparing content...');
+      } else if (!res.ok) {
+        setLessonError('Could not load. Try again.');
+      } else {
+        const lesson: Lesson = await res.json();
+        setCachedLesson(courseId, level, lessonNumber, lesson);
+        setCurrentLesson(lesson);
+        setCurrentLessonNumber(lessonNumber);
+        setCurrentSectionIndex(0);
+        setRevealedHints({});
+      }
+    } catch {
+      setLessonError('Could not load. Try again.');
+      setCurrentLesson(null);
+    } finally {
       setIsLoadingLesson(false);
     }
 

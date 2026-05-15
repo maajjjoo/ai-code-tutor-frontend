@@ -105,7 +105,7 @@ export function LessonView({
         </div>
       )}
 
-      {lessonError && !isLoading && (
+      {lessonError && (
         <div className="mx-6 mt-3 rounded-lg px-[14px] py-[10px] bg-[#FEF2F2] border border-[#FCA5A5] flex items-center justify-between">
           <span className="text-[12px] text-[#991B1B]">{lessonError}</span>
           <button
@@ -114,7 +114,6 @@ export function LessonView({
           >
             Retry
           </button>
->>>>>>> 2e88757 (feat: replace AI lesson loading with JSON-based content & add error UI)
         </div>
       )}
 
@@ -141,13 +140,11 @@ export function LessonView({
               onOpenInEditor={onOpenInEditor}
             />
           ))
-        ) : !lessonError ? (
-          <>
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-28 bg-[#F9FAFB] rounded-xl animate-pulse mb-3" />
-            ))}
-          </>
-        ) : null}
+        ) : lessonError ? null : (
+          <div className="flex items-center justify-center h-48">
+            <p className="text-[#9CA3AF] text-[13px]">No content available for this lesson.</p>
+          </div>
+        )}
       </div>
 
       {sections.length > 0 && !lessonError && (
