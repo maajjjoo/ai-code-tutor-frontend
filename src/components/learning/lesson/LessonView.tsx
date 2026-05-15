@@ -14,6 +14,10 @@ interface Props {
   sections: LessonSection[];
   currentSectionIndex: number;
   isLoadingLesson: boolean;
+<<<<<<< HEAD
+=======
+  lessonError: string | null;
+>>>>>>> 2e88757 (feat: replace AI lesson loading with JSON-based content & add error UI)
   bookmarked: boolean;
   revealedHints: Record<number, number>;
   scrollRef: RefObject<HTMLDivElement | null>;
@@ -29,14 +33,20 @@ interface Props {
   onOpenInEditor: (prompt: string) => void;
   onBookmarkToggle: () => void;
   onPracticeClick: () => void;
+  onRetry: () => void;
 }
 
 export function LessonView({
   course, selectedLevel, currentLessonNumber, currentLesson, sections,
+<<<<<<< HEAD
   currentSectionIndex, isLoadingLesson, bookmarked,
+=======
+  currentSectionIndex, isLoadingLesson, lessonError, bookmarked,
+>>>>>>> 2e88757 (feat: replace AI lesson loading with JSON-based content & add error UI)
   revealedHints, scrollRef, displayTitle, levelsDone,
   onLevelTabClick, onPrevious, onNext, onComplete, onStepClick,
   onHintReveal, onOpenInEditor, onBookmarkToggle, onPracticeClick,
+  onRetry,
 }: Props) {
   const isLoading = isLoadingLesson && !currentLesson;
 
@@ -56,7 +66,7 @@ export function LessonView({
             className="flex items-center gap-1.5 px-[14px] py-[6px] rounded-lg text-[12px] font-medium border border-[#E5E7EB] text-[#374151] hover:bg-[#F8F9FA] transition-colors cursor-pointer"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill={bookmarked ? '#534AB7' : 'none'} stroke={bookmarked ? '#534AB7' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+              <path d="M19 21l-7-5-7 5V5a5 5 0 0 1 2-2h10a5 5 0 0 1 2 2z"/>
             </svg>
             {bookmarked ? 'Saved' : 'Save'}
           </button>
@@ -88,7 +98,23 @@ export function LessonView({
             <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25"/>
             <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75"/>
           </svg>
+<<<<<<< HEAD
           <span className="text-[12px] text-[#3C3489]">Loading lesson content...</span>
+=======
+          <span className="text-[12px] text-[#3C3489]">Loading lesson...</span>
+        </div>
+      )}
+
+      {lessonError && !isLoading && (
+        <div className="mx-6 mt-3 rounded-lg px-[14px] py-[10px] bg-[#FEF2F2] border border-[#FCA5A5] flex items-center justify-between">
+          <span className="text-[12px] text-[#991B1B]">{lessonError}</span>
+          <button
+            onClick={onRetry}
+            className="text-[12px] font-medium text-[#991B1B] underline hover:no-underline cursor-pointer"
+          >
+            Retry
+          </button>
+>>>>>>> 2e88757 (feat: replace AI lesson loading with JSON-based content & add error UI)
         </div>
       )}
 
@@ -98,7 +124,7 @@ export function LessonView({
         {isLoading ? (
           <>
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-24 bg-[#F9FAFB] rounded-xl animate-pulse mb-3" />
+              <div key={i} className="h-28 bg-[#F9FAFB] rounded-xl animate-pulse mb-3" />
             ))}
           </>
         ) : sections.length > 0 ? (
@@ -115,16 +141,16 @@ export function LessonView({
               onOpenInEditor={onOpenInEditor}
             />
           ))
-        ) : (
+        ) : !lessonError ? (
           <>
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-24 bg-[#F9FAFB] rounded-xl animate-pulse mb-3" />
+              <div key={i} className="h-28 bg-[#F9FAFB] rounded-xl animate-pulse mb-3" />
             ))}
           </>
-        )}
+        ) : null}
       </div>
 
-      {sections.length > 0 && (
+      {sections.length > 0 && !lessonError && (
         <BottomNav
           currentIndex={currentSectionIndex}
           totalSections={sections.length}
