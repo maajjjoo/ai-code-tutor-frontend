@@ -9,7 +9,7 @@ export function LearningPage() {
   const navigate = useNavigate();
   const {
     viewState, selectedCourse, selectedLevel, currentLessonNumber,
-    currentLesson, currentSectionIndex, isLoadingLesson, isGeneratingLesson,
+    currentLesson, currentSectionIndex, isLoadingLesson,
     isCompletionModalOpen, bookmarked, revealedHints, sections, scrollRef,
     doneLessons, completionCounts, levelsDone, isLastLevel, displayTitle,
     handleCourseSelect, handleLevelSelect, handleLevelTabClick,
@@ -59,7 +59,6 @@ export function LearningPage() {
             sections={sections}
             currentSectionIndex={currentSectionIndex}
             isLoadingLesson={isLoadingLesson}
-            isGeneratingLesson={isGeneratingLesson}
             bookmarked={bookmarked}
             revealedHints={revealedHints}
             scrollRef={scrollRef}
