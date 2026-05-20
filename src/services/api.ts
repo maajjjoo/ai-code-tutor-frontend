@@ -22,6 +22,19 @@ client.interceptors.request.use(config => {
   return config;
 });
 
+// Redirect to login on 401 (token expired or missing)
+client.interceptors.response.use(
+  r => r,
+  err => {
+    if (err?.response?.status === 401) {
+      localStorage.removeItem('user');
+      localStorage.removeItem('codetutor_token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(err);
+  }
+);
+
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 export const registerUser = (body: RegisterRequest) =>
   client.post<LoginResponse>('/users', body).then(r => r.data);
