@@ -9,8 +9,19 @@ export function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const [focusedField, setFocusedField] = useState('');
+
+  const passwordRules = {
+    length: form.password.length >= 8,
+    uppercase: /[A-Z]/.test(form.password),
+    number: /[0-9]/.test(form.password),
+    special: /[!@#$%^&*]/.test(form.password),
+  };
+  const passwordValid = Object.values(passwordRules).every(Boolean);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!passwordValid) return;
     setError('');
     setLoading(true);
     try {
@@ -91,11 +102,35 @@ export function RegisterPage() {
                 placeholder="••••••••"
                 autoComplete="new-password"
                 value={form.password}
+                onFocus={() => setFocusedField('password')}
+                onBlur={() => setFocusedField('')}
                 onChange={e => setForm({ ...form, password: e.target.value })}
                 className="bg-[#0d0d14] border border-[#ffffff12] rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#6f42c1] focus:ring-1 focus:ring-[#6f42c1]/30 transition-all" />
+              {(focusedField === 'password' || form.password.length > 0) && (
+                <div className="mt-1 flex flex-col gap-1">
+                  {[
+                    { key: 'length', label: 'Mínimo 8 caracteres' },
+                    { key: 'uppercase', label: 'Una mayúscula' },
+                    { key: 'number', label: 'Un número' },
+                    { key: 'special', label: 'Un caracter especial (!@#$%^&*)' },
+                  ].map(rule => {
+                    const ok = passwordRules[rule.key as keyof typeof passwordRules];
+                    return (
+                      <div key={rule.key} className="flex items-center gap-1.5">
+                        <span className={`text-xs ${ok ? 'text-green-400' : 'text-[#6b7280]'}`}>
+                          {ok ? '✓' : '○'}
+                        </span>
+                        <span className={`text-xs ${ok ? 'text-green-400' : 'text-[#6b7280]'}`}>
+                          {rule.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-            <button type="submit" disabled={loading}
-              className="mt-1 w-full py-2.5 rounded-lg bg-gradient-to-r from-[#6f42c1] to-[#0e639c] hover:from-[#0e639c] hover:to-[#6f42c1] text-white text-sm font-semibold disabled:opacity-50 transition-all shadow-lg shadow-[#6f42c1]/20 cursor-pointer">
+            <button type="submit" disabled={loading || !passwordValid}
+              className="mt-1 w-full py-2.5 rounded-lg bg-gradient-to-r from-[#6f42c1] to-[#0e639c] hover:from-[#0e639c] hover:to-[#6f42c1] text-white text-sm font-semibold disabled:opacity-50 transition-all shadow-lg shadow-[#6f42c1]/20 cursor-pointer disabled:cursor-not-allowed">
               {loading ? 'Creando cuenta...' : 'Crear cuenta'}
             </button>
           </form>

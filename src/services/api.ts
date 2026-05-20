@@ -73,8 +73,14 @@ export const getProgress = (userId: number) =>
 // ─── Helper para extraer mensaje de error del backend ─────────────────────────
 export function getErrorMessage(err: unknown): string {
   if (typeof err === 'object' && err !== null && 'response' in err) {
-    const e = err as { response?: { data?: unknown } };
-    if (e.response?.data) return String(e.response.data);
+    const e = err as { response?: { data?: Record<string, unknown> } };
+    const data = e.response?.data;
+    if (data) {
+      if (typeof data === 'string') return data;
+      if (typeof data.error === 'string') return data.error;
+      if (typeof data.message === 'string') return data.message;
+      return JSON.stringify(data);
+    }
   }
   return 'Error inesperado. Intenta de nuevo.';
 }
