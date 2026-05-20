@@ -27,7 +27,7 @@ interface Props {
   onComplete: () => void;
   onStepClick: (i: number) => void;
   onHintReveal: (i: number) => void;
-  onOpenInEditor: (prompt: string) => void;
+  onOpenInEditor: (prompt: string, hints: string[]) => void;
   onBookmarkToggle: () => void;
   onPracticeClick: () => void;
   onRetry: () => void;

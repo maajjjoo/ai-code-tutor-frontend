@@ -257,8 +257,19 @@ export function useLearning() {
     setIsCompletionModalOpen,
     loadLesson,
     handleHintReveal: (i: number) => setRevealedHints(p => ({ ...p, [i]: (p[i] ?? 0) + 1 })),
-    handleOpenInEditor: (prompt: string) =>
-      navigate(`/practice?exercisePrompt=${encodeURIComponent(prompt)}&language=${encodeURIComponent(selectedCourse?.name ?? '')}`),
+    handleOpenInEditor: (prompt: string, hints: string[]) => {
+      const exerciseContext = {
+        lessonTitle: currentLesson?.title ?? '',
+        language: selectedCourse?.name ?? '',
+        exercisePrompt: prompt,
+        hints,
+        courseId: selectedCourseId ?? '',
+        level: selectedLevel,
+        lessonNumber: currentLessonNumber,
+      };
+      const encoded = encodeURIComponent(JSON.stringify(exerciseContext));
+      navigate(`/practice?exercise=${encoded}`);
+    },
     handleStepClick: (i: number) => { if (i <= currentSectionIndex) setCurrentSectionIndex(i); },
   };
 }

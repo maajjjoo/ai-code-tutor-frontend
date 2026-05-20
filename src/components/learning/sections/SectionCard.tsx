@@ -19,7 +19,7 @@ interface Props {
   revealedHints: Record<number, number>;
   language: string;
   onHintReveal: (i: number) => void;
-  onOpenInEditor: (prompt: string) => void;
+  onOpenInEditor: (prompt: string, hints: string[]) => void;
 }
 
 export function SectionCard({ section, index, currentIndex, revealedHints, language: _language, onHintReveal, onOpenInEditor }: Props) {

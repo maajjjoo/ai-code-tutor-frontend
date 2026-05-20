@@ -1,8 +1,9 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import MonacoEditor from '@monaco-editor/react';
 import { sendChatMessage, analyzeCodePedagogical, runCode } from '../services/api';
-import type { Language } from '../types';
+import type { Language, ExerciseContext } from '../types';
+import { ExerciseContextPanel } from '../components/practice/ExerciseContextPanel';
 
 interface StoredUser { id: number; username: string; email: string; }
 interface ChatMsg { id: string; role: 'user' | 'ai'; content: string; }
@@ -17,7 +18,25 @@ const LANG_MAP: Record<string, string> = {
 
 export function PracticePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const user: StoredUser = JSON.parse(localStorage.getItem('user') ?? '{}');
+
+  // Exercise context from lesson
+  const [exerciseContext, setExerciseContext] = useState<ExerciseContext | null>(null);
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
+
+  useEffect(() => {
+    const raw = searchParams.get('exercise');
+    if (raw) {
+      try {
+        const ctx = JSON.parse(decodeURIComponent(raw)) as ExerciseContext;
+        setExerciseContext(ctx);
+        setProjectName(ctx.lessonTitle);
+      } catch {
+        setExerciseContext(null);
+      }
+    }
+  }, []);
 
   // Editor state
   const [code, setCode] = useState('');
@@ -52,7 +71,18 @@ export function PracticePage() {
     setMessages(prev => [...prev, userMsg]);
     setChatLoading(true);
     try {
-      const result = await analyzeCodePedagogical({ code, language, projectDescription: projectName });
+      const result = await analyzeCodePedagogical({
+        code,
+        language,
+        projectDescription: projectName,
+        exerciseContext: exerciseContext
+          ? {
+              prompt: exerciseContext.exercisePrompt,
+              lessonTitle: exerciseContext.lessonTitle,
+              level: exerciseContext.level,
+            }
+          : undefined,
+      });
       let response = `**Resumen:** ${result.summary}\n\n`;
       response += `**Calidad:** ${result.codeQuality.score}/5 — ${result.codeQuality.feedback}\n\n`;
       if (result.suggestions.length > 0) {
@@ -68,7 +98,7 @@ export function PracticePage() {
     } finally {
       setChatLoading(false);
     }
-  }, [code, language, projectName]);
+  }, [code, language, projectName, exerciseContext]);
 
   const handleSendMessage = useCallback(async () => {
     if (!chatInput.trim()) return;
@@ -225,6 +255,15 @@ export function PracticePage() {
 
         {/* CENTER: Editor + Console */}
         <div className="flex flex-col flex-1 overflow-hidden">
+          {/* EXERCISE CONTEXT PANEL */}
+          {exerciseContext && (
+            <ExerciseContextPanel
+              context={exerciseContext}
+              onDismiss={() => setExerciseContext(null)}
+              isCollapsed={isPanelCollapsed}
+              onToggleCollapse={() => setIsPanelCollapsed(p => !p)}
+            />
+          )}
           {/* EDITOR */}
           <div className="flex-1 overflow-hidden">
             {code || true ? (

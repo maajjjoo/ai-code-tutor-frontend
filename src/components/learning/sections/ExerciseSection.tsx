@@ -3,7 +3,7 @@ interface Props {
   hints?: string[];
   hintsRevealed: number;
   onHintReveal: () => void;
-  onOpenInEditor: (prompt: string) => void;
+  onOpenInEditor: (prompt: string, hints: string[]) => void;
 }
 
 export function ExerciseSection({ prompt, hints = [], hintsRevealed, onHintReveal, onOpenInEditor }: Props) {
@@ -33,7 +33,7 @@ export function ExerciseSection({ prompt, hints = [], hintsRevealed, onHintRevea
 
       <div className="flex items-center gap-2 mt-3">
         <button
-          onClick={() => onOpenInEditor(prompt ?? '')}
+          onClick={() => onOpenInEditor(prompt ?? '', hints)}
           className="flex items-center gap-1.5 px-4 py-2 bg-[#534AB7] text-white rounded-lg text-[13px] font-medium hover:opacity-90 cursor-pointer transition-opacity"
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

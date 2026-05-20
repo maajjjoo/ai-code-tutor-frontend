@@ -112,7 +112,17 @@ export interface LoginResponse { id: number; username: string; email: string; to
 export interface CreateProjectRequest { name: string; description: string; programmingLanguage: Language; userId: number; }
 export interface SaveSnapshotRequest { content: string; versionLabel?: string; projectId: number; }
 export interface AnalyzeCodeRequest { code: string; language: string; projectId: number; }
-export interface AnalyzeCodePedagogicalRequest { code: string; language: string; projectDescription: string; }
+export interface AnalyzeCodePedagogicalRequest { code: string; language: string; projectDescription: string; exerciseContext?: { prompt: string; lessonTitle: string; level: string; }; }
+
+export interface ExerciseContext {
+  lessonTitle: string;
+  language: string;
+  exercisePrompt: string;
+  hints: string[];
+  courseId: string;
+  level: string;
+  lessonNumber: number;
+}
 export interface GenerateExerciseRequest { topicId: number; language: Language; userId: number; }
 export interface EvaluateSolutionRequest { exerciseId: number; userCode: string; language: Language; userId: number; }
 
