@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type {
-  User, Project, EditorData, CodeSnapshot, AnalysisHistory,
+  Project, EditorData, CodeSnapshot, AnalysisHistory,
   RegisterRequest, LoginRequest, LoginResponse,
   CreateProjectRequest, SaveSnapshotRequest, AnalyzeCodeRequest,
   AnalyzeCodePedagogicalRequest, CodeAnalysisResponse,
