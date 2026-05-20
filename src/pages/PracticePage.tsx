@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import MonacoEditor from '@monaco-editor/react';
 import { sendChatMessage, analyzeCodePedagogical, runCode, createProject, saveSnapshot } from '../services/api';
-import type { Language, ExerciseContext, Project } from '../types';
+import type { Language, ExerciseContext } from '../types';
 import { ExerciseContextPanel } from '../components/practice/ExerciseContextPanel';
 
 interface StoredUser { id: number; username: string; email: string; }
@@ -10,16 +10,6 @@ interface ChatMsg { id: string; role: 'user' | 'ai'; content: string; }
 interface TermLine { type: 'input' | 'output' | 'error'; text: string; }
 
 function uid() { return `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`; }
-
-const getFileName = (language: string): string => {
-  switch (language.toLowerCase()) {
-    case 'python':     return 'Main.py';
-    case 'java':       return 'Main.java';
-    case 'javascript': return 'main.js';
-    case 'typescript': return 'main.ts';
-    default:           return 'main.txt';
-  }
-};
 
 const getStarterContent = (language: string, prompt: string): string => {
   const truncated = prompt.length > 80 ? prompt.substring(0, 80) + '...' : prompt;
@@ -89,7 +79,6 @@ export function PracticePage() {
   // Exercise context from lesson
   const [exerciseContext, setExerciseContext] = useState<ExerciseContext | null>(null);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
-  const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
 
   const autoCreateExerciseProject = useCallback(async (ctx: ExerciseContext) => {
@@ -105,7 +94,6 @@ export function PracticePage() {
         userId: userData.id,
       });
 
-      setActiveProject(project);
       setProjectName(project.name);
       setLanguage(ctx.language.toLowerCase() as Language);
 
