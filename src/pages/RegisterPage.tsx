@@ -25,8 +25,9 @@ export function RegisterPage() {
     setError('');
     setLoading(true);
     try {
-      const user = await registerUser(form);
-      localStorage.setItem('user', JSON.stringify({ id: user.id, username: user.username, email: user.email }));
+      const res = await registerUser(form);
+      localStorage.setItem('user', JSON.stringify({ id: res.id, username: res.username, email: res.email }));
+      localStorage.setItem('codetutor_token', res.token);
       navigate('/');
     } catch (err) {
       const msg = getErrorMessage(err).toLowerCase();

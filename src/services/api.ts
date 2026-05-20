@@ -24,7 +24,7 @@ client.interceptors.request.use(config => {
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 export const registerUser = (body: RegisterRequest) =>
-  client.post<User>('/users', body).then(r => r.data);
+  client.post<LoginResponse>('/users', body).then(r => r.data);
 
 export const loginUser = (body: LoginRequest) =>
   client.post<LoginResponse>('/users/login', body).then(r => r.data);
