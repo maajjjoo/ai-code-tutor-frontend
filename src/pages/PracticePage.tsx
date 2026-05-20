@@ -1,8 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import MonacoEditor from '@monaco-editor/react';
-import { sendChatMessage, analyzeCodePedagogical, runCode } from '../services/api';
-import type { Language, ExerciseContext } from '../types';
+import { sendChatMessage, analyzeCodePedagogical, runCode, createProject, saveSnapshot } from '../services/api';
+import type { Language, ExerciseContext, Project } from '../types';
 import { ExerciseContextPanel } from '../components/practice/ExerciseContextPanel';
 
 interface StoredUser { id: number; username: string; email: string; }
@@ -10,6 +10,71 @@ interface ChatMsg { id: string; role: 'user' | 'ai'; content: string; }
 interface TermLine { type: 'input' | 'output' | 'error'; text: string; }
 
 function uid() { return `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`; }
+
+const getFileName = (language: string): string => {
+  switch (language.toLowerCase()) {
+    case 'python':     return 'Main.py';
+    case 'java':       return 'Main.java';
+    case 'javascript': return 'main.js';
+    case 'typescript': return 'main.ts';
+    default:           return 'main.txt';
+  }
+};
+
+const getStarterContent = (language: string, prompt: string): string => {
+  const truncated = prompt.length > 80 ? prompt.substring(0, 80) + '...' : prompt;
+  switch (language.toLowerCase()) {
+    case 'python':
+      return [
+        `# Exercise: ${truncated}`,
+        `# Write your solution below`,
+        `#`,
+        `# Hint: Think about the problem before writing any code.`,
+        ``,
+        `def main():`,
+        `    # Your code here`,
+        `    pass`,
+        ``,
+        `if __name__ == "__main__":`,
+        `    main()`,
+      ].join('\n');
+    case 'java':
+      return [
+        `// Exercise: ${truncated}`,
+        `// Write your solution below`,
+        ``,
+        `public class Main {`,
+        `    public static void main(String[] args) {`,
+        `        // Your code here`,
+        `    }`,
+        `}`,
+      ].join('\n');
+    case 'javascript':
+      return [
+        `// Exercise: ${truncated}`,
+        `// Write your solution below`,
+        ``,
+        `function main() {`,
+        `    // Your code here`,
+        `}`,
+        ``,
+        `main();`,
+      ].join('\n');
+    case 'typescript':
+      return [
+        `// Exercise: ${truncated}`,
+        `// Write your solution below`,
+        ``,
+        `function main(): void {`,
+        `    // Your code here`,
+        `}`,
+        ``,
+        `main();`,
+      ].join('\n');
+    default:
+      return `# Exercise: ${truncated}\n# Write your solution below\n`;
+  }
+};
 
 const LANG_MAP: Record<string, string> = {
   javascript: 'javascript', typescript: 'typescript',
@@ -24,17 +89,54 @@ export function PracticePage() {
   // Exercise context from lesson
   const [exerciseContext, setExerciseContext] = useState<ExerciseContext | null>(null);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
+  const [activeProject, setActiveProject] = useState<Project | null>(null);
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
+
+  const autoCreateExerciseProject = useCallback(async (ctx: ExerciseContext) => {
+    setIsCreatingProject(true);
+    try {
+      const userData: StoredUser = JSON.parse(localStorage.getItem('user') ?? '{}');
+      if (!userData.id) throw new Error('No user found');
+
+      const project = await createProject({
+        name: `${ctx.lessonTitle} — ${ctx.language}`,
+        description: ctx.exercisePrompt,
+        programmingLanguage: ctx.language.toLowerCase() as Language,
+        userId: userData.id,
+      });
+
+      setActiveProject(project);
+      setProjectName(project.name);
+      setLanguage(ctx.language.toLowerCase() as Language);
+
+      const fileContent = getStarterContent(ctx.language, ctx.exercisePrompt);
+      setCode(fileContent);
+
+      try {
+        await saveSnapshot({
+          content: fileContent,
+          versionLabel: 'Initial exercise code',
+          projectId: project.id,
+        });
+      } catch {
+        // snapshot save is non-critical
+      }
+    } catch (err) {
+      console.error('Auto-create exercise project failed:', err);
+    } finally {
+      setIsCreatingProject(false);
+    }
+  }, []);
 
   useEffect(() => {
     const raw = searchParams.get('exercise');
-    if (raw) {
-      try {
-        const ctx = JSON.parse(decodeURIComponent(raw)) as ExerciseContext;
-        setExerciseContext(ctx);
-        setProjectName(ctx.lessonTitle);
-      } catch {
-        setExerciseContext(null);
-      }
+    if (!raw) return;
+    try {
+      const ctx = JSON.parse(decodeURIComponent(raw)) as ExerciseContext;
+      setExerciseContext(ctx);
+      autoCreateExerciseProject(ctx);
+    } catch {
+      // no exercise context, open normally
     }
   }, []);
 
@@ -219,7 +321,7 @@ export function PracticePage() {
       </div>
 
       {/* ═══ MAIN AREA ═══ */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         {/* SIDEBAR */}
         <div className="w-14 bg-[#F0F1F3] border-r border-[#E5E7EB] flex flex-col items-center py-2 gap-1 shrink-0">
           <button
@@ -256,10 +358,13 @@ export function PracticePage() {
         {/* CENTER: Editor + Console */}
         <div className="flex flex-col flex-1 overflow-hidden">
           {/* EXERCISE CONTEXT PANEL */}
-          {exerciseContext && (
+          {exerciseContext && !isCreatingProject && (
             <ExerciseContextPanel
               context={exerciseContext}
-              onDismiss={() => setExerciseContext(null)}
+              onDismiss={() => {
+                setExerciseContext(null);
+                setIsPanelCollapsed(false);
+              }}
               isCollapsed={isPanelCollapsed}
               onToggleCollapse={() => setIsPanelCollapsed(p => !p)}
             />
@@ -422,6 +527,17 @@ export function PracticePage() {
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
+        )}
+
+        {/* Loading overlay while creating project */}
+        {isCreatingProject && (
+          <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center z-50 gap-3">
+            <svg className="animate-spin h-6 w-6 text-[#534AB7]" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+            </svg>
+            <p className="text-[#534AB7] text-sm font-medium">Preparing your exercise...</p>
+          </div>
         )}
       </div>
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Code2 } from 'lucide-react';
 import { registerUser, getErrorMessage } from '../services/api';
+import { encodePassword } from '../utils/passwordUtils';
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ export function RegisterPage() {
     setError('');
     setLoading(true);
     try {
-      const res = await registerUser(form);
+      const res = await registerUser({ ...form, password: encodePassword(form.password) });
       localStorage.setItem('user', JSON.stringify({ id: res.id, username: res.username, email: res.email }));
       localStorage.setItem('codetutor_token', res.token);
       navigate('/');
