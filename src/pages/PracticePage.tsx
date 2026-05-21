@@ -1,15 +1,25 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import MonacoEditor from '@monaco-editor/react';
-import { sendChatMessage, analyzeCodePedagogical, runCode, createProject, saveSnapshot } from '../services/api';
-import type { Language, ExerciseContext, CodeAnalysisResponse, CodeSuggestion } from '../types';
+import { FolderPlus, Bot, Send } from 'lucide-react';
+import {
+  sendChatMessage, analyzeCodePedagogical, runCode,
+  createProject, saveSnapshot, getProjectsByUser, loadEditor,
+  getErrorMessage,
+} from '../services/api';
+import type { Language, ExerciseContext, CodeAnalysisResponse, Project as BackendProject } from '../types';
+import type { VNode, VFile } from '../types/vfs';
+import { uid, detectLang } from '../types/vfs';
 import { ExerciseContextPanel } from '../components/practice/ExerciseContextPanel';
+import { NewProjectModal } from '../components/editor/NewProjectModal';
+import { DeleteProjectModal } from '../components/editor/DeleteProjectModal';
+import { SaveIndicatorBar } from '../components/editor/SaveIndicatorBar';
+import { useEditorPersistence } from '../hooks/useEditorPersistence';
 
 interface StoredUser { id: number; username: string; email: string; }
-interface ChatMsg { id: string; role: 'user' | 'ai'; content: string; quality?: { structure: number; readability: number }; suggestions?: CodeSuggestion[]; timestamp: number; }
-interface TermLine { type: 'input' | 'output' | 'error'; text: string; }
 
-function uid() { return `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`; }
+const FS_STORAGE_KEY = 'codetutor-fs-nodes';
+const ACTIVE_PROJECT_KEY = 'codetutor-active-project';
 
 const FILE_EXT_COLORS: Record<string, string> = {
   py: '#3B82F6', java: '#F59E0B', js: '#EAB308',
@@ -30,135 +40,12 @@ const LANG_MAP: Record<string, string> = {
   python: 'python', java: 'java', cpp: 'cpp',
 };
 
-const DEFAULT_FILES: Record<string, { name: string; content: string }[]> = {
-  python: [
-    { name: 'main.py', content: 'def main():\n    # Your code here\n    pass\n\nif __name__ == "__main__":\n    main()\n' },
-  ],
-  java: [
-    { name: 'Main.java', content: 'public class Main {\n    public static void main(String[] args) {\n        // Your code here\n    }\n}\n' },
-  ],
-  javascript: [
-    { name: 'index.js', content: 'function main() {\n    // Your code here\n}\n\nmain();\n' },
-  ],
-  typescript: [
-    { name: 'index.ts', content: 'function main(): void {\n    // Your code here\n}\n\nmain();\n' },
-  ],
-  cpp: [
-    { name: 'main.cpp', content: '#include <iostream>\n\nint main() {\n    // Your code here\n    return 0;\n}\n' },
-  ],
-};
-
-const getStarterContent = (language: string, prompt: string): string => {
-  const truncated = prompt.length > 80 ? prompt.substring(0, 80) + '...' : prompt;
-  switch (language.toLowerCase()) {
-    case 'python':
-      return `# Exercise: ${truncated}\n# Write your solution below\n\ndef main():\n    # Your code here\n    pass\n\nif __name__ == "__main__":\n    main()\n`;
-    case 'java':
-      return `// Exercise: ${truncated}\n// Write your solution below\n\npublic class Main {\n    public static void main(String[] args) {\n        // Your code here\n    }\n}\n`;
-    case 'javascript':
-      return `// Exercise: ${truncated}\n// Write your solution below\n\nfunction main() {\n    // Your code here\n}\n\nmain();\n`;
-    case 'typescript':
-      return `// Exercise: ${truncated}\n// Write your solution below\n\nfunction main(): void {\n    // Your code here\n}\n\nmain();\n`;
-    default:
-      return `// Exercise: ${truncated}\n// Write your solution below\n`;
-  }
-};
-
 function getFileExt(filename: string): string {
   return filename.includes('.') ? filename.split('.').pop() ?? '' : '';
 }
 
 function getFileDotColor(filename: string): string {
   return FILE_EXT_COLORS[getFileExt(filename)] ?? '#D1D5DB';
-}
-
-function fmtTime(ts: number): string {
-  const diff = Date.now() - ts;
-  if (diff < 60000) return 'just now';
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-  const d = new Date(ts);
-  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-}
-
-function QualityBar({ label, score }: { label: string; score: number }) {
-  const fillColor = label === 'Readability' && score < 70 ? '#F59E0B' : '#534AB7';
-  return (
-    <div className="flex items-center gap-[10px]">
-      <span className="text-[12px] text-[#6B7280] min-w-[80px]">{label}</span>
-      <div className="flex-1 h-[4px] bg-[#E5E7EB] rounded-full overflow-hidden">
-        <div className="h-full rounded-full" style={{ width: `${score}%`, backgroundColor: fillColor }} />
-      </div>
-      <span className="text-[12px] font-semibold min-w-[32px] text-right" style={{ color: fillColor }}>{score}%</span>
-    </div>
-  );
-}
-
-function AiMessageBubble({ msg }: { msg: ChatMsg }) {
-  const isAi = msg.role === 'ai';
-  if (isAi) {
-    const hasQuality = msg.quality && msg.quality.structure !== undefined;
-    const hasSuggestions = msg.suggestions && msg.suggestions.length > 0;
-    return (
-      <div className="mb-5">
-        <div className="flex items-center gap-2 mb-[8px]">
-          <div className="w-[28px] h-[28px] bg-[#EEEDFE] rounded-[8px] flex items-center justify-center shrink-0">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#534AB7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
-            </svg>
-          </div>
-          <span className="text-[12px] font-medium text-[#534AB7]">AI Tutor</span>
-          <span className="text-[11px] text-[#9CA3AF] ml-auto">{fmtTime(msg.timestamp)}</span>
-        </div>
-        <div className="bg-white border border-[#E5E7EB] rounded-tl-none rounded-tr-[10px] rounded-br-[10px] rounded-bl-[10px] p-[12px_14px] space-y-[10px]">
-          {hasQuality && msg.quality && (
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mb-[8px]">Code quality</p>
-              <QualityBar label="Structure" score={msg.quality.structure} />
-              <div className="mt-[6px]">
-                <QualityBar label="Readability" score={msg.quality.readability} />
-              </div>
-            </div>
-          )}
-          {(hasQuality && msg.quality) && <div className="h-[0.5px] bg-[#F3F4F6]" />}
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mb-[8px]">What your code does</p>
-            <p className="text-[12px] text-[#4B5563] leading-relaxed whitespace-pre-wrap">
-              {msg.content.split(/(`[^`]+`)/).map((part, i) =>
-                part.startsWith('`') && part.endsWith('`')
-                  ? <code key={i} className="bg-[#EEEDFE] text-[#3C3489] rounded-[4px] px-[6px] py-[1px] text-[11px] font-mono">{part.slice(1, -1)}</code>
-                  : <span key={i}>{part}</span>
-              )}
-            </p>
-          </div>
-          {hasSuggestions && msg.suggestions && <div className="h-[0.5px] bg-[#F3F4F6]" />}
-          {hasSuggestions && msg.suggestions && (
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mb-[8px]">Suggestions</p>
-              {msg.suggestions.map((s, i) => (
-                <div key={i} className={`flex items-start gap-[8px] py-[6px] ${i < msg.suggestions!.length - 1 ? 'border-b border-[#F9FAFB]' : ''}`}>
-                  <div className="w-[20px] h-[20px] bg-[#534AB7] text-white text-[11px] font-semibold rounded-full flex items-center justify-center shrink-0 mt-[1px]">
-                    {i + 1}
-                  </div>
-                  <span className="text-[12px] text-[#4B5563] leading-relaxed">{s.title}: {s.description}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div className="flex justify-end mb-5">
-      <div className="flex items-center gap-2 justify-end mb-[2px]">
-        <span className="text-[11px] text-[#9CA3AF]">{fmtTime(msg.timestamp)}</span>
-      </div>
-      <div className="bg-[#534AB7] text-white rounded-tl-[10px] rounded-tr-[10px] rounded-bl-none rounded-br-[10px] px-[14px] py-[10px] max-w-[85%] text-[12px] leading-relaxed">
-        {msg.content}
-      </div>
-    </div>
-  );
 }
 
 export function PracticePage() {
@@ -169,52 +56,104 @@ export function PracticePage() {
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
 
+  // VFS
+  const [fsNodes, setFsNodes] = useState<VNode[]>(() => {
+    try { return JSON.parse(localStorage.getItem(FS_STORAGE_KEY) ?? '[]'); } catch { return []; }
+  });
+  const [fsActiveId, setFsActiveId] = useState<string | null>(null);
+  const [openFile, setOpenFile] = useState<{ name: string; content: string; language: Language } | null>(null);
   const [code, setCode] = useState('');
-  const [language, setLanguage] = useState<Language>('python');
-  const [projectName, setProjectName] = useState('My Project');
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [files, setFiles] = useState<{ name: string; content: string }[]>(DEFAULT_FILES.python);
-  const [activeFile, setActiveFile] = useState(0);
-  const [unsaved, setUnsaved] = useState(false);
 
+  // Projects
+  const [activeProject, setActiveProject] = useState<BackendProject | null>(() => {
+    try { return JSON.parse(localStorage.getItem(ACTIVE_PROJECT_KEY) ?? 'null'); } catch { return null; }
+  });
+  const [savedProjects, setSavedProjects] = useState<BackendProject[]>([]);
+  const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
+  const [modalLoading, setModalLoading] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<BackendProject | null>(null);
+  const [loadingProject, setLoadingProject] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const [backupSaving, setBackupSaving] = useState(false);
+
+  // Terminal
   const [consoleOpen, setConsoleOpen] = useState(true);
   const [consoleTab, setConsoleTab] = useState<'Terminal' | 'Output' | 'Problems'>('Terminal');
-  const [termLines, setTermLines] = useState<TermLine[]>([]);
+  const [termLines, setTermLines] = useState<{ text: string; type: 'stdout' | 'stderr' | 'error' | 'info' | 'output' | 'input' }[]>([]);
+  const [, setTerminalRunning] = useState(false);
 
-  const [messages, setMessages] = useState<ChatMsg[]>([
-    { id: 'welcome', role: 'ai', content: 'Welcome! I\'m your AI tutor. Ask me anything or analyze your code to get started.', timestamp: Date.now() }
-  ]);
-  const [chatInput, setChatInput] = useState('');
-  const [chatLoading, setChatLoading] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  // AI Chat
+  const [aiMessages, setAiMessages] = useState<{ id: string; role: 'user' | 'ai'; content: string; timestamp: number }[]>([]);
+  const [aiInput, setAiInput] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const aiBottomRef = useRef<HTMLDivElement>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
-  const [savedProjects, setSavedProjects] = useState<{ name: string; language: string }[]>([]);
+  const projectId = activeProject?.id ?? 0;
+  const fileName = openFile?.name ?? 'untitled';
 
+  const {
+    hasUnsavedChanges,
+    saveIndicatorState,
+    lastSavedAt,
+    saveManually,
+  } = useEditorPersistence({ projectId, fileName, currentContent: code });
+
+  useEffect(() => { aiBottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [aiMessages, aiLoading]);
+
+  // Load saved projects
+  useEffect(() => {
+    if (user.id) {
+      getProjectsByUser(user.id).then(setSavedProjects).catch(() => {});
+    }
+  }, [user.id]);
+
+  // Toast auto-dismiss
+  useEffect(() => {
+    if (toast) {
+      const t = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [toast]);
+
+  // Create exercise project from query params
   const autoCreateExerciseProject = useCallback(async (ctx: ExerciseContext) => {
     setIsCreatingProject(true);
     try {
-      const userData: StoredUser = JSON.parse(localStorage.getItem('user') ?? '{}');
-      if (!userData.id) throw new Error('No user found');
+      if (!user.id) throw new Error('No user found');
       const project = await createProject({
         name: `${ctx.lessonTitle} — ${ctx.language}`,
         description: ctx.exercisePrompt,
         programmingLanguage: ctx.language.toLowerCase() as Language,
-        userId: userData.id,
+        userId: user.id,
       });
-      setProjectName(project.name);
+      const folderId = uid();
       const lang = ctx.language.toLowerCase() as Language;
-      setLanguage(lang);
-      setFiles(DEFAULT_FILES[lang] ?? DEFAULT_FILES.python);
-      const fileContent = getStarterContent(ctx.language, ctx.exercisePrompt);
-      setCode(fileContent);
-      setActiveFile(0);
-      try { await saveSnapshot({ content: fileContent, versionLabel: 'Initial exercise code', projectId: project.id }); } catch {}
+      const fileName = `main.${lang === 'python' ? 'py' : lang === 'java' ? 'java' : lang === 'cpp' ? 'cpp' : lang === 'typescript' ? 'ts' : 'js'}`;
+      const content = `// Exercise: ${ctx.exercisePrompt}\n\n`;
+      const nodes: VNode[] = [
+        { id: folderId, type: 'folder', name: project.name, parentId: null, open: true },
+        { id: uid(), type: 'file', name: fileName, content, language: lang, parentId: folderId },
+      ];
+      setFsNodes(nodes);
+      localStorage.setItem(FS_STORAGE_KEY, JSON.stringify(nodes));
+      setActiveProject(project);
+      localStorage.setItem(ACTIVE_PROJECT_KEY, JSON.stringify(project));
+      setOpenFile({ name: fileName, content, language: lang });
+      setCode(content);
+      setFsActiveId(nodes[1].id);
+      try { await saveSnapshot({ content, versionLabel: 'Initial exercise code', projectId: project.id }); } catch {}
+      try {
+        const projects = await getProjectsByUser(user.id);
+        setSavedProjects(projects);
+      } catch {}
     } catch (err) {
       console.error('Auto-create exercise project failed:', err);
     } finally {
       setIsCreatingProject(false);
     }
-  }, []);
+  }, [user.id]);
 
   useEffect(() => {
     const raw = searchParams.get('exercise');
@@ -226,151 +165,237 @@ export function PracticePage() {
     } catch {}
   }, []);
 
-  useEffect(() => {
-    const key = `practice-save-${user.id}`;
-    const saved = localStorage.getItem(key);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed.code) setCode(parsed.code);
-        if (parsed.language) {
-          const lang = parsed.language as Language;
-          setLanguage(lang);
-          setFiles(DEFAULT_FILES[lang] ?? DEFAULT_FILES.python);
-        }
-        if (parsed.projectName) setProjectName(parsed.projectName);
-      } catch {}
-    }
+  // File ops
+  const handleOpenFile = useCallback((name: string, content: string, language: Language) => {
+    setOpenFile({ name, content, language });
+    setCode(content);
+  }, []);
+
+  // Save
+  const saveCurrentProject = useCallback(async () => {
+    if (!activeProject || backupSaving) return;
+    await saveManually();
+    setBackupSaving(true);
     try {
-      const listKey = `practice-projects-${user.id}`;
-      const list = localStorage.getItem(listKey);
-      if (list) setSavedProjects(JSON.parse(list));
-    } catch {}
-  }, [user.id]);
+      const updatedNodes = fsNodes.map(n =>
+        n.id === fsActiveId && n.type === 'file' ? { ...n, content: code } : n
+      );
+      setFsNodes(updatedNodes);
+      localStorage.setItem(FS_STORAGE_KEY, JSON.stringify(updatedNodes));
+      await saveSnapshot({ content: JSON.stringify({ nodes: updatedNodes }), projectId: activeProject.id });
+      localStorage.setItem(`codetutor-project-${activeProject.id}-nodes`, JSON.stringify(updatedNodes));
+      setToast('Project saved');
+    } catch (err) {
+      console.error('Save error:', getErrorMessage(err));
+    } finally {
+      setBackupSaving(false);
+    }
+  }, [activeProject, backupSaving, saveManually, fsNodes, fsActiveId, code]);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  const handleSave = useCallback(() => {
-    const key = `practice-save-${user.id}`;
-    localStorage.setItem(key, JSON.stringify({ code, language, projectName, savedAt: new Date().toISOString() }));
-    setUnsaved(false);
-    const listKey = `practice-projects-${user.id}`;
-    const list: { name: string; language: string }[] = JSON.parse(localStorage.getItem(listKey) ?? '[]');
-    const existing = list.findIndex(p => p.name === projectName);
-    const entry = { name: projectName, language };
-    if (existing >= 0) list[existing] = entry; else list.unshift(entry);
-    if (list.length > 20) list.length = 20;
-    localStorage.setItem(listKey, JSON.stringify(list));
-    setSavedProjects(list);
-  }, [code, language, projectName, user.id]);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); handleSave(); }
+    const handler = async (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        await saveCurrentProject();
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [handleSave]);
+  }, [saveCurrentProject]);
 
+  // Create project
+  const handleCreateProject = async (name: string) => {
+    setModalLoading(true);
+    setModalError(null);
+    try {
+      if (activeProject && hasUnsavedChanges) {
+        await saveCurrentProject();
+      }
+      const newProject = await createProject({
+        name, description: name, programmingLanguage: 'javascript', userId: user.id,
+      });
+      setOpenFile(null);
+      setCode('');
+      setFsActiveId(null);
+      setTermLines([]);
+      const folderId = uid();
+      const newNodes: VNode[] = [{ id: folderId, type: 'folder', name, parentId: null, open: true }];
+      setFsNodes(newNodes);
+      localStorage.setItem(FS_STORAGE_KEY, JSON.stringify(newNodes));
+      setActiveProject(newProject);
+      localStorage.setItem(ACTIVE_PROJECT_KEY, JSON.stringify(newProject));
+      const projects = await getProjectsByUser(user.id);
+      setSavedProjects(projects);
+      setIsNewProjectModalOpen(false);
+    } catch {
+      setModalError('Error creating project. Check your connection.');
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  // Load project
+  const handleLoadSavedProject = async (project: BackendProject) => {
+    if (activeProject && hasUnsavedChanges) {
+      await saveCurrentProject();
+    }
+    setOpenFile(null);
+    setCode('');
+    setFsActiveId(null);
+    setTermLines([]);
+    setLoadingProject(true);
+    let projectNodes: VNode[] = [];
+    const localNodes = localStorage.getItem(`codetutor-project-${project.id}-nodes`);
+    if (localNodes) {
+      try { const parsed = JSON.parse(localNodes); if (Array.isArray(parsed) && parsed.length > 0) projectNodes = parsed; } catch {}
+    }
+    if (projectNodes.length === 0) {
+      try {
+        const data = await loadEditor(project.id);
+        try { const parsed = JSON.parse(data.currentCode ?? ''); if (parsed.nodes && Array.isArray(parsed.nodes)) projectNodes = parsed.nodes; } catch {}
+      } catch {}
+    }
+    if (projectNodes.length === 0) {
+      const folderId = uid();
+      projectNodes = [{ id: folderId, type: 'folder', name: project.name, parentId: null, open: true }];
+    }
+    setFsNodes(projectNodes);
+    localStorage.setItem(FS_STORAGE_KEY, JSON.stringify(projectNodes));
+    setActiveProject(project);
+    localStorage.setItem(ACTIVE_PROJECT_KEY, JSON.stringify(project));
+    setLoadingProject(false);
+    setToast('Project loaded');
+  };
+
+  // Delete project
+  const handleDeleteProject = async () => {
+    if (!deleteTarget) return;
+    localStorage.removeItem(`codetutor-project-${deleteTarget.id}-nodes`);
+    setSavedProjects(prev => prev.filter(p => p.id !== deleteTarget.id));
+    setDeleteTarget(null);
+    setToast('Project deleted');
+  };
+
+  // Analysis
   const handleAnalyze = useCallback(async () => {
     if (!code.trim()) return;
     const now = Date.now();
-    const userMsg: ChatMsg = { id: uid(), role: 'user', content: 'Analyze my code', timestamp: now };
-    setMessages(prev => [...prev, userMsg]);
-    setChatLoading(true);
+    setAiMessages(prev => [...prev, { id: uid(), role: 'user', content: 'Analyze my code', timestamp: now }]);
+    setAiLoading(true);
     try {
       const result: CodeAnalysisResponse = await analyzeCodePedagogical({
-        code, language, projectDescription: projectName,
+        code, language: openFile?.language ?? 'python', projectDescription: activeProject?.name ?? 'Project',
         exerciseContext: exerciseContext ? { prompt: exerciseContext.exercisePrompt, lessonTitle: exerciseContext.lessonTitle, level: exerciseContext.level } : undefined,
       });
       let fullContent = result.summary;
       if (result.hasErrors && result.errorHint) {
         fullContent += `\n\nError detected: ${result.errorHint}`;
       }
-      const aiMsg: ChatMsg = { id: uid(), role: 'ai', content: fullContent, suggestions: result.suggestions, timestamp: Date.now() };
-      if (result.quality) { aiMsg.quality = result.quality; }
-      setMessages(prev => [...prev, aiMsg]);
+      if (result.suggestions.length > 0) {
+        fullContent += '\n\nSuggestions:';
+        result.suggestions.forEach(s => { fullContent += `\n• ${s.title}: ${s.description}`; });
+      }
+      setAiMessages(prev => [...prev, { id: uid(), role: 'ai', content: fullContent, timestamp: Date.now() }]);
     } catch {
-      setMessages(prev => [...prev, { id: uid(), role: 'ai', content: 'Could not analyze your code right now. Please try again.', timestamp: Date.now() }]);
+      setAiMessages(prev => [...prev, { id: uid(), role: 'ai', content: 'Could not analyze your code right now. Please try again.', timestamp: Date.now() }]);
     } finally {
-      setChatLoading(false);
+      setAiLoading(false);
     }
-  }, [code, language, projectName, exerciseContext]);
+  }, [code, openFile, activeProject, exerciseContext]);
 
-  const handleSendMessage = useCallback(async () => {
-    if (!chatInput.trim()) return;
-    const text = chatInput.trim();
-    setChatInput('');
-    const userMsg: ChatMsg = { id: uid(), role: 'user', content: text, timestamp: Date.now() };
-    setMessages(prev => [...prev, userMsg]);
-    setChatLoading(true);
+  // AI send
+  const handleAiSend = useCallback(async () => {
+    if (!aiInput.trim() || aiLoading) return;
+    const text = aiInput.trim();
+    setAiInput('');
+    setAiMessages(prev => [...prev, { id: uid(), role: 'user', content: text, timestamp: Date.now() }]);
+    setAiLoading(true);
     try {
-      const history = messages.slice(-10).map(m => ({ role: m.role === 'ai' ? 'ai' as const : 'user' as const, content: m.content }));
-      const res = await sendChatMessage({ message: text, history, currentCode: code, language });
-      setMessages(prev => [...prev, { id: uid(), role: 'ai', content: res.message, timestamp: Date.now() }]);
+      const history = aiMessages.slice(-10).map(m => ({ role: m.role === 'ai' ? 'ai' as const : 'user' as const, content: m.content }));
+      const res = await sendChatMessage({ message: text, history, currentCode: code, language: openFile?.language });
+      setAiMessages(prev => [...prev, { id: uid(), role: 'ai', content: res.message.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}]/gu, '').replace(/\s{2,}/g, ' ').trim(), timestamp: Date.now() }]);
     } catch {
-      setMessages(prev => [...prev, { id: uid(), role: 'ai', content: 'Connection error. Please try again.', timestamp: Date.now() }]);
+      setAiMessages(prev => [...prev, { id: uid(), role: 'ai', content: 'Connection error. Please try again.', timestamp: Date.now() }]);
     } finally {
-      setChatLoading(false);
+      setAiLoading(false);
     }
-  }, [chatInput, messages, code, language]);
+  }, [aiInput, aiLoading, aiMessages, code, openFile]);
 
+  // Run code
   const handleRunCode = useCallback(async () => {
     if (!code.trim()) return;
     setConsoleOpen(true);
     setConsoleTab('Output');
-    setTermLines(prev => [...prev, { type: 'input', text: `$ python ${files[activeFile]?.name ?? 'main.py'}` }]);
+    setTermLines(prev => [...prev, { text: `> Ejecutando...`, type: 'info' }]);
+    setTerminalRunning(true);
     try {
-      const res = await runCode({ code, language });
-      if (res.stdout) setTermLines(prev => [...prev, { type: 'output', text: res.stdout }]);
-      if (res.stderr) setTermLines(prev => [...prev, { type: 'error', text: res.stderr }]);
-      if (!res.stdout && !res.stderr) setTermLines(prev => [...prev, { type: 'output', text: '(no output)' }]);
-      setTermLines(prev => [...prev, { type: 'output', text: 'Process finished with exit code 0' }]);
+      const res = await runCode({ code, language: openFile?.language ?? 'python' });
+      const next = [...termLines, { text: `> Ejecutando...`, type: 'info' as const }];
+      if (res.stdout) { res.stdout.split('\n').filter(Boolean).forEach(l => next.push({ text: l, type: 'output' as const })); }
+      if (res.stderr) { res.stderr.split('\n').filter(Boolean).forEach(l => next.push({ text: l, type: 'error' as const })); }
+      if (!res.stdout && !res.stderr) { next.push({ text: '(no output)', type: 'output' as const }); }
+      next.push({ text: res.exitCode === 0 ? 'Process finished with exit code 0' : `Process finished with exit code ${res.exitCode}`, type: res.exitCode === 0 ? 'output' as const : 'error' as const });
+      setTermLines(next);
     } catch {
-      setTermLines(prev => [...prev, { type: 'error', text: 'Error executing code' }]);
+      setTermLines(prev => [...prev, { text: 'Error executing code', type: 'error' as const }]);
+    } finally {
+      setTerminalRunning(false);
     }
-  }, [code, language, files, activeFile]);
-
-  const handleCreateNewProject = useCallback(() => {
-    setFiles(DEFAULT_FILES[language] ?? DEFAULT_FILES.python);
-    setCode(DEFAULT_FILES[language]?.[0]?.content ?? '');
-    setActiveFile(0);
-    setProjectName('Untitled Project');
-    setTermLines([]);
-    setUnsaved(true);
-  }, [language]);
-
-  const handleSavedProjectClick = useCallback((p: { name: string; language: string }) => {
-    const key = `practice-save-${user.id}`;
-    const saved = localStorage.getItem(key);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setCode(parsed.code ?? '');
-        setLanguage(parsed.language as Language ?? p.language as Language);
-        setProjectName(p.name);
-        setFiles(DEFAULT_FILES[parsed.language as Language ?? p.language as Language] ?? DEFAULT_FILES.python);
-        setActiveFile(0);
-      } catch {}
-    }
-  }, [user.id]);
+  }, [code, openFile, termLines]);
 
   const handleNewCode = useCallback((val: string | undefined) => {
     setCode(val ?? '');
-    setUnsaved(true);
   }, []);
 
-  const disp = LANG_DISPLAY[language] ?? { lang: language, ver: '' };
+  const disp = LANG_DISPLAY[openFile?.language ?? 'python'] ?? { lang: 'Python', ver: '' };
+
+  // Save fsNodes to localStorage when they change
+  useEffect(() => { localStorage.setItem(FS_STORAGE_KEY, JSON.stringify(fsNodes)); }, [fsNodes]);
+
+  // Update openFile when fsActiveId changes
+  useEffect(() => {
+    if (!fsActiveId) { setOpenFile(null); return; }
+    const node = fsNodes.find(n => n.id === fsActiveId);
+    if (node && node.type === 'file') {
+      setOpenFile({ name: node.name, content: node.content, language: node.language });
+      setCode(node.content);
+    }
+  }, [fsActiveId, fsNodes]);
+
+  const firstFolder = fsNodes.find(n => n.type === 'folder' && n.parentId === null);
+  const filesList = fsNodes.filter(n => n.type === 'file' && n.parentId === firstFolder?.id) as VFile[];
 
   return (
     <div className="h-screen w-screen grid grid-cols-[220px_1fr_320px] overflow-hidden bg-white">
 
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-4 right-4 z-[200] bg-[#111827] text-white text-[12px] px-4 py-2 rounded-lg shadow-lg animate-fade-in">
+          {toast}
+        </div>
+      )}
+
+      <NewProjectModal
+        open={isNewProjectModalOpen}
+        onClose={() => { setIsNewProjectModalOpen(false); setModalError(null); }}
+        onCreate={handleCreateProject}
+        loading={modalLoading}
+        error={modalError}
+      />
+
+      <DeleteProjectModal
+        open={!!deleteTarget}
+        projectName={deleteTarget?.name ?? ''}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteProject}
+      />
+
       {/* ═══ COLUMN 1 — SIDEBAR ═══ */}
       <div className="bg-white border-r border-[#E5E7EB] flex flex-col overflow-hidden p-3">
-
-        <button onClick={handleCreateNewProject} className="w-full flex items-center gap-[10px] bg-white border border-[#E5E7EB] rounded-[10px] px-[14px] py-[10px] text-[13px] font-medium text-[#111827] cursor-pointer hover:bg-[#F9FAFB] transition-colors">
+        <button
+          onClick={() => setIsNewProjectModalOpen(true)}
+          className="w-full flex items-center gap-[10px] bg-white border border-[#E5E7EB] rounded-[10px] px-[14px] py-[10px] text-[13px] font-medium text-[#111827] cursor-pointer hover:bg-[#F9FAFB] transition-colors"
+        >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           New project
         </button>
@@ -378,41 +403,69 @@ export function PracticePage() {
         <div className="flex-1 overflow-y-auto mt-4">
           <p className="text-[11px] font-medium uppercase tracking-wider text-[#9CA3AF] mb-[8px]">Current</p>
 
-          <div className="flex items-center gap-[8px] bg-[#EEEDFE] rounded-[8px] px-[10px] py-[8px]">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#534AB7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-            </svg>
-            <span
-              className="text-[13px] font-medium text-[#3C3489] truncate cursor-pointer"
-              onClick={() => setIsEditingName(true)}
-            >
-              {projectName}
-            </span>
-            {isEditingName && (
-              <input
-                autoFocus
-                value={projectName}
-                onChange={e => setProjectName(e.target.value)}
-                onBlur={() => setIsEditingName(false)}
-                onKeyDown={e => e.key === 'Enter' && setIsEditingName(false)}
-                className="text-[13px] font-medium text-[#3C3489] bg-transparent border border-[#534AB7] rounded px-1 py-0 outline-none w-full"
-              />
-            )}
-          </div>
+          {activeProject && (
+            <div className="flex items-center gap-[8px] bg-[#EEEDFE] rounded-[8px] px-[10px] py-[8px]">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#534AB7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              </svg>
+              <span className="text-[13px] font-medium text-[#3C3489] truncate">{activeProject.name}</span>
+            </div>
+          )}
+
+          {!activeProject && (
+            <div className="text-center py-6">
+              <FolderPlus className="w-8 h-8 text-[#E5E7EB] mx-auto mb-2" />
+              <p className="text-xs text-[#9CA3AF]">Create a project to start</p>
+              <button
+                onClick={() => setIsNewProjectModalOpen(true)}
+                className="mt-3 px-3 py-1.5 bg-[#534AB7] text-white text-xs rounded-lg hover:opacity-90 cursor-pointer"
+              >
+                + New Project
+              </button>
+            </div>
+          )}
 
           <div className="mt-[4px]">
-            {files.map((f, i) => (
-              <div
-                key={i}
-                onClick={() => setActiveFile(i)}
-                className={`flex items-center gap-[8px] px-[8px] py-[6px] rounded-[6px] cursor-pointer transition-colors ${i === activeFile ? 'bg-[#EEEDFE]' : 'hover:bg-[#F9FAFB]'}`}
-                style={{ paddingLeft: '22px' }}
-              >
-                <span className="w-[8px] h-[8px] rounded-full shrink-0" style={{ backgroundColor: getFileDotColor(f.name) }} />
-                <span className={`text-[13px] truncate ${i === activeFile ? 'font-medium text-[#111827]' : 'text-[#9CA3AF]'}`}>{f.name}</span>
-              </div>
-            ))}
+            {filesList.map((f) => {
+              const isActive = fsActiveId === f.id;
+              return (
+                <div
+                  key={f.id}
+                  onClick={() => {
+                    setFsActiveId(f.id);
+                    handleOpenFile(f.name, f.content, f.language);
+                  }}
+                  className={`flex items-center gap-[8px] px-[8px] py-[6px] rounded-[6px] cursor-pointer transition-colors ${isActive ? 'bg-[#EEEDFE]' : 'hover:bg-[#F9FAFB]'}`}
+                  style={{ paddingLeft: '22px' }}
+                >
+                  <span className="w-[8px] h-[8px] rounded-full shrink-0" style={{ backgroundColor: getFileDotColor(f.name) }} />
+                  <span className={`text-[13px] truncate ${isActive ? 'font-medium text-[#111827]' : 'text-[#9CA3AF]'}`}>{f.name}</span>
+                </div>
+              );
+            })}
           </div>
+
+          {/* Inline create file */}
+          {activeProject && (
+            <div
+              onClick={() => {
+                const name = prompt('Enter filename:');
+                if (name && name.trim()) {
+                  const lang = detectLang(name.trim());
+                  const parentId = firstFolder?.id ?? null;
+                  const node: VFile = { id: uid(), type: 'file', name: name.trim(), content: '', language: lang, parentId };
+                  setFsNodes(prev => [...prev, node]);
+                  setFsActiveId(node.id);
+                  handleOpenFile(node.name, node.content, node.language);
+                }
+              }}
+              className="flex items-center gap-[8px] px-[8px] py-[6px] rounded-[6px] cursor-pointer hover:bg-[#F9FAFB] transition-colors mt-1"
+              style={{ paddingLeft: '22px' }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span className="text-[12px] text-[#9CA3AF]">New file</span>
+            </div>
+          )}
         </div>
 
         <div className="h-[0.5px] bg-[#E5E7EB] my-3" />
@@ -420,18 +473,31 @@ export function PracticePage() {
         <div className="overflow-y-auto max-h-[180px]">
           <p className="text-[11px] font-medium uppercase tracking-wider text-[#9CA3AF] mb-2">Saved projects</p>
           {savedProjects.length === 0 && <p className="text-[11px] text-[#9CA3AF] px-1 py-1">No saved projects yet</p>}
-          {savedProjects.map((p, i) => (
-            <div
-              key={i}
-              onClick={() => handleSavedProjectClick(p)}
-              className="flex items-center gap-[8px] px-[8px] py-[6px] rounded-[4px] cursor-pointer hover:bg-[#F9FAFB] transition-colors"
-            >
-              <div className="w-[14px] h-[14px] bg-[#534AB7] border border-[#534AB7] rounded-[3px] flex items-center justify-center shrink-0">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          {savedProjects.map((p) => {
+            const isActive = activeProject?.id === p.id;
+            return (
+              <div
+                key={p.id}
+                onClick={() => !isActive && handleLoadSavedProject(p)}
+                className={`flex items-center gap-[8px] px-[8px] py-[6px] rounded-[4px] cursor-pointer transition-colors ${isActive ? 'bg-[#EEEDFE]' : 'hover:bg-[#F9FAFB]'}`}
+              >
+                <div className={`w-[14px] h-[14px] rounded-[3px] flex items-center justify-center shrink-0 ${isActive ? 'bg-[#534AB7] border border-[#534AB7]' : 'bg-white border border-[#D1D5DB]'}`}>
+                  {isActive && (
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  )}
+                </div>
+                <span className={`text-[13px] truncate ${isActive ? 'text-[#111827]' : 'text-[#6B7280] hover:text-[#111827]'}`}>{p.name}</span>
+                {!isActive && (
+                  <button
+                    onClick={e => { e.stopPropagation(); setDeleteTarget(p); }}
+                    className="ml-auto text-[#9CA3AF] hover:text-[#EF4444] cursor-pointer shrink-0"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                )}
               </div>
-              <span className="text-[13px] text-[#6B7280] truncate hover:text-[#111827]">{p.name}</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -444,19 +510,22 @@ export function PracticePage() {
         {/* Tab bar */}
         <div className="h-[40px] bg-white border-b border-[#E5E7EB] flex items-center shrink-0 px-3">
           <div className="flex items-center h-full flex-1 overflow-x-auto">
-            {files.map((f, i) => (
-              <div
-                key={i}
-                onClick={() => setActiveFile(i)}
-                className={`flex items-center gap-[6px] px-[14px] h-full text-[12px] cursor-pointer transition-colors shrink-0 ${
-                  i === activeFile ? 'bg-white border-b-2 border-[#534AB7] text-[#111827] font-medium' : 'text-[#9CA3AF] hover:bg-[#F3F4F6]'
-                }`}
-              >
-                <span className="w-[8px] h-[8px] rounded-full shrink-0" style={{ backgroundColor: getFileDotColor(f.name) }} />
-                <span className="truncate max-w-[100px]">{f.name}</span>
-                {unsaved && i === activeFile && <span className="w-[6px] h-[6px] rounded-full bg-[#F59E0B] shrink-0" />}
-              </div>
-            ))}
+            {filesList.map((f) => {
+              const isActive = fsActiveId === f.id;
+              return (
+                <div
+                  key={f.id}
+                  onClick={() => { setFsActiveId(f.id); handleOpenFile(f.name, f.content, f.language); }}
+                  className={`flex items-center gap-[6px] px-[14px] h-full text-[12px] cursor-pointer transition-colors shrink-0 ${
+                    isActive ? 'bg-white border-b-2 border-[#534AB7] text-[#111827] font-medium' : 'text-[#9CA3AF] hover:bg-[#F3F4F6]'
+                  }`}
+                >
+                  <span className="w-[8px] h-[8px] rounded-full shrink-0" style={{ backgroundColor: getFileDotColor(f.name) }} />
+                  <span className="truncate max-w-[100px]">{f.name}</span>
+                  {hasUnsavedChanges && isActive && <span className="w-[6px] h-[6px] rounded-full bg-[#F59E0B] shrink-0" />}
+                </div>
+              );
+            })}
           </div>
           <div className="flex items-center gap-[8px] ml-auto shrink-0">
             <div className="flex items-center gap-[6px] bg-[#EEEDFE] text-[#3C3489] rounded-[6px] px-[10px] py-[3px]">
@@ -471,32 +540,54 @@ export function PracticePage() {
           </div>
         </div>
 
+        {/* Save indicator bar */}
+        <SaveIndicatorBar state={saveIndicatorState} />
+
         {/* Editor body */}
-        <div className="flex-1 flex overflow-hidden">
-          <MonacoEditor
-            height="100%"
-            width="100%"
-            language={LANG_MAP[language] ?? 'plaintext'}
-            value={code}
-            onChange={handleNewCode}
-            theme="vs"
-            options={{
-              fontSize: 13,
-              fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-              lineHeight: 1.7,
-              minimap: { enabled: false },
-              scrollBeyondLastLine: false,
-              renderLineHighlight: 'all',
-              lineNumbers: 'on',
-              padding: { top: 14 },
-              wordWrap: 'on',
-              glyphMargin: false,
-              folding: false,
-              lineNumbersMinChars: 3,
-              cursorBlinking: 'smooth',
-              smoothScrolling: true,
-            }}
-          />
+        <div className="flex-1 flex overflow-hidden relative">
+          {loadingProject && (
+            <div className="absolute inset-0 z-10 bg-white/80 flex flex-col items-center justify-center">
+              <svg className="w-8 h-8 animate-spin text-[#534AB7] mb-3" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" />
+                <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" />
+              </svg>
+              <p className="text-[13px] text-[#4B5563]">Loading project...</p>
+            </div>
+          )}
+          {!openFile ? (
+            <div className="flex-1 flex items-center justify-center bg-white select-none">
+              <div className="text-center">
+                <p className="text-5xl mb-4 opacity-20 text-[#9CA3AF]">{'</>'}</p>
+                <p className="text-sm text-[#9CA3AF]">Open a file from the explorer to start</p>
+                <p className="text-xs mt-2 text-[#C4C4C4]">Ctrl+S to save</p>
+              </div>
+            </div>
+          ) : (
+            <MonacoEditor
+              height="100%"
+              width="100%"
+              language={LANG_MAP[openFile.language] ?? 'plaintext'}
+              value={code}
+              onChange={handleNewCode}
+              theme="vs"
+              options={{
+                fontSize: 13,
+                fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                lineHeight: 1.7,
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                renderLineHighlight: 'all',
+                lineNumbers: 'on',
+                padding: { top: 14 },
+                wordWrap: 'on',
+                glyphMargin: false,
+                folding: false,
+                lineNumbersMinChars: 3,
+                cursorBlinking: 'smooth',
+                smoothScrolling: true,
+              }}
+            />
+          )}
         </div>
 
         {/* Status bar */}
@@ -505,8 +596,12 @@ export function PracticePage() {
             <span className="w-[6px] h-[6px] rounded-full bg-[#5DCAA5]" />
             Connected
           </span>
-          <span>Ln 4, Col 18</span>
-          <span className="capitalize">{language}</span>
+          {hasUnsavedChanges ? (
+            <span className="text-[#F59E0B]">● Unsaved</span>
+          ) : lastSavedAt ? (
+            <span className="text-[#0F6E56]">✓ Saved</span>
+          ) : null}
+          <span className="capitalize">{openFile?.language ?? 'plaintext'}</span>
           <span className="ml-auto">UTF-8</span>
         </div>
 
@@ -528,10 +623,11 @@ export function PracticePage() {
               {consoleTab !== 'Problems' && termLines.map((line, i) => (
                 <div key={i} className={
                   line.type === 'error' ? 'text-[#DC2626]'
-                  : line.type === 'input' ? 'text-[#534AB7]'
+                  : line.type === 'info' ? 'text-[#534AB7]'
+                  : line.type === 'stdout' ? 'text-[#059669]'
                   : line.type === 'output' ? 'text-[#059669]'
                   : 'text-[#9CA3AF]'
-                }>{line.type === 'output' ? `  ${line.text}` : line.text}</div>
+                }>{line.type === 'output' || line.type === 'stdout' ? `  ${line.text}` : line.text}</div>
               ))}
             </div>
           </div>
@@ -547,9 +643,12 @@ export function PracticePage() {
             <span className="text-[13px] font-medium text-[#111827]">AI Tutor</span>
           </div>
           <div className="flex items-center gap-[8px]">
-            <button className="flex items-center gap-1 border border-[#E5E7EB] bg-transparent text-[#6B7280] rounded-[8px] px-[12px] py-[5px] text-[12px] font-medium cursor-pointer hover:bg-[#F9FAFB]">
+            <button
+              onClick={() => setShowHistory(prev => !prev)}
+              className={`flex items-center gap-1 border ${showHistory ? 'bg-[#EEEDFE] border-[#534AB7] text-[#534AB7]' : 'border-[#E5E7EB] bg-transparent text-[#6B7280]'} rounded-[8px] px-[12px] py-[5px] text-[12px] font-medium cursor-pointer hover:bg-[#F9FAFB]`}
+            >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              History
+              {showHistory ? 'Chat' : 'History'}
             </button>
             <button onClick={handleAnalyze} className="flex items-center gap-1 bg-[#534AB7] text-white rounded-[8px] px-[12px] py-[5px] text-[12px] font-medium cursor-pointer hover:opacity-90 border-none">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
@@ -560,61 +659,98 @@ export function PracticePage() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-[14px] py-[14px]">
-          {messages.map(msg => <AiMessageBubble key={msg.id} msg={msg} />)}
-          {chatLoading && (
-            <div className="mb-5">
-              <div className="flex items-center gap-2 mb-[8px]">
-                <div className="w-[28px] h-[28px] bg-[#EEEDFE] rounded-[8px] flex items-center justify-center shrink-0">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#534AB7" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          {showHistory && (
+            <div className="space-y-3">
+              <p className="text-[12px] font-medium text-[#111827]">Conversation history</p>
+              {aiMessages.length === 0 && <p className="text-[11px] text-[#9CA3AF]">No previous conversations.</p>}
+              {aiMessages.map(msg => (
+                <div key={msg.id} className={`p-2 rounded-lg text-[11px] ${msg.role === 'ai' ? 'bg-[#F9FAFB] border border-[#E5E7EB]' : 'bg-[#EEEDFE]'}`}>
+                  <span className="font-medium text-[#534AB7]">{msg.role === 'ai' ? 'AI' : 'You'}: </span>
+                  <span className="text-[#4B5563]">{msg.content.length > 80 ? msg.content.substring(0, 80) + '...' : msg.content}</span>
                 </div>
-                <span className="text-[12px] font-medium text-[#534AB7]">AI Tutor</span>
-              </div>
-              <div className="bg-white border border-[#E5E7EB] rounded-tl-none rounded-tr-[10px] rounded-br-[10px] rounded-bl-[10px] px-[14px] py-[10px] flex gap-[4px]">
-                <span className="w-[6px] h-[6px] bg-[#9CA3AF] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-[6px] h-[6px] bg-[#9CA3AF] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-[6px] h-[6px] bg-[#9CA3AF] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-              </div>
+              ))}
             </div>
           )}
-          <div ref={chatEndRef} />
+          {!showHistory && (
+            <>
+              {aiMessages.map(msg => {
+                const isAi = msg.role === 'ai';
+                return (
+                  <div key={msg.id} className={`mb-5 ${isAi ? '' : 'flex justify-end'}`}>
+                    {isAi && (
+                      <div className="flex items-center gap-2 mb-[8px]">
+                        <div className="w-[28px] h-[28px] bg-[#EEEDFE] rounded-[8px] flex items-center justify-center shrink-0">
+                          <Bot className="w-3.5 h-3.5 text-[#534AB7]" />
+                        </div>
+                        <span className="text-[12px] font-medium text-[#534AB7]">AI Tutor</span>
+                      </div>
+                    )}
+                    <div className={`${isAi ? 'bg-white border border-[#E5E7EB] rounded-tl-none rounded-tr-[10px] rounded-br-[10px] rounded-bl-[10px] p-[12px_14px]' : 'bg-[#534AB7] text-white rounded-tl-[10px] rounded-tr-[10px] rounded-br-[10px] rounded-bl-none px-[14px] py-[10px] max-w-[85%]'}`}>
+                      <p className={`${isAi ? 'text-[12px] text-[#4B5563]' : 'text-[12px]'} leading-relaxed whitespace-pre-wrap break-words`}>{msg.content}</p>
+                    </div>
+                  </div>
+                );
+              })}
+              {aiLoading && (
+                <div className="mb-5">
+                  <div className="flex items-center gap-2 mb-[8px]">
+                    <div className="w-[28px] h-[28px] bg-[#EEEDFE] rounded-[8px] flex items-center justify-center shrink-0">
+                      <Bot className="w-3.5 h-3.5 text-[#534AB7]" />
+                    </div>
+                    <span className="text-[12px] font-medium text-[#534AB7]">AI Tutor</span>
+                  </div>
+                  <div className="bg-white border border-[#E5E7EB] rounded-tl-none rounded-tr-[10px] rounded-br-[10px] rounded-bl-[10px] px-[14px] py-[10px] flex gap-[4px]">
+                    <span className="w-[6px] h-[6px] bg-[#9CA3AF] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-[6px] h-[6px] bg-[#9CA3AF] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-[6px] h-[6px] bg-[#9CA3AF] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
+              )}
+              <div ref={aiBottomRef} />
+            </>
+          )}
         </div>
 
         {/* Input area */}
-        <div className="px-3 pb-2 pt-1">
-          <div className="flex flex-wrap gap-[6px] mb-[10px]">
-            <button onClick={() => { setChatInput('Analyze my code'); }} className="bg-[#EEEDFE] text-[#3C3489] border border-[#AFA9EC] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] transition-colors">
-              Analyze code
-            </button>
-            <button onClick={() => { setChatInput('What should I do next?'); }} className="bg-[#EEEDFE] text-[#3C3489] border border-[#AFA9EC] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] transition-colors">
-              Next step?
-            </button>
-            <button onClick={() => { setChatInput('Explain what my code does'); }} className="bg-[#EEEDFE] text-[#3C3489] border border-[#AFA9EC] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] transition-colors">
-              Explain this
-            </button>
-          </div>
-        </div>
+        {!showHistory && (
+          <>
+            <div className="px-3 pb-2 pt-1">
+              <div className="flex flex-wrap gap-[6px] mb-[10px]">
+                <button onClick={() => setAiInput('Analyze my code')} className="bg-[#EEEDFE] text-[#3C3489] border border-[#AFA9EC] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] transition-colors">
+                  Analyze code
+                </button>
+                <button onClick={() => setAiInput('What should I do next?')} className="bg-[#EEEDFE] text-[#3C3489] border border-[#AFA9EC] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] transition-colors">
+                  Next step?
+                </button>
+                <button onClick={() => setAiInput('Explain what my code does')} className="bg-[#EEEDFE] text-[#3C3489] border border-[#AFA9EC] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] transition-colors">
+                  Explain this
+                </button>
+              </div>
+            </div>
 
-        <div className="border-t border-[#E5E7EB] px-3 py-3">
-          <div className="flex items-center gap-[8px]">
-            <textarea
-              value={chatInput}
-              onChange={e => setChatInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
-              placeholder="Ask about your code..."
-              rows={1}
-              className="flex-1 bg-[#F9FAFB] border border-[#E5E7EB] rounded-[10px] px-[12px] py-[8px] text-[12px] text-[#111827] placeholder-[#9CA3AF] outline-none resize-none min-h-[36px] max-h-[100px] focus:border-[#534AB7] focus:bg-white"
-            />
-            <button
-              onClick={handleSendMessage}
-              disabled={!chatInput.trim()}
-              className={`w-[36px] h-[36px] rounded-[10px] flex items-center justify-center shrink-0 cursor-pointer border-none ${
-                chatInput.trim() ? 'bg-[#534AB7] text-white' : 'bg-[#E5E7EB] text-[#9CA3AF]'
-              }`}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </button>
-          </div>
-        </div>
+            <div className="border-t border-[#E5E7EB] px-3 py-3">
+              <div className="flex items-center gap-[8px]">
+                <textarea
+                  value={aiInput}
+                  onChange={e => setAiInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAiSend(); } }}
+                  placeholder="Ask about your code..."
+                  rows={1}
+                  className="flex-1 bg-[#F9FAFB] border border-[#E5E7EB] rounded-[10px] px-[12px] py-[8px] text-[12px] text-[#111827] placeholder-[#9CA3AF] outline-none resize-none min-h-[36px] max-h-[100px] focus:border-[#534AB7] focus:bg-white"
+                />
+                <button
+                  onClick={handleAiSend}
+                  disabled={!aiInput.trim() || aiLoading}
+                  className={`w-[36px] h-[36px] rounded-[10px] flex items-center justify-center shrink-0 cursor-pointer border-none ${
+                    aiInput.trim() ? 'bg-[#534AB7] text-white' : 'bg-[#E5E7EB] text-[#9CA3AF]'
+                  }`}
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Loading overlay */}
