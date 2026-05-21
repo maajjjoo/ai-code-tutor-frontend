@@ -5,7 +5,7 @@ import { FolderPlus, Bot, Send } from 'lucide-react';
 import {
   sendChatMessage, analyzeCodePedagogical, runCode,
   createProject, saveSnapshot, getProjectsByUser, loadEditor,
-  getErrorMessage,
+  getErrorMessage, explainCode,
 } from '../services/api';
 import type { Language, ExerciseContext, Project as BackendProject } from '../types';
 import type { VNode, VFile } from '../types/vfs';
@@ -164,6 +164,36 @@ export function PracticePage() {
   const [fsActiveId, setFsActiveId] = useState<string | null>(null);
   const [openFile, setOpenFile] = useState<{ name: string; content: string; language: Language } | null>(null);
   const [code, setCode] = useState('');
+  const fileContentsRef = useRef<Record<string, string>>({});
+
+  // Panel resize
+  const [sidebarWidth, setSidebarWidth] = useState(220);
+  const [aiPanelWidth, setAiPanelWidth] = useState(320);
+  const resizing = useRef<'sidebar' | 'ai' | null>(null);
+  const resizeStartX = useRef(0);
+  const resizeStartWidth = useRef(0);
+
+  // Inline file create
+  const [isCreatingFile, setIsCreatingFile] = useState(false);
+  const [creatingFileName, setCreatingFileName] = useState('');
+  const creatingInputRef = useRef<HTMLInputElement>(null);
+
+  // Inline file rename
+  const [renamingFileId, setRenamingFileId] = useState<string | null>(null);
+  const [renamingFileName, setRenamingFileName] = useState('');
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  // Monaco refs
+  const editorRef = useRef<any>(null);
+  const monacoRef = useRef<any>(null);
+
+  // Tooltip for code explanation
+  const [selectedText, setSelectedText] = useState('');
+  const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
+  const [tooltipContent, setTooltipContent] = useState<string | null>(null);
+  const [tooltipLoading, setTooltipLoading] = useState(false);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const handleExplainRef = useRef<() => void>(() => {});
 
   // Projects
   const [activeProject, setActiveProject] = useState<BackendProject | null>(() => {
@@ -232,6 +262,7 @@ export function PracticePage() {
       const lang = ctx.language.toLowerCase() as Language;
       const fileName = `main.${lang === 'python' ? 'py' : lang === 'java' ? 'java' : lang === 'cpp' ? 'cpp' : lang === 'typescript' ? 'ts' : 'js'}`;
       const content = `// Exercise: ${ctx.exercisePrompt}\n\n`;
+      fileContentsRef.current = {};
       const nodes: VNode[] = [
         { id: folderId, type: 'folder', name: project.name, parentId: null, open: true },
         { id: uid(), type: 'file', name: fileName, content, language: lang, parentId: folderId },
@@ -266,10 +297,19 @@ export function PracticePage() {
   }, []);
 
   // File ops
-  const handleOpenFile = useCallback((name: string, content: string, language: Language) => {
-    setOpenFile({ name, content, language });
-    setCode(content);
-  }, []);
+  const switchToFile = useCallback((fileId: string) => {
+    if (fsActiveId) {
+      fileContentsRef.current[fsActiveId] = code;
+    }
+    const node = fsNodes.find(n => n.id === fileId);
+    if (node && node.type === 'file') {
+      const cached = fileContentsRef.current[fileId];
+      const content = cached !== undefined ? cached : node.content;
+      setOpenFile({ name: node.name, content, language: node.language });
+      setCode(content);
+    }
+    setFsActiveId(fileId);
+  }, [fsActiveId, code, fsNodes]);
 
   // Save
   const saveCurrentProject = useCallback(async () => {
@@ -277,6 +317,9 @@ export function PracticePage() {
     await saveManually();
     setBackupSaving(true);
     try {
+      if (fsActiveId) {
+        fileContentsRef.current[fsActiveId] = code;
+      }
       const updatedNodes = fsNodes.map(n =>
         n.id === fsActiveId && n.type === 'file' ? { ...n, content: code } : n
       );
@@ -284,6 +327,13 @@ export function PracticePage() {
       localStorage.setItem(FS_STORAGE_KEY, JSON.stringify(updatedNodes));
       await saveSnapshot({ content: JSON.stringify({ nodes: updatedNodes }), projectId: activeProject.id });
       localStorage.setItem(`codetutor-project-${activeProject.id}-nodes`, JSON.stringify(updatedNodes));
+      if (editorRef.current && monacoRef.current) {
+        const model = editorRef.current.getModel();
+        if (model) {
+          monacoRef.current.editor.setModelMarkers(model, 'syntax', []);
+          monacoRef.current.editor.setModelMarkers(model, 'runtime', []);
+        }
+      }
       setToast('Project saved');
     } catch (err) {
       console.error('Save error:', getErrorMessage(err));
@@ -311,6 +361,7 @@ export function PracticePage() {
       if (activeProject && hasUnsavedChanges) {
         await saveCurrentProject();
       }
+      fileContentsRef.current = {};
       const newProject = await createProject({
         name, description: name, programmingLanguage: projectLanguage as Language, userId: user.id,
       });
@@ -339,6 +390,7 @@ export function PracticePage() {
     if (activeProject && hasUnsavedChanges) {
       await saveCurrentProject();
     }
+    fileContentsRef.current = {};
     setOpenFile(null);
     setCode('');
     setFsActiveId(null);
@@ -413,6 +465,34 @@ export function PracticePage() {
         suggestions: structured.suggestions || result.suggestions.map(s => `${s.title}: ${s.description}`),
       };
       setAiMessages(prev => [...prev, aiMsg]);
+      if (result.hasErrors && editorRef.current && monacoRef.current) {
+        const model = editorRef.current.getModel();
+        if (model) {
+          monacoRef.current.editor.setModelMarkers(model, 'syntax', []);
+          const markers: any[] = [];
+          if (result.errorHint) {
+            const lineMatch = result.errorHint.match(/line\s*(\d+)/i) || result.errorHint.match(/Line\s*(\d+)/i);
+            if (lineMatch) {
+              markers.push({
+                startLineNumber: parseInt(lineMatch[1]),
+                startColumn: 1,
+                endLineNumber: parseInt(lineMatch[1]),
+                endColumn: 1000,
+                message: result.errorHint,
+                severity: monacoRef.current.MarkerSeverity.Error,
+              });
+            } else {
+              const totalLines = (code.match(/\n/g) || []).length + 1;
+              markers.push({
+                startLineNumber: 1, startColumn: 1, endLineNumber: totalLines, endColumn: 1000,
+                message: result.errorHint,
+                severity: monacoRef.current.MarkerSeverity.Error,
+              });
+            }
+          }
+          monacoRef.current.editor.setModelMarkers(model, 'syntax', markers);
+        }
+      }
     } catch {
       setAiMessages(prev => [...prev, { id: uid(), role: 'ai', content: 'Could not analyze your code right now. Please try again.', timestamp: Date.now() }]);
     } finally {
@@ -450,7 +530,29 @@ export function PracticePage() {
       const res = await runCode({ code, language: openFile?.language ?? 'python' });
       const next = [...termLines, { text: `> Ejecutando...`, type: 'info' as const }];
       if (res.stdout) { res.stdout.split('\n').filter(Boolean).forEach(l => next.push({ text: l, type: 'output' as const })); }
-      if (res.stderr) { res.stderr.split('\n').filter(Boolean).forEach(l => next.push({ text: l, type: 'error' as const })); }
+      if (res.stderr) {
+        res.stderr.split('\n').filter(Boolean).forEach(l => next.push({ text: l, type: 'error' as const }));
+        if (editorRef.current && monacoRef.current) {
+          const model = editorRef.current.getModel();
+          if (model) {
+            const markers: any[] = [];
+            res.stderr.split('\n').forEach(line => {
+              const match = line.match(/line\s*(\d+)/i) || line.match(/Line\s*(\d+)/i);
+              if (match) {
+                markers.push({
+                  startLineNumber: parseInt(match[1]),
+                  startColumn: 1,
+                  endLineNumber: parseInt(match[1]),
+                  endColumn: 1000,
+                  message: line.trim(),
+                  severity: monacoRef.current.MarkerSeverity.Error,
+                });
+              }
+            });
+            monacoRef.current.editor.setModelMarkers(model, 'runtime', markers);
+          }
+        }
+      }
       if (!res.stdout && !res.stderr) { next.push({ text: '(no output)', type: 'output' as const }); }
       next.push({ text: res.exitCode === 0 ? 'Process finished with exit code 0' : `Process finished with exit code ${res.exitCode}`, type: res.exitCode === 0 ? 'output' as const : 'error' as const });
       setTermLines(next);
@@ -461,22 +563,74 @@ export function PracticePage() {
     }
   }, [code, openFile, termLines]);
 
+  // Explain code via tooltip
+  const handleExplainCode = useCallback(async () => {
+    const text = selectedText;
+    if (!text || !openFile) return;
+    setTooltipLoading(true);
+    try {
+      const res = await explainCode({ selectedText: text, language: openFile.language, context: code });
+      setTooltipContent(res.explanation);
+    } catch {
+      setTooltipContent('Failed to get explanation.');
+    } finally {
+      setTooltipLoading(false);
+    }
+  }, [selectedText, openFile, code]);
+
+  useEffect(() => { handleExplainRef.current = handleExplainCode; }, [handleExplainCode]);
+
   const handleNewCode = useCallback((val: string | undefined) => {
-    setCode(val ?? '');
-  }, []);
+    const newVal = val ?? '';
+    setCode(newVal);
+    if (fsActiveId) {
+      fileContentsRef.current[fsActiveId] = newVal;
+    }
+  }, [fsActiveId]);
 
   const disp = LANG_DISPLAY[openFile?.language ?? 'python'] ?? { lang: 'Python', ver: '' };
 
   // Save fsNodes to localStorage when they change
+  // Tooltip: click outside or Escape to dismiss
+  useEffect(() => {
+    if (!tooltipPos) return;
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.code-tooltip')) {
+        setTooltipPos(null);
+        setSelectedText('');
+        setTooltipContent(null);
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setTooltipPos(null);
+        setSelectedText('');
+        setTooltipContent(null);
+      }
+    };
+    const id = setTimeout(() => {
+      document.addEventListener('click', handleClick);
+      document.addEventListener('keydown', handleKey);
+    }, 0);
+    return () => {
+      clearTimeout(id);
+      document.removeEventListener('click', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [tooltipPos]);
+
   useEffect(() => { localStorage.setItem(FS_STORAGE_KEY, JSON.stringify(fsNodes)); }, [fsNodes]);
 
-  // Update openFile when fsActiveId changes
+  // Update openFile when fsActiveId changes (uses cached content)
   useEffect(() => {
     if (!fsActiveId) { setOpenFile(null); return; }
     const node = fsNodes.find(n => n.id === fsActiveId);
     if (node && node.type === 'file') {
-      setOpenFile({ name: node.name, content: node.content, language: node.language });
-      setCode(node.content);
+      const cached = fileContentsRef.current[fsActiveId];
+      const content = cached !== undefined ? cached : node.content;
+      setOpenFile({ name: node.name, content, language: node.language });
+      setCode(content);
     }
   }, [fsActiveId, fsNodes]);
 
@@ -484,7 +638,7 @@ export function PracticePage() {
   const filesList = fsNodes.filter(n => n.type === 'file' && n.parentId === firstFolder?.id) as VFile[];
 
   return (
-    <div className="h-screen w-screen grid grid-cols-[220px_1fr_320px] overflow-hidden bg-white">
+    <div className="h-screen w-screen grid overflow-hidden bg-white" style={{ gridTemplateColumns: `${sidebarWidth}px 1fr ${aiPanelWidth}px` }}>
 
       {/* Toast */}
       {toast && (
@@ -509,7 +663,7 @@ export function PracticePage() {
       />
 
       {/* ═══ COLUMN 1 — SIDEBAR ═══ */}
-      <div className="bg-white border-r border-[#E5E7EB] flex flex-col overflow-hidden p-3">
+      <div className="bg-white border-r border-[#E5E7EB] flex flex-col overflow-hidden p-3 relative">
         <div onClick={() => navigate('/')} className="flex items-center gap-[8px] px-[12px] pt-[12px] pb-[8px] cursor-pointer border-b border-[#E5E7EB] mb-[8px] hover:opacity-85 transition-opacity">
           <div className="w-[24px] h-[24px] bg-[#534AB7] rounded-[6px] flex items-center justify-center shrink-0">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
@@ -556,36 +710,125 @@ export function PracticePage() {
           <div className="mt-[4px]">
             {filesList.map((f) => {
               const isActive = fsActiveId === f.id;
+              const isRenaming = renamingFileId === f.id;
               return (
                 <div
                   key={f.id}
                   onClick={() => {
-                    setFsActiveId(f.id);
-                    handleOpenFile(f.name, f.content, f.language);
+                    if (!isRenaming) {
+                      switchToFile(f.id);
+                    }
                   }}
-                  className={`flex items-center gap-[8px] px-[8px] py-[6px] rounded-[6px] cursor-pointer transition-colors ${isActive ? 'bg-[#EEEDFE]' : 'hover:bg-[#F9FAFB]'}`}
+                  onDoubleClick={() => {
+                    setRenamingFileId(f.id);
+                    setRenamingFileName(f.name);
+                  }}
+                  className={`flex items-center gap-[8px] px-[8px] py-[6px] rounded-[6px] ${isRenaming ? '' : 'cursor-pointer'} transition-colors ${isActive ? 'bg-[#EEEDFE]' : 'hover:bg-[#F9FAFB]'}`}
                   style={{ paddingLeft: '22px' }}
                 >
-                  <span className="w-[8px] h-[8px] rounded-full shrink-0" style={{ backgroundColor: getFileDotColor(f.name) }} />
-                  <span className={`text-[13px] truncate ${isActive ? 'font-medium text-[#111827]' : 'text-[#9CA3AF]'}`}>{f.name}</span>
+                  <span className="w-[8px] h-[8px] rounded-full shrink-0" style={{ backgroundColor: getFileDotColor(isRenaming ? renamingFileName : f.name) }} />
+                  {isRenaming ? (
+                    <input
+                      ref={renameInputRef}
+                      value={renamingFileName}
+                      onChange={e => setRenamingFileName(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const name = renamingFileName.trim();
+                          if (name) {
+                            setFsNodes(prev => prev.map(n =>
+                              n.id === renamingFileId && n.type === 'file'
+                                ? { ...n, name, language: detectLang(name) }
+                                : n
+                            ));
+                            if (fsActiveId === renamingFileId && openFile) {
+                              setOpenFile(prev => prev ? { ...prev, name, language: detectLang(name) } : null);
+                            }
+                          }
+                          setRenamingFileId(null);
+                          setRenamingFileName('');
+                        } else if (e.key === 'Escape') {
+                          setRenamingFileId(null);
+                          setRenamingFileName('');
+                        }
+                      }}
+                      onBlur={() => {
+                        const name = renamingFileName.trim();
+                        if (name && renamingFileId) {
+                          setFsNodes(prev => prev.map(n =>
+                            n.id === renamingFileId && n.type === 'file'
+                              ? { ...n, name, language: detectLang(name) }
+                              : n
+                          ));
+                          if (fsActiveId === renamingFileId && openFile) {
+                            setOpenFile(prev => prev ? { ...prev, name, language: detectLang(name) } : null);
+                          }
+                        }
+                        setRenamingFileId(null);
+                        setRenamingFileName('');
+                      }}
+                      className="flex-1 bg-transparent text-[13px] text-[#111827] outline-none border-b border-[#534AB7]"
+                    />
+                  ) : (
+                    <span className={`text-[13px] truncate ${isActive ? 'font-medium text-[#111827]' : 'text-[#9CA3AF]'}`}>{f.name}</span>
+                  )}
                 </div>
               );
             })}
+            {isCreatingFile && (
+              <div className="flex items-center gap-[8px] px-[8px] py-[6px] rounded-[6px]" style={{ paddingLeft: '22px' }}>
+                <span className="w-[8px] h-[8px] rounded-full shrink-0" style={{ backgroundColor: getFileDotColor(creatingFileName) || '#D1D5DB' }} />
+                <input
+                  ref={creatingInputRef}
+                  value={creatingFileName}
+                  onChange={e => setCreatingFileName(e.target.value)}
+                  placeholder="filename.py"
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const name = creatingFileName.trim();
+                      if (name) {
+                        const lang = detectLang(name);
+                        const node: VFile = { id: uid(), type: 'file', name, content: '', language: lang, parentId: firstFolder?.id ?? null };
+                        setFsNodes(prev => [...prev, node]);
+                        fileContentsRef.current[node.id] = '';
+                        setFsActiveId(node.id);
+                        switchToFile(node.id);
+                      }
+                      setIsCreatingFile(false);
+                      setCreatingFileName('');
+                    } else if (e.key === 'Escape') {
+                      setIsCreatingFile(false);
+                      setCreatingFileName('');
+                    }
+                  }}
+                  onBlur={() => {
+                    const name = creatingFileName.trim();
+                    if (name) {
+                      const lang = detectLang(name);
+                      const node: VFile = { id: uid(), type: 'file', name, content: '', language: lang, parentId: firstFolder?.id ?? null };
+                      setFsNodes(prev => [...prev, node]);
+                      fileContentsRef.current[node.id] = '';
+                      setFsActiveId(node.id);
+                      switchToFile(node.id);
+                    }
+                    setIsCreatingFile(false);
+                    setCreatingFileName('');
+                  }}
+                  className="flex-1 bg-transparent text-[13px] text-[#111827] outline-none border-b border-[#534AB7]"
+                />
+              </div>
+            )}
           </div>
 
           {/* Inline create file */}
           {activeProject && (
             <div
               onClick={() => {
-                const name = prompt('Enter filename:');
-                if (name && name.trim()) {
-                  const lang = detectLang(name.trim());
-                  const parentId = firstFolder?.id ?? null;
-                  const node: VFile = { id: uid(), type: 'file', name: name.trim(), content: '', language: lang, parentId };
-                  setFsNodes(prev => [...prev, node]);
-                  setFsActiveId(node.id);
-                  handleOpenFile(node.name, node.content, node.language);
-                }
+                setIsCreatingFile(true);
+                setCreatingFileName('');
+                setTimeout(() => creatingInputRef.current?.focus(), 20);
               }}
               className="flex items-center gap-[8px] px-[8px] py-[6px] rounded-[6px] cursor-pointer hover:bg-[#F9FAFB] transition-colors mt-1"
               style={{ paddingLeft: '22px' }}
@@ -627,6 +870,27 @@ export function PracticePage() {
             );
           })}
         </div>
+        <div
+          onMouseDown={e => {
+            e.preventDefault();
+            resizing.current = 'sidebar';
+            resizeStartX.current = e.clientX;
+            resizeStartWidth.current = sidebarWidth;
+            const onMove = (ev: MouseEvent) => {
+              if (resizing.current !== 'sidebar') return;
+              const w = Math.max(160, Math.min(360, resizeStartWidth.current + ev.clientX - resizeStartX.current));
+              setSidebarWidth(w);
+            };
+            const onUp = () => {
+              resizing.current = null;
+              document.removeEventListener('mousemove', onMove);
+              document.removeEventListener('mouseup', onUp);
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+          }}
+          className="absolute right-0 top-0 bottom-0 w-[4px] cursor-col-resize hover:bg-[#534AB7]/30 transition-colors z-10"
+        />
       </div>
 
       {/* ═══ COLUMN 2 — EDITOR ═══ */}
@@ -643,7 +907,7 @@ export function PracticePage() {
               return (
                 <div
                   key={f.id}
-                  onClick={() => { setFsActiveId(f.id); handleOpenFile(f.name, f.content, f.language); }}
+                  onClick={() => { switchToFile(f.id); }}
                   className={`flex items-center gap-[6px] px-[14px] h-full text-[12px] cursor-pointer transition-colors shrink-0 ${
                     isActive ? 'bg-white border-b-2 border-[#534AB7] text-[#111827] font-medium' : 'text-[#9CA3AF] hover:bg-[#F3F4F6]'
                   }`}
@@ -697,6 +961,44 @@ export function PracticePage() {
               language={LANG_MAP[openFile.language] ?? 'plaintext'}
               value={code}
               onChange={handleNewCode}
+              onMount={(editor, monaco) => {
+                editorRef.current = editor;
+                monacoRef.current = monaco;
+                editor.addAction({
+                  id: 'explain-code',
+                  label: 'Explain Code',
+                  keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK],
+                  run: () => handleExplainRef.current(),
+                });
+                editor.onDidChangeCursorSelection(() => {
+                  const sel = editor.getSelection();
+                  if (sel && !sel.isEmpty()) {
+                    const txt = editor.getModel()?.getValueInRange(sel) ?? '';
+                    setSelectedText(txt);
+                    const pos = editor.getScrolledVisiblePosition(sel.getPosition());
+                    if (pos) {
+                      const domNode = editor.getDomNode();
+                      if (domNode) {
+                        const rect = domNode.getBoundingClientRect();
+                        setTooltipPos({ top: rect.top + pos.top - 40, left: rect.left + pos.left + 20 });
+                      }
+                    }
+                    setTooltipContent(null);
+                    setTooltipLoading(false);
+                  } else {
+                    setSelectedText('');
+                    setTooltipPos(null);
+                    setTooltipContent(null);
+                    setTooltipLoading(false);
+                  }
+                });
+                if (monaco.languages.typescript?.javascriptDefaults) {
+                  monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+                    noSemanticValidation: false,
+                    noSyntaxValidation: false,
+                  });
+                }
+              }}
               theme="vs"
               options={{
                 fontSize: 13,
@@ -715,6 +1017,28 @@ export function PracticePage() {
                 smoothScrolling: true,
               }}
             />
+          )}
+          {tooltipPos && selectedText && (
+            <div
+              ref={tooltipRef}
+              className="code-tooltip fixed z-[1000] bg-[#1E1E2E] text-white rounded-[8px] px-[12px] py-[8px] max-w-[280px] text-[12px] leading-relaxed shadow-lg"
+              style={{ top: tooltipPos.top, left: tooltipPos.left, transform: 'translateX(-50%)' }}
+            >
+              {tooltipLoading ? (
+                <div className="flex items-center gap-2">
+                  <svg className="animate-spin w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                  <span className="text-[11px] text-[#9CA3AF]">Explaining...</span>
+                </div>
+              ) : tooltipContent !== null ? (
+                <p className="text-[11px] leading-relaxed whitespace-pre-wrap">{tooltipContent}</p>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-[#9CA3AF]">Press </span>
+                  <kbd className="bg-white/10 rounded-[3px] px-[5px] py-[1px] text-[10px] font-mono">Ctrl+K</kbd>
+                  <span className="text-[11px] text-[#9CA3AF]"> to explain</span>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
@@ -773,7 +1097,7 @@ export function PracticePage() {
       </div>
 
       {/* ═══ COLUMN 3 — AI PANEL ═══ */}
-      <div className="bg-white border-l border-[#E5E7EB] flex flex-col overflow-hidden">
+      <div className="bg-white border-l border-[#E5E7EB] flex flex-col overflow-hidden relative">
         {/* Header */}
         <div className="h-[44px] border-b border-[#E5E7EB] flex items-center px-[14px] shrink-0">
           <div className="flex items-center gap-2 flex-1">
@@ -880,6 +1204,27 @@ export function PracticePage() {
             </div>
           </>
         )}
+        <div
+          onMouseDown={e => {
+            e.preventDefault();
+            resizing.current = 'ai';
+            resizeStartX.current = e.clientX;
+            resizeStartWidth.current = aiPanelWidth;
+            const onMove = (ev: MouseEvent) => {
+              if (resizing.current !== 'ai') return;
+              const w = Math.max(240, Math.min(480, resizeStartWidth.current - (ev.clientX - resizeStartX.current)));
+              setAiPanelWidth(w);
+            };
+            const onUp = () => {
+              resizing.current = null;
+              document.removeEventListener('mousemove', onMove);
+              document.removeEventListener('mouseup', onUp);
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+          }}
+          className="absolute left-0 top-0 bottom-0 w-[4px] cursor-col-resize hover:bg-[#534AB7]/30 transition-colors z-10"
+        />
       </div>
 
       {/* Loading overlay */}

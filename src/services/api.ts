@@ -115,6 +115,10 @@ export const sendChatMessage = (body: {
   language?: string;
 }) => client.post<{ message: string }>('/chat', body).then(r => r.data);
 
+// ─── Explain ──────────────────────────────────────────────────────────────────
+export const explainCode = (body: { selectedText: string; language: string; context: string }) =>
+  client.post<{ explanation: string }>('/editor/explain', body).then(r => r.data);
+
 // ─── Terminal ─────────────────────────────────────────────────────────────────
 export const runCode = (body: { code: string; language: string; stdin?: string }) =>
   client.post<{ stdout: string; stderr: string; exitCode: number }>('/terminal/run', body).then(r => r.data);
