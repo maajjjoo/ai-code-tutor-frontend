@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import MonacoEditor from '@monaco-editor/react';
 import { sendChatMessage, analyzeCodePedagogical, runCode, createProject, saveSnapshot } from '../services/api';
 import type { Language, ExerciseContext, CodeAnalysisResponse, CodeSuggestion } from '../types';
@@ -17,10 +17,12 @@ const FILE_EXT_COLORS: Record<string, string> = {
   cpp: '#9CA3AF', cs: '#9CA3AF',
 };
 
-const LANG_VERSION: Record<string, string> = {
-  python: 'Python 3.11', java: 'Java 17',
-  javascript: 'Node 20', typescript: 'TypeScript 5.4',
-  cpp: 'C++20',
+const LANG_DISPLAY: Record<string, { lang: string; ver: string }> = {
+  python: { lang: 'Python', ver: '3.11' },
+  java: { lang: 'Java', ver: '17' },
+  javascript: { lang: 'JavaScript', ver: 'Node 20' },
+  typescript: { lang: 'TypeScript', ver: '5.4' },
+  cpp: { lang: 'C++', ver: '20' },
 };
 
 const LANG_MAP: Record<string, string> = {
@@ -67,38 +69,30 @@ function getFileExt(filename: string): string {
 }
 
 function getFileDotColor(filename: string): string {
-  return FILE_EXT_COLORS[getFileExt(filename)] ?? '#9CA3AF';
-}
-
-// ─── Sub-components ────────────────────────────────────────────────────────────
-
-function QualityBar({ label, score }: { label: string; score: number }) {
-  const color = label === 'Readability' && score < 70 ? '#F59E0B' : '#534AB7';
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-[11px] text-[#6B7280] min-w-[68px]">{label}</span>
-      <div className="flex-1 h-1 bg-[#E5E7EB] rounded-full overflow-hidden">
-        <div className="h-full rounded-full" style={{ width: `${score}%`, backgroundColor: color }} />
-      </div>
-      <span className="text-[11px] font-medium min-w-[26px] text-right" style={{ color }}>{score}%</span>
-    </div>
-  );
-}
-
-function ConsoleTab({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className={`text-[11px] cursor-pointer ${active ? 'text-[#111827] font-medium' : 'text-[#9CA3AF]'}`}>
-      {label}
-    </button>
-  );
+  return FILE_EXT_COLORS[getFileExt(filename)] ?? '#D1D5DB';
 }
 
 function fmtTime(ts: number): string {
+  const diff = Date.now() - ts;
+  if (diff < 60000) return 'just now';
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
   const d = new Date(ts);
   return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
-const SUGGESTION_NUMBERS = ['①', '②', '③'];
+function QualityBar({ label, score }: { label: string; score: number }) {
+  const fillColor = label === 'Readability' && score < 70 ? '#F59E0B' : '#534AB7';
+  return (
+    <div className="flex items-center gap-[10px]">
+      <span className="text-[12px] text-[#6B7280] min-w-[80px]">{label}</span>
+      <div className="flex-1 h-[4px] bg-[#E5E7EB] rounded-full overflow-hidden">
+        <div className="h-full rounded-full" style={{ width: `${score}%`, backgroundColor: fillColor }} />
+      </div>
+      <span className="text-[12px] font-semibold min-w-[32px] text-right" style={{ color: fillColor }}>{score}%</span>
+    </div>
+  );
+}
 
 function AiMessageBubble({ msg }: { msg: ChatMsg }) {
   const isAi = msg.role === 'ai';
@@ -106,81 +100,75 @@ function AiMessageBubble({ msg }: { msg: ChatMsg }) {
     const hasQuality = msg.quality && msg.quality.structure !== undefined;
     const hasSuggestions = msg.suggestions && msg.suggestions.length > 0;
     return (
-      <div className="flex items-start gap-2 mb-4">
-        <div className="w-6 h-6 bg-[#EEEDFE] rounded-md flex items-center justify-center shrink-0 mt-0.5">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#534AB7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
-          </svg>
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-[11px] font-medium text-[#534AB7]">AI Tutor</span>
-            <span className="text-[10px] text-[#9CA3AF]">{fmtTime(msg.timestamp)}</span>
+      <div className="mb-5">
+        <div className="flex items-center gap-2 mb-[8px]">
+          <div className="w-[28px] h-[28px] bg-[#EEEDFE] rounded-[8px] flex items-center justify-center shrink-0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#534AB7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+            </svg>
           </div>
-          <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-tr-md rounded-br-md rounded-bl-md p-2.5 space-y-2.5">
-            {hasQuality && msg.quality && (
-              <div>
-                <p className="text-[10px] text-[#9CA3AF] font-medium uppercase tracking-wide mb-1">Code quality</p>
-                <QualityBar label="Structure" score={msg.quality.structure} />
+          <span className="text-[12px] font-medium text-[#534AB7]">AI Tutor</span>
+          <span className="text-[11px] text-[#9CA3AF] ml-auto">{fmtTime(msg.timestamp)}</span>
+        </div>
+        <div className="bg-white border border-[#E5E7EB] rounded-tl-none rounded-tr-[10px] rounded-br-[10px] rounded-bl-[10px] p-[12px_14px] space-y-[10px]">
+          {hasQuality && msg.quality && (
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mb-[8px]">Code quality</p>
+              <QualityBar label="Structure" score={msg.quality.structure} />
+              <div className="mt-[6px]">
                 <QualityBar label="Readability" score={msg.quality.readability} />
               </div>
-            )}
-            <div>
-              <p className="text-[10px] text-[#9CA3AF] font-medium uppercase tracking-wide mb-1">What your code does</p>
-              <p className="text-[11px] text-[#4B5563] leading-relaxed whitespace-pre-wrap">
-                {msg.content.split(/(`[^`]+`)/).map((part, i) =>
-                  part.startsWith('`') && part.endsWith('`')
-                    ? <code key={i} className="bg-[#EEEDFE] text-[#3C3489] px-1 py-0.5 rounded-sm text-[10px] font-mono">{part.slice(1, -1)}</code>
-                    : <span key={i}>{part}</span>
-                )}
-              </p>
             </div>
-            {hasSuggestions && msg.suggestions && (
-              <div>
-                <p className="text-[10px] text-[#9CA3AF] font-medium uppercase tracking-wide mb-1">Suggestions</p>
-                <div className="space-y-2">
-                  {msg.suggestions.map((s, i) => (
-                    <div key={i} className="flex items-start gap-1.5">
-                      <span className="text-[11px] text-[#534AB7] mt-0.5 shrink-0">{SUGGESTION_NUMBERS[i] ?? `${i + 1}.`}</span>
-                      <div>
-                        <span className="text-[11px] font-medium text-[#111827]">{s.title}</span>
-                        <p className="text-[11px] text-[#6B7280] leading-relaxed">{s.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+          )}
+          {(hasQuality && msg.quality) && <div className="h-[0.5px] bg-[#F3F4F6]" />}
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mb-[8px]">What your code does</p>
+            <p className="text-[12px] text-[#4B5563] leading-relaxed whitespace-pre-wrap">
+              {msg.content.split(/(`[^`]+`)/).map((part, i) =>
+                part.startsWith('`') && part.endsWith('`')
+                  ? <code key={i} className="bg-[#EEEDFE] text-[#3C3489] rounded-[4px] px-[6px] py-[1px] text-[11px] font-mono">{part.slice(1, -1)}</code>
+                  : <span key={i}>{part}</span>
+              )}
+            </p>
           </div>
+          {hasSuggestions && msg.suggestions && <div className="h-[0.5px] bg-[#F3F4F6]" />}
+          {hasSuggestions && msg.suggestions && (
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mb-[8px]">Suggestions</p>
+              {msg.suggestions.map((s, i) => (
+                <div key={i} className={`flex items-start gap-[8px] py-[6px] ${i < msg.suggestions!.length - 1 ? 'border-b border-[#F9FAFB]' : ''}`}>
+                  <div className="w-[20px] h-[20px] bg-[#534AB7] text-white text-[11px] font-semibold rounded-full flex items-center justify-center shrink-0 mt-[1px]">
+                    {i + 1}
+                  </div>
+                  <span className="text-[12px] text-[#4B5563] leading-relaxed">{s.title}: {s.description}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
   }
   return (
-    <div className="flex justify-end mb-4">
-      <div className="flex items-center gap-2 justify-end mb-0.5">
-        <span className="text-[10px] text-[#9CA3AF]">{fmtTime(msg.timestamp)}</span>
+    <div className="flex justify-end mb-5">
+      <div className="flex items-center gap-2 justify-end mb-[2px]">
+        <span className="text-[11px] text-[#9CA3AF]">{fmtTime(msg.timestamp)}</span>
       </div>
-      <div className="bg-[#534AB7] text-white rounded-tr-md rounded-tl-md rounded-bl-md px-3 py-2 max-w-[85%] text-[11px] leading-relaxed">
+      <div className="bg-[#534AB7] text-white rounded-tl-[10px] rounded-tr-[10px] rounded-bl-none rounded-br-[10px] px-[14px] py-[10px] max-w-[85%] text-[12px] leading-relaxed">
         {msg.content}
       </div>
     </div>
   );
 }
 
-// ─── Main Component ────────────────────────────────────────────────────────────
-
 export function PracticePage() {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const user: StoredUser = JSON.parse(localStorage.getItem('user') ?? '{}');
 
-  // Exercise context from lesson
   const [exerciseContext, setExerciseContext] = useState<ExerciseContext | null>(null);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
 
-  // Editor state
   const [code, setCode] = useState('');
   const [language, setLanguage] = useState<Language>('python');
   const [projectName, setProjectName] = useState('My Project');
@@ -189,12 +177,10 @@ export function PracticePage() {
   const [activeFile, setActiveFile] = useState(0);
   const [unsaved, setUnsaved] = useState(false);
 
-  // Console
   const [consoleOpen, setConsoleOpen] = useState(true);
   const [consoleTab, setConsoleTab] = useState<'Terminal' | 'Output' | 'Problems'>('Terminal');
   const [termLines, setTermLines] = useState<TermLine[]>([]);
 
-  // Chat
   const [messages, setMessages] = useState<ChatMsg[]>([
     { id: 'welcome', role: 'ai', content: 'Welcome! I\'m your AI tutor. Ask me anything or analyze your code to get started.', timestamp: Date.now() }
   ]);
@@ -202,7 +188,6 @@ export function PracticePage() {
   const [chatLoading, setChatLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Saved projects list
   const [savedProjects, setSavedProjects] = useState<{ name: string; language: string }[]>([]);
 
   const autoCreateExerciseProject = useCallback(async (ctx: ExerciseContext) => {
@@ -241,7 +226,6 @@ export function PracticePage() {
     } catch {}
   }, []);
 
-  // Load saved on mount
   useEffect(() => {
     const key = `practice-save-${user.id}`;
     const saved = localStorage.getItem(key);
@@ -257,7 +241,6 @@ export function PracticePage() {
         if (parsed.projectName) setProjectName(parsed.projectName);
       } catch {}
     }
-    // Load saved projects list
     try {
       const listKey = `practice-projects-${user.id}`;
       const list = localStorage.getItem(listKey);
@@ -269,12 +252,10 @@ export function PracticePage() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Ctrl+S
   const handleSave = useCallback(() => {
     const key = `practice-save-${user.id}`;
     localStorage.setItem(key, JSON.stringify({ code, language, projectName, savedAt: new Date().toISOString() }));
     setUnsaved(false);
-    // Add to saved projects
     const listKey = `practice-projects-${user.id}`;
     const list: { name: string; language: string }[] = JSON.parse(localStorage.getItem(listKey) ?? '[]');
     const existing = list.findIndex(p => p.name === projectName);
@@ -340,16 +321,17 @@ export function PracticePage() {
     if (!code.trim()) return;
     setConsoleOpen(true);
     setConsoleTab('Output');
-    setTermLines(prev => [...prev, { type: 'input', text: `$ Running ${language}...` }]);
+    setTermLines(prev => [...prev, { type: 'input', text: `$ python ${files[activeFile]?.name ?? 'main.py'}` }]);
     try {
       const res = await runCode({ code, language });
       if (res.stdout) setTermLines(prev => [...prev, { type: 'output', text: res.stdout }]);
       if (res.stderr) setTermLines(prev => [...prev, { type: 'error', text: res.stderr }]);
       if (!res.stdout && !res.stderr) setTermLines(prev => [...prev, { type: 'output', text: '(no output)' }]);
+      setTermLines(prev => [...prev, { type: 'output', text: 'Process finished with exit code 0' }]);
     } catch {
       setTermLines(prev => [...prev, { type: 'error', text: 'Error executing code' }]);
     }
-  }, [code, language]);
+  }, [code, language, files, activeFile]);
 
   const handleCreateNewProject = useCallback(() => {
     setFiles(DEFAULT_FILES[language] ?? DEFAULT_FILES.python);
@@ -375,246 +357,273 @@ export function PracticePage() {
     }
   }, [user.id]);
 
-  const handleQuickAction = useCallback((action: string) => {
-    setChatInput(action);
-  }, []);
-
   const handleNewCode = useCallback((val: string | undefined) => {
     setCode(val ?? '');
     setUnsaved(true);
   }, []);
 
+  const disp = LANG_DISPLAY[language] ?? { lang: language, ver: '' };
+
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden bg-white">
-      {/* ═══ TOP BAR ═══ */}
-      <div className="h-[38px] bg-white border-b border-[#E5E7EB] flex items-center px-3 shrink-0">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-          <div className="w-6 h-6 bg-[#534AB7] rounded-md flex items-center justify-center">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-          </div>
-          <span className="text-[12px] font-medium text-[#111827] hidden sm:inline">AICodeTutor</span>
-        </div>
-        <div className="w-px h-4 bg-[#E5E7EB] mx-2" />
-        {isEditingName ? (
-          <input autoFocus value={projectName} onChange={e => setProjectName(e.target.value)} onBlur={() => setIsEditingName(false)} onKeyDown={e => e.key === 'Enter' && setIsEditingName(false)} className="text-[12px] font-medium text-[#111827] bg-white border border-[#534AB7] rounded px-2 py-0.5 outline-none w-36" />
-        ) : (
-          <span className="text-[12px] font-medium text-[#111827] cursor-pointer hover:text-[#534AB7]" onClick={() => setIsEditingName(true)}>{projectName}</span>
-        )}
-        <div className="flex-1" />
-        <button onClick={handleSave} className="border border-[#E5E7EB] text-[#6B7280] px-2.5 py-1 rounded-md text-[11px] font-medium hover:bg-[#F9FAFB] cursor-pointer">Save</button>
-        <div className="w-6 h-6 bg-[#534AB7] rounded-full flex items-center justify-center text-white text-[10px] font-medium ml-2">{user.username?.charAt(0).toUpperCase() || 'U'}</div>
-      </div>
+    <div className="h-screen w-screen grid grid-cols-[220px_1fr_320px] overflow-hidden bg-white">
 
-      {/* ═══ MAIN AREA ═══ */}
-      <div className="flex flex-1 overflow-hidden relative">
-        {/* ═══ LEFT SIDEBAR ═══ */}
-        <div className="w-[200px] bg-[#F8F9FA] border-r border-[#E5E7EB] flex flex-col shrink-0 overflow-hidden">
-          {/* New project button */}
-          <div className="p-2.5 border-b border-[#E5E7EB]">
-            <button onClick={handleCreateNewProject} className="w-full flex items-center justify-center gap-1.5 bg-[#534AB7] text-white rounded-lg px-3 py-2 text-[11px] font-medium cursor-pointer hover:opacity-90 transition-opacity">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              New project
-            </button>
-          </div>
+      {/* ═══ COLUMN 1 — SIDEBAR ═══ */}
+      <div className="bg-white border-r border-[#E5E7EB] flex flex-col overflow-hidden p-3">
 
-          {/* Current project files */}
-          <div className="flex-1 overflow-y-auto px-2 py-1">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-[#9CA3AF] px-1 py-1">Current</p>
-            <div className="flex items-center gap-2 bg-[#EEEDFE] rounded-lg px-2 py-1.5 mb-1">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#534AB7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-              <span className="text-[11px] font-medium text-[#3C3489] truncate">{projectName}</span>
-            </div>
-            <div className="pl-[18px]">
-              {files.map((f, i) => (
-                <div
-                  key={i}
-                  onClick={() => setActiveFile(i)}
-                  className={`flex items-center gap-1.5 px-2 py-1 rounded-md cursor-pointer transition-colors ${i === activeFile ? 'bg-[#EEEDFE]' : 'hover:bg-[#F3F4F6]'}`}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: getFileDotColor(f.name) }} />
-                  <span className={`text-[11px] truncate ${i === activeFile ? 'text-[#534AB7] font-medium' : 'text-[#6B7280]'}`}>{f.name}</span>
-                </div>
-              ))}
-            </div>
+        <button onClick={handleCreateNewProject} className="w-full flex items-center gap-[10px] bg-white border border-[#E5E7EB] rounded-[10px] px-[14px] py-[10px] text-[13px] font-medium text-[#111827] cursor-pointer hover:bg-[#F9FAFB] transition-colors">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New project
+        </button>
+
+        <div className="flex-1 overflow-y-auto mt-4">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-[#9CA3AF] mb-[8px]">Current</p>
+
+          <div className="flex items-center gap-[8px] bg-[#EEEDFE] rounded-[8px] px-[10px] py-[8px]">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#534AB7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span
+              className="text-[13px] font-medium text-[#3C3489] truncate cursor-pointer"
+              onClick={() => setIsEditingName(true)}
+            >
+              {projectName}
+            </span>
+            {isEditingName && (
+              <input
+                autoFocus
+                value={projectName}
+                onChange={e => setProjectName(e.target.value)}
+                onBlur={() => setIsEditingName(false)}
+                onKeyDown={e => e.key === 'Enter' && setIsEditingName(false)}
+                className="text-[13px] font-medium text-[#3C3489] bg-transparent border border-[#534AB7] rounded px-1 py-0 outline-none w-full"
+              />
+            )}
           </div>
 
-          {/* Saved projects */}
-          <div className="border-t border-[#E5E7EB] px-2 py-2 overflow-y-auto max-h-[180px]">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-[#9CA3AF] px-1 py-0.5">Saved projects</p>
-            {savedProjects.length === 0 && <p className="text-[10px] text-[#9CA3AF] px-1 py-1">No saved projects yet</p>}
-            {savedProjects.map((p, i) => (
-              <div key={i} onClick={() => handleSavedProjectClick(p)} className="flex items-center gap-1.5 px-1.5 py-1 rounded-md cursor-pointer hover:bg-[#F3F4F6] transition-colors">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-                <span className="text-[11px] text-[#9CA3AF] truncate hover:text-[#6B7280]">{p.name}</span>
+          <div className="mt-[4px]">
+            {files.map((f, i) => (
+              <div
+                key={i}
+                onClick={() => setActiveFile(i)}
+                className={`flex items-center gap-[8px] px-[8px] py-[6px] rounded-[6px] cursor-pointer transition-colors ${i === activeFile ? 'bg-[#EEEDFE]' : 'hover:bg-[#F9FAFB]'}`}
+                style={{ paddingLeft: '22px' }}
+              >
+                <span className="w-[8px] h-[8px] rounded-full shrink-0" style={{ backgroundColor: getFileDotColor(f.name) }} />
+                <span className={`text-[13px] truncate ${i === activeFile ? 'font-medium text-[#111827]' : 'text-[#9CA3AF]'}`}>{f.name}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* ═══ CENTER: Editor + Console ═══ */}
-        <div className="flex flex-col flex-1 overflow-hidden">
-          {/* Exercise context panel */}
-          {exerciseContext && !isCreatingProject && (
-            <ExerciseContextPanel context={exerciseContext} onDismiss={() => { setExerciseContext(null); setIsPanelCollapsed(false); }} isCollapsed={isPanelCollapsed} onToggleCollapse={() => setIsPanelCollapsed(p => !p)} />
-          )}
+        <div className="h-[0.5px] bg-[#E5E7EB] my-3" />
 
-          {/* Tab bar */}
-          <div className="h-[38px] bg-[#F9FAFB] border-b border-[#E5E7EB] flex items-center shrink-0">
-            <div className="flex items-center h-full flex-1 overflow-x-auto">
-              {files.map((f, i) => (
-                <div
-                  key={i}
-                  onClick={() => setActiveFile(i)}
-                  className={`flex items-center gap-1.5 px-3 h-full text-[11px] border-b-2 cursor-pointer transition-colors shrink-0 ${
-                    i === activeFile ? 'bg-white border-[#534AB7] text-[#534AB7]' : 'border-transparent text-[#9CA3AF] hover:bg-[#F3F4F6]'
-                  }`}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: getFileDotColor(f.name) }} />
-                  <span className="truncate max-w-[100px]">{f.name}</span>
-                  {unsaved && i === activeFile && <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] shrink-0" />}
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center gap-2 px-3 shrink-0">
-              <span className="bg-[#EEEDFE] text-[#3C3489] rounded-sm px-2 py-0.5 text-[10px] font-medium">{LANG_VERSION[language]}</span>
-              <button onClick={handleRunCode} className="flex items-center gap-1 bg-[#E1F5EE] text-[#0F6E56] border border-[#9FE1CB] rounded-md px-2.5 py-1 text-[11px] font-medium cursor-pointer hover:bg-[#D1FAE5] transition-colors">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                Run
-              </button>
-            </div>
-          </div>
-
-          {/* Editor area */}
-          <div className="flex-1 flex overflow-hidden">
-            <MonacoEditor
-              height="100%"
-              width="100%"
-              language={LANG_MAP[language] ?? 'plaintext'}
-              value={code}
-              onChange={handleNewCode}
-              theme="vs"
-              options={{
-                fontSize: 13,
-                fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                lineHeight: 1.7,
-                minimap: { enabled: false },
-                scrollBeyondLastLine: false,
-                renderLineHighlight: 'all',
-                lineNumbers: 'on',
-                padding: { top: 14 },
-                wordWrap: 'on',
-                glyphMargin: false,
-                folding: false,
-                lineNumbersMinChars: 3,
-                cursorBlinking: 'smooth',
-                smoothScrolling: true,
-              }}
-            />
-          </div>
-
-          {/* Status bar */}
-          <div className="h-[22px] bg-[#F3F4F6] border-t border-[#E5E7EB] flex items-center px-3 text-[10px] text-[#9CA3AF] gap-4 shrink-0">
-            <span className="flex items-center gap-1 text-[#0F6E56]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#5DCAA5]" />
-              Connected
-            </span>
-            <span>Ln 1, Col 1</span>
-            <span className="capitalize">{language}</span>
-            <span className="ml-auto">UTF-8</span>
-            <span>Ctrl+S to save</span>
-          </div>
-
-          {/* Console */}
-          {consoleOpen && (
-            <div className="h-[110px] border-t border-[#E5E7EB] flex flex-col shrink-0">
-              <div className="h-7 bg-[#F3F4F6] border-b border-[#E5E7EB] flex items-center px-3 gap-3 shrink-0">
-                <ConsoleTab label="Terminal" active={consoleTab === 'Terminal'} onClick={() => setConsoleTab('Terminal')} />
-                <ConsoleTab label="Output" active={consoleTab === 'Output'} onClick={() => setConsoleTab('Output')} />
-                <ConsoleTab label="Problems" active={consoleTab === 'Problems'} onClick={() => setConsoleTab('Problems')} />
-                <span className="text-[10px] text-[#9CA3AF] ml-auto cursor-pointer hover:text-[#6B7280]" onClick={() => setTermLines([])}>Clear</span>
+        <div className="overflow-y-auto max-h-[180px]">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-[#9CA3AF] mb-2">Saved projects</p>
+          {savedProjects.length === 0 && <p className="text-[11px] text-[#9CA3AF] px-1 py-1">No saved projects yet</p>}
+          {savedProjects.map((p, i) => (
+            <div
+              key={i}
+              onClick={() => handleSavedProjectClick(p)}
+              className="flex items-center gap-[8px] px-[8px] py-[6px] rounded-[4px] cursor-pointer hover:bg-[#F9FAFB] transition-colors"
+            >
+              <div className="w-[14px] h-[14px] bg-[#534AB7] border border-[#534AB7] rounded-[3px] flex items-center justify-center shrink-0">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               </div>
-              <div className="flex-1 overflow-y-auto bg-[#FAFAFA] px-3.5 py-2 font-mono text-[11px] leading-relaxed">
-                {termLines.length === 0 && consoleTab !== 'Problems' && <span className="text-[#9CA3AF]">Run your code to see output here...</span>}
-                {consoleTab === 'Problems' && <span className="text-[#9CA3AF]">No problems detected</span>}
-                {consoleTab !== 'Problems' && termLines.map((line, i) => (
-                  <div key={i} className={
-                    line.type === 'error' ? 'text-[#DC2626]'
-                    : line.type === 'input' ? 'text-[#534AB7]'
-                    : line.type === 'output' ? 'text-[#059669]'
-                    : 'text-[#9CA3AF]'
-                  }>{line.text}</div>
-                ))}
-              </div>
+              <span className="text-[13px] text-[#6B7280] truncate hover:text-[#111827]">{p.name}</span>
             </div>
-          )}
+          ))}
         </div>
+      </div>
 
-        {/* ═══ RIGHT AI PANEL ═══ */}
-        <div className="w-[300px] bg-white border-l border-[#E5E7EB] flex flex-col shrink-0">
-          {/* Panel header */}
-          <div className="h-11 border-b border-[#E5E7EB] flex items-center px-3.5 gap-2 shrink-0">
-            <span className="w-2 h-2 rounded-full bg-[#5DCAA5]" />
-            <span className="text-[13px] font-medium text-[#111827] flex-1">AI Tutor</span>
-            <button className="border border-[#E5E7EB] bg-transparent text-[#6B7280] rounded-md px-2.5 py-1 text-[11px] font-medium cursor-pointer hover:bg-[#F9FAFB]">History</button>
-            <button onClick={handleAnalyze} className="bg-[#534AB7] text-white rounded-md px-2.5 py-1 text-[11px] font-medium cursor-pointer hover:opacity-90">Analyze</button>
-          </div>
+      {/* ═══ COLUMN 2 — EDITOR ═══ */}
+      <div className="flex flex-col overflow-hidden bg-white">
+        {exerciseContext && !isCreatingProject && (
+          <ExerciseContextPanel context={exerciseContext} onDismiss={() => { setExerciseContext(null); setIsPanelCollapsed(false); }} isCollapsed={isPanelCollapsed} onToggleCollapse={() => setIsPanelCollapsed(p => !p)} />
+        )}
 
-          {/* Messages area */}
-          <div className="flex-1 overflow-y-auto px-3 py-3">
-            {messages.map(msg => <AiMessageBubble key={msg.id} msg={msg} />)}
-            {chatLoading && (
-              <div className="flex items-start gap-2 mb-4">
-                <div className="w-6 h-6 bg-[#EEEDFE] rounded-md flex items-center justify-center shrink-0">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#534AB7" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                </div>
-                <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-tr-md rounded-br-md rounded-bl-md px-3 py-2 flex gap-1">
-                  <span className="w-1.5 h-1.5 bg-[#9CA3AF] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-1.5 h-1.5 bg-[#9CA3AF] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-1.5 h-1.5 bg-[#9CA3AF] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                </div>
-              </div>
-            )}
-            <div ref={chatEndRef} />
-          </div>
-
-          {/* Quick action chips */}
-          <div className="px-3 pb-2 flex flex-wrap gap-1.5">
-            <button onClick={() => handleQuickAction('Analyze my code')} className="bg-[#EEEDFE] text-[#3C3489] border border-[#AFA9EC] rounded-full px-2.5 py-1 text-[10px] font-medium cursor-pointer hover:bg-[#CECBF6] transition-colors">Analyze code</button>
-            <button onClick={() => handleQuickAction('What should I do next?')} className="bg-[#EEEDFE] text-[#3C3489] border border-[#AFA9EC] rounded-full px-2.5 py-1 text-[10px] font-medium cursor-pointer hover:bg-[#CECBF6] transition-colors">Next step?</button>
-            <button onClick={() => handleQuickAction('Explain what my code does')} className="bg-[#EEEDFE] text-[#3C3489] border border-[#AFA9EC] rounded-full px-2.5 py-1 text-[10px] font-medium cursor-pointer hover:bg-[#CECBF6] transition-colors">Explain this</button>
-          </div>
-
-          {/* Input area */}
-          <div className="border-t border-[#E5E7EB] px-3 py-2.5 bg-[#FAFAFA]">
-            <div className="flex items-center gap-1.5">
-              <input
-                value={chatInput}
-                onChange={e => setChatInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
-                placeholder="Ask the AI tutor..."
-                className="flex-1 border border-[#E5E7EB] rounded-lg px-2.5 py-1.5 text-[11px] text-[#111827] placeholder-[#9CA3AF] outline-none h-8 focus:border-[#534AB7]"
-              />
-              <button
-                onClick={handleSendMessage}
-                disabled={!chatInput.trim()}
-                className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 cursor-pointer ${
-                  chatInput.trim() ? 'bg-[#534AB7] text-white' : 'bg-[#E5E7EB] text-[#9CA3AF]'
+        {/* Tab bar */}
+        <div className="h-[40px] bg-white border-b border-[#E5E7EB] flex items-center shrink-0 px-3">
+          <div className="flex items-center h-full flex-1 overflow-x-auto">
+            {files.map((f, i) => (
+              <div
+                key={i}
+                onClick={() => setActiveFile(i)}
+                className={`flex items-center gap-[6px] px-[14px] h-full text-[12px] cursor-pointer transition-colors shrink-0 ${
+                  i === activeFile ? 'bg-white border-b-2 border-[#534AB7] text-[#111827] font-medium' : 'text-[#9CA3AF] hover:bg-[#F3F4F6]'
                 }`}
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-              </button>
+                <span className="w-[8px] h-[8px] rounded-full shrink-0" style={{ backgroundColor: getFileDotColor(f.name) }} />
+                <span className="truncate max-w-[100px]">{f.name}</span>
+                {unsaved && i === activeFile && <span className="w-[6px] h-[6px] rounded-full bg-[#F59E0B] shrink-0" />}
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-[8px] ml-auto shrink-0">
+            <div className="flex items-center gap-[6px] bg-[#EEEDFE] text-[#3C3489] rounded-[6px] px-[10px] py-[3px]">
+              <span className="text-[11px] font-medium">{disp.lang}</span>
+              <svg width="1" height="12" viewBox="0 0 1 12" fill="#3C3489" opacity="0.3"><rect width="1" height="12" rx="0.5"/></svg>
+              <span className="text-[11px] text-[#9CA3AF]">{disp.ver}</span>
             </div>
+            <button onClick={handleRunCode} className="flex items-center gap-[6px] bg-[#E1F5EE] text-[#0F6E56] border border-[#9FE1CB] rounded-[8px] px-[14px] py-[5px] text-[12px] font-medium cursor-pointer hover:bg-[#D1FAE5] transition-colors">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="#0F6E56"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Run
+            </button>
           </div>
         </div>
 
-        {/* Loading overlay */}
-        {isCreatingProject && (
-          <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center z-50 gap-3">
-            <svg className="animate-spin h-6 w-6 text-[#534AB7]" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
-            <p className="text-[#534AB7] text-sm font-medium">Preparing your exercise...</p>
+        {/* Editor body */}
+        <div className="flex-1 flex overflow-hidden">
+          <MonacoEditor
+            height="100%"
+            width="100%"
+            language={LANG_MAP[language] ?? 'plaintext'}
+            value={code}
+            onChange={handleNewCode}
+            theme="vs"
+            options={{
+              fontSize: 13,
+              fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+              lineHeight: 1.7,
+              minimap: { enabled: false },
+              scrollBeyondLastLine: false,
+              renderLineHighlight: 'all',
+              lineNumbers: 'on',
+              padding: { top: 14 },
+              wordWrap: 'on',
+              glyphMargin: false,
+              folding: false,
+              lineNumbersMinChars: 3,
+              cursorBlinking: 'smooth',
+              smoothScrolling: true,
+            }}
+          />
+        </div>
+
+        {/* Status bar */}
+        <div className="h-[22px] bg-[#F9FAFB] border-t border-[#E5E7EB] flex items-center px-3 text-[11px] text-[#9CA3AF] gap-4 shrink-0">
+          <span className="flex items-center gap-[4px] text-[#0F6E56]">
+            <span className="w-[6px] h-[6px] rounded-full bg-[#5DCAA5]" />
+            Connected
+          </span>
+          <span>Ln 4, Col 18</span>
+          <span className="capitalize">{language}</span>
+          <span className="ml-auto">UTF-8</span>
+        </div>
+
+        {/* Console */}
+        {consoleOpen && (
+          <div className="h-[150px] bg-[#FAFAFA] border-t border-[#E5E7EB] flex flex-col shrink-0">
+            <div className="h-[32px] bg-[#F3F4F6] border-b border-[#E5E7EB] flex items-center px-[14px] gap-4 shrink-0">
+              <button onClick={() => setConsoleTab('Terminal')} className={`text-[12px] cursor-pointer ${consoleTab === 'Terminal' ? 'text-[#111827] font-semibold' : 'text-[#9CA3AF]'}`}>Terminal</button>
+              <button onClick={() => setConsoleTab('Output')} className={`text-[12px] cursor-pointer ${consoleTab === 'Output' ? 'text-[#111827] font-semibold' : 'text-[#9CA3AF]'}`}>Output</button>
+              <button onClick={() => setConsoleTab('Problems')} className={`text-[12px] cursor-pointer ${consoleTab === 'Problems' ? 'text-[#111827] font-semibold' : 'text-[#9CA3AF]'}`}>Problems</button>
+              <span className="text-[11px] text-[#9CA3AF] ml-auto flex items-center gap-1 cursor-pointer hover:text-[#6B7280]" onClick={() => setTermLines([])}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+                Clear
+              </span>
+            </div>
+            <div className="flex-1 overflow-y-auto px-[14px] py-[10px] font-mono text-[12px] leading-relaxed">
+              {termLines.length === 0 && consoleTab !== 'Problems' && <span className="text-[#9CA3AF]">Run your code to see output here...</span>}
+              {consoleTab === 'Problems' && <span className="text-[#9CA3AF]">No problems detected</span>}
+              {consoleTab !== 'Problems' && termLines.map((line, i) => (
+                <div key={i} className={
+                  line.type === 'error' ? 'text-[#DC2626]'
+                  : line.type === 'input' ? 'text-[#534AB7]'
+                  : line.type === 'output' ? 'text-[#059669]'
+                  : 'text-[#9CA3AF]'
+                }>{line.type === 'output' ? `  ${line.text}` : line.text}</div>
+              ))}
+            </div>
           </div>
         )}
       </div>
+
+      {/* ═══ COLUMN 3 — AI PANEL ═══ */}
+      <div className="bg-white border-l border-[#E5E7EB] flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="h-[44px] border-b border-[#E5E7EB] flex items-center px-[14px] shrink-0">
+          <div className="flex items-center gap-2 flex-1">
+            <span className="w-[8px] h-[8px] rounded-full bg-[#5DCAA5]" />
+            <span className="text-[13px] font-medium text-[#111827]">AI Tutor</span>
+          </div>
+          <div className="flex items-center gap-[8px]">
+            <button className="flex items-center gap-1 border border-[#E5E7EB] bg-transparent text-[#6B7280] rounded-[8px] px-[12px] py-[5px] text-[12px] font-medium cursor-pointer hover:bg-[#F9FAFB]">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              History
+            </button>
+            <button onClick={handleAnalyze} className="flex items-center gap-1 bg-[#534AB7] text-white rounded-[8px] px-[12px] py-[5px] text-[12px] font-medium cursor-pointer hover:opacity-90 border-none">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
+              Analyze
+            </button>
+          </div>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-[14px] py-[14px]">
+          {messages.map(msg => <AiMessageBubble key={msg.id} msg={msg} />)}
+          {chatLoading && (
+            <div className="mb-5">
+              <div className="flex items-center gap-2 mb-[8px]">
+                <div className="w-[28px] h-[28px] bg-[#EEEDFE] rounded-[8px] flex items-center justify-center shrink-0">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#534AB7" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                </div>
+                <span className="text-[12px] font-medium text-[#534AB7]">AI Tutor</span>
+              </div>
+              <div className="bg-white border border-[#E5E7EB] rounded-tl-none rounded-tr-[10px] rounded-br-[10px] rounded-bl-[10px] px-[14px] py-[10px] flex gap-[4px]">
+                <span className="w-[6px] h-[6px] bg-[#9CA3AF] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-[6px] h-[6px] bg-[#9CA3AF] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-[6px] h-[6px] bg-[#9CA3AF] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            </div>
+          )}
+          <div ref={chatEndRef} />
+        </div>
+
+        {/* Input area */}
+        <div className="px-3 pb-2 pt-1">
+          <div className="flex flex-wrap gap-[6px] mb-[10px]">
+            <button onClick={() => { setChatInput('Analyze my code'); }} className="bg-[#EEEDFE] text-[#3C3489] border border-[#AFA9EC] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] transition-colors">
+              Analyze code
+            </button>
+            <button onClick={() => { setChatInput('What should I do next?'); }} className="bg-[#EEEDFE] text-[#3C3489] border border-[#AFA9EC] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] transition-colors">
+              Next step?
+            </button>
+            <button onClick={() => { setChatInput('Explain what my code does'); }} className="bg-[#EEEDFE] text-[#3C3489] border border-[#AFA9EC] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] transition-colors">
+              Explain this
+            </button>
+          </div>
+        </div>
+
+        <div className="border-t border-[#E5E7EB] px-3 py-3">
+          <div className="flex items-center gap-[8px]">
+            <textarea
+              value={chatInput}
+              onChange={e => setChatInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+              placeholder="Ask about your code..."
+              rows={1}
+              className="flex-1 bg-[#F9FAFB] border border-[#E5E7EB] rounded-[10px] px-[12px] py-[8px] text-[12px] text-[#111827] placeholder-[#9CA3AF] outline-none resize-none min-h-[36px] max-h-[100px] focus:border-[#534AB7] focus:bg-white"
+            />
+            <button
+              onClick={handleSendMessage}
+              disabled={!chatInput.trim()}
+              className={`w-[36px] h-[36px] rounded-[10px] flex items-center justify-center shrink-0 cursor-pointer border-none ${
+                chatInput.trim() ? 'bg-[#534AB7] text-white' : 'bg-[#E5E7EB] text-[#9CA3AF]'
+              }`}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Loading overlay */}
+      {isCreatingProject && (
+        <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center z-50 gap-3">
+          <svg className="animate-spin h-6 w-6 text-[#534AB7]" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+          <p className="text-[#534AB7] text-sm font-medium">Preparing your exercise...</p>
+        </div>
+      )}
 
       {/* Mobile warning */}
       <div className="md:hidden fixed inset-0 bg-white z-[100] flex items-center justify-center p-8">
