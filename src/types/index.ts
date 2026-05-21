@@ -71,6 +71,7 @@ export interface CodeAnalysisResponse {
   suggestions: CodeSuggestion[];
   hasErrors: boolean;
   errorHint: string | null;
+  quality?: { structure: number; readability: number };
 }
 
 // ─── Learn ────────────────────────────────────────────────────────────────────

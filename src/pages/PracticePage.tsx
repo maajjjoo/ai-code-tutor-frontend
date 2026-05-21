@@ -2,74 +2,145 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import MonacoEditor from '@monaco-editor/react';
 import { sendChatMessage, analyzeCodePedagogical, runCode, createProject, saveSnapshot } from '../services/api';
-import type { Language, ExerciseContext } from '../types';
+import type { Language, ExerciseContext, CodeAnalysisResponse } from '../types';
 import { ExerciseContextPanel } from '../components/practice/ExerciseContextPanel';
 
 interface StoredUser { id: number; username: string; email: string; }
-interface ChatMsg { id: string; role: 'user' | 'ai'; content: string; }
+interface ChatMsg { id: string; role: 'user' | 'ai'; content: string; quality?: { structure: number; readability: number }; }
 interface TermLine { type: 'input' | 'output' | 'error'; text: string; }
 
 function uid() { return `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`; }
 
-const getStarterContent = (language: string, prompt: string): string => {
-  const truncated = prompt.length > 80 ? prompt.substring(0, 80) + '...' : prompt;
-  switch (language.toLowerCase()) {
-    case 'python':
-      return [
-        `# Exercise: ${truncated}`,
-        `# Write your solution below`,
-        `#`,
-        `# Hint: Think about the problem before writing any code.`,
-        ``,
-        `def main():`,
-        `    # Your code here`,
-        `    pass`,
-        ``,
-        `if __name__ == "__main__":`,
-        `    main()`,
-      ].join('\n');
-    case 'java':
-      return [
-        `// Exercise: ${truncated}`,
-        `// Write your solution below`,
-        ``,
-        `public class Main {`,
-        `    public static void main(String[] args) {`,
-        `        // Your code here`,
-        `    }`,
-        `}`,
-      ].join('\n');
-    case 'javascript':
-      return [
-        `// Exercise: ${truncated}`,
-        `// Write your solution below`,
-        ``,
-        `function main() {`,
-        `    // Your code here`,
-        `}`,
-        ``,
-        `main();`,
-      ].join('\n');
-    case 'typescript':
-      return [
-        `// Exercise: ${truncated}`,
-        `// Write your solution below`,
-        ``,
-        `function main(): void {`,
-        `    // Your code here`,
-        `}`,
-        ``,
-        `main();`,
-      ].join('\n');
-    default:
-      return `# Exercise: ${truncated}\n# Write your solution below\n`;
-  }
+const FILE_EXT_COLORS: Record<string, string> = {
+  py: '#3B82F6', java: '#F59E0B', js: '#EAB308',
+  ts: '#6366F1', tsx: '#6366F1', jsx: '#EAB308',
+  cpp: '#9CA3AF', cs: '#9CA3AF',
+};
+
+const LANG_VERSION: Record<string, string> = {
+  python: 'Python 3.11', java: 'Java 17',
+  javascript: 'Node 20', typescript: 'TypeScript 5.4',
+  cpp: 'C++20',
 };
 
 const LANG_MAP: Record<string, string> = {
   javascript: 'javascript', typescript: 'typescript',
   python: 'python', java: 'java', cpp: 'cpp',
 };
+
+const DEFAULT_FILES: Record<string, { name: string; content: string }[]> = {
+  python: [
+    { name: 'main.py', content: 'def main():\n    # Your code here\n    pass\n\nif __name__ == "__main__":\n    main()\n' },
+  ],
+  java: [
+    { name: 'Main.java', content: 'public class Main {\n    public static void main(String[] args) {\n        // Your code here\n    }\n}\n' },
+  ],
+  javascript: [
+    { name: 'index.js', content: 'function main() {\n    // Your code here\n}\n\nmain();\n' },
+  ],
+  typescript: [
+    { name: 'index.ts', content: 'function main(): void {\n    // Your code here\n}\n\nmain();\n' },
+  ],
+  cpp: [
+    { name: 'main.cpp', content: '#include <iostream>\n\nint main() {\n    // Your code here\n    return 0;\n}\n' },
+  ],
+};
+
+const getStarterContent = (language: string, prompt: string): string => {
+  const truncated = prompt.length > 80 ? prompt.substring(0, 80) + '...' : prompt;
+  switch (language.toLowerCase()) {
+    case 'python':
+      return `# Exercise: ${truncated}\n# Write your solution below\n\ndef main():\n    # Your code here\n    pass\n\nif __name__ == "__main__":\n    main()\n`;
+    case 'java':
+      return `// Exercise: ${truncated}\n// Write your solution below\n\npublic class Main {\n    public static void main(String[] args) {\n        // Your code here\n    }\n}\n`;
+    case 'javascript':
+      return `// Exercise: ${truncated}\n// Write your solution below\n\nfunction main() {\n    // Your code here\n}\n\nmain();\n`;
+    case 'typescript':
+      return `// Exercise: ${truncated}\n// Write your solution below\n\nfunction main(): void {\n    // Your code here\n}\n\nmain();\n`;
+    default:
+      return `// Exercise: ${truncated}\n// Write your solution below\n`;
+  }
+};
+
+function getFileExt(filename: string): string {
+  return filename.includes('.') ? filename.split('.').pop() ?? '' : '';
+}
+
+function getFileDotColor(filename: string): string {
+  return FILE_EXT_COLORS[getFileExt(filename)] ?? '#9CA3AF';
+}
+
+// ─── Sub-components ────────────────────────────────────────────────────────────
+
+function QualityBar({ label, score }: { label: string; score: number }) {
+  const color = label === 'Readability' && score < 70 ? '#F59E0B' : '#534AB7';
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[11px] text-[#6B7280] min-w-[68px]">{label}</span>
+      <div className="flex-1 h-1 bg-[#E5E7EB] rounded-full overflow-hidden">
+        <div className="h-full rounded-full" style={{ width: `${score}%`, backgroundColor: color }} />
+      </div>
+      <span className="text-[11px] font-medium min-w-[26px] text-right" style={{ color }}>{score}%</span>
+    </div>
+  );
+}
+
+function ConsoleTab({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className={`text-[11px] cursor-pointer ${active ? 'text-[#111827] font-medium' : 'text-[#9CA3AF]'}`}>
+      {label}
+    </button>
+  );
+}
+
+function AiMessageBubble({ msg }: { msg: ChatMsg }) {
+  const isAi = msg.role === 'ai';
+  if (isAi) {
+    const hasQuality = msg.quality && msg.quality.structure !== undefined;
+    return (
+      <div className="flex items-start gap-2 mb-4">
+        <div className="w-6 h-6 bg-[#EEEDFE] rounded-md flex items-center justify-center shrink-0 mt-0.5">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#534AB7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-[11px] font-medium text-[#534AB7]">AI Tutor</span>
+          </div>
+          <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-tr-md rounded-br-md rounded-bl-md p-2.5 space-y-2.5">
+            {hasQuality && msg.quality && (
+              <div>
+                <p className="text-[10px] text-[#9CA3AF] font-medium uppercase tracking-wide mb-1">Code quality</p>
+                <QualityBar label="Structure" score={msg.quality.structure} />
+                <QualityBar label="Readability" score={msg.quality.readability} />
+              </div>
+            )}
+            <div>
+              <p className="text-[10px] text-[#9CA3AF] font-medium uppercase tracking-wide mb-1">What your code does</p>
+              <p className="text-[11px] text-[#4B5563] leading-relaxed whitespace-pre-wrap">
+                {msg.content.split(/(`[^`]+`)/).map((part, i) =>
+                  part.startsWith('`') && part.endsWith('`')
+                    ? <code key={i} className="bg-[#EEEDFE] text-[#3C3489] px-1 py-0.5 rounded-sm text-[10px] font-mono">{part.slice(1, -1)}</code>
+                    : <span key={i}>{part}</span>
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="flex justify-end mb-4">
+      <div className="bg-[#534AB7] text-white rounded-tr-md rounded-tl-md rounded-bl-md px-3 py-2 max-w-[85%] text-[11px] leading-relaxed">
+        {msg.content}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ────────────────────────────────────────────────────────────
 
 export function PracticePage() {
   const navigate = useNavigate();
@@ -81,34 +152,51 @@ export function PracticePage() {
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
 
+  // Editor state
+  const [code, setCode] = useState('');
+  const [language, setLanguage] = useState<Language>('python');
+  const [projectName, setProjectName] = useState('My Project');
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [files, setFiles] = useState<{ name: string; content: string }[]>(DEFAULT_FILES.python);
+  const [activeFile, setActiveFile] = useState(0);
+  const [unsaved, setUnsaved] = useState(false);
+
+  // Console
+  const [consoleOpen, setConsoleOpen] = useState(true);
+  const [consoleTab, setConsoleTab] = useState<'Terminal' | 'Output' | 'Problems'>('Terminal');
+  const [termLines, setTermLines] = useState<TermLine[]>([]);
+
+  // Chat
+  const [messages, setMessages] = useState<ChatMsg[]>([
+    { id: 'welcome', role: 'ai', content: 'Welcome! I\'m your AI tutor. Ask me anything or analyze your code to get started.' }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const [editorLine, setEditorLine] = useState(1);
+
+  // Saved projects list
+  const [savedProjects, setSavedProjects] = useState<{ name: string; language: string }[]>([]);
+
   const autoCreateExerciseProject = useCallback(async (ctx: ExerciseContext) => {
     setIsCreatingProject(true);
     try {
       const userData: StoredUser = JSON.parse(localStorage.getItem('user') ?? '{}');
       if (!userData.id) throw new Error('No user found');
-
       const project = await createProject({
         name: `${ctx.lessonTitle} — ${ctx.language}`,
         description: ctx.exercisePrompt,
         programmingLanguage: ctx.language.toLowerCase() as Language,
         userId: userData.id,
       });
-
       setProjectName(project.name);
-      setLanguage(ctx.language.toLowerCase() as Language);
-
+      const lang = ctx.language.toLowerCase() as Language;
+      setLanguage(lang);
+      setFiles(DEFAULT_FILES[lang] ?? DEFAULT_FILES.python);
       const fileContent = getStarterContent(ctx.language, ctx.exercisePrompt);
       setCode(fileContent);
-
-      try {
-        await saveSnapshot({
-          content: fileContent,
-          versionLabel: 'Initial exercise code',
-          projectId: project.id,
-        });
-      } catch {
-        // snapshot save is non-critical
-      }
+      setActiveFile(0);
+      try { await saveSnapshot({ content: fileContent, versionLabel: 'Initial exercise code', projectId: project.id }); } catch {}
     } catch (err) {
       console.error('Auto-create exercise project failed:', err);
     } finally {
@@ -123,68 +211,83 @@ export function PracticePage() {
       const ctx = JSON.parse(decodeURIComponent(raw)) as ExerciseContext;
       setExerciseContext(ctx);
       autoCreateExerciseProject(ctx);
-    } catch {
-      // no exercise context, open normally
-    }
+    } catch {}
   }, []);
 
-  // Editor state
-  const [code, setCode] = useState('');
-  const [language, setLanguage] = useState<Language>('javascript');
-  const [projectName, setProjectName] = useState('My Project');
-  const [isEditingName, setIsEditingName] = useState(false);
+  // Load saved on mount
+  useEffect(() => {
+    const key = `practice-save-${user.id}`;
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.code) setCode(parsed.code);
+        if (parsed.language) {
+          const lang = parsed.language as Language;
+          setLanguage(lang);
+          setFiles(DEFAULT_FILES[lang] ?? DEFAULT_FILES.python);
+        }
+        if (parsed.projectName) setProjectName(parsed.projectName);
+      } catch {}
+    }
+    // Load saved projects list
+    try {
+      const listKey = `practice-projects-${user.id}`;
+      const list = localStorage.getItem(listKey);
+      if (list) setSavedProjects(JSON.parse(list));
+    } catch {}
+  }, [user.id]);
 
-  // Panels
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [consoleOpen, setConsoleOpen] = useState(true);
-  const [aiPanelOpen, setAiPanelOpen] = useState(true);
-
-  // Chat
-  const [messages, setMessages] = useState<ChatMsg[]>([
-    { id: 'welcome', role: 'ai', content: 'Hola, soy tu tutor IA. Escribe un mensaje o analiza tu código para comenzar.' }
-  ]);
-  const [chatInput, setChatInput] = useState('');
-  const [chatLoading, setChatLoading] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
-
-  // Console
-  const [termLines, setTermLines] = useState<TermLine[]>([]);
-
-  // Scroll chat to bottom
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Ctrl+S
+  const handleSave = useCallback(() => {
+    const key = `practice-save-${user.id}`;
+    localStorage.setItem(key, JSON.stringify({ code, language, projectName, savedAt: new Date().toISOString() }));
+    setUnsaved(false);
+    // Add to saved projects
+    const listKey = `practice-projects-${user.id}`;
+    const list: { name: string; language: string }[] = JSON.parse(localStorage.getItem(listKey) ?? '[]');
+    const existing = list.findIndex(p => p.name === projectName);
+    const entry = { name: projectName, language };
+    if (existing >= 0) list[existing] = entry; else list.unshift(entry);
+    if (list.length > 20) list.length = 20;
+    localStorage.setItem(listKey, JSON.stringify(list));
+    setSavedProjects(list);
+  }, [code, language, projectName, user.id]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); handleSave(); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [handleSave]);
+
   const handleAnalyze = useCallback(async () => {
     if (!code.trim()) return;
-    const userMsg: ChatMsg = { id: uid(), role: 'user', content: '📊 Analizar código actual' };
+    const userMsg: ChatMsg = { id: uid(), role: 'user', content: 'Analyze my code' };
     setMessages(prev => [...prev, userMsg]);
     setChatLoading(true);
     try {
-      const result = await analyzeCodePedagogical({
-        code,
-        language,
-        projectDescription: projectName,
-        exerciseContext: exerciseContext
-          ? {
-              prompt: exerciseContext.exercisePrompt,
-              lessonTitle: exerciseContext.lessonTitle,
-              level: exerciseContext.level,
-            }
-          : undefined,
+      const result: CodeAnalysisResponse = await analyzeCodePedagogical({
+        code, language, projectDescription: projectName,
+        exerciseContext: exerciseContext ? { prompt: exerciseContext.exercisePrompt, lessonTitle: exerciseContext.lessonTitle, level: exerciseContext.level } : undefined,
       });
-      let response = `**Resumen:** ${result.summary}\n\n`;
-      response += `**Calidad:** ${result.codeQuality.score}/5 — ${result.codeQuality.feedback}\n\n`;
+      let fullContent = result.summary;
       if (result.suggestions.length > 0) {
-        response += '**Sugerencias:**\n';
-        result.suggestions.forEach(s => { response += `${s.order}. **${s.title}** — ${s.description}\n`; });
+        fullContent += '\n\nSuggestions:\n' + result.suggestions.map(s => `- ${s.title}: ${s.description}`).join('\n');
       }
       if (result.hasErrors && result.errorHint) {
-        response += `\n⚠️ **Error detectado:** ${result.errorHint}`;
+        fullContent += `\n\nError detected: ${result.errorHint}`;
       }
-      setMessages(prev => [...prev, { id: uid(), role: 'ai', content: response }]);
+      const aiMsg: ChatMsg = { id: uid(), role: 'ai', content: fullContent };
+      if (result.quality) { aiMsg.quality = result.quality; }
+      setMessages(prev => [...prev, aiMsg]);
     } catch {
-      setMessages(prev => [...prev, { id: uid(), role: 'ai', content: 'Error al analizar el código. Intenta de nuevo.' }]);
+      setMessages(prev => [...prev, { id: uid(), role: 'ai', content: 'Could not analyze your code right now. Please try again.' }]);
     } finally {
       setChatLoading(false);
     }
@@ -202,7 +305,7 @@ export function PracticePage() {
       const res = await sendChatMessage({ message: text, history, currentCode: code, language });
       setMessages(prev => [...prev, { id: uid(), role: 'ai', content: res.message }]);
     } catch {
-      setMessages(prev => [...prev, { id: uid(), role: 'ai', content: 'Error de conexión con el tutor.' }]);
+      setMessages(prev => [...prev, { id: uid(), role: 'ai', content: 'Connection error. Please try again.' }]);
     } finally {
       setChatLoading(false);
     }
@@ -210,7 +313,9 @@ export function PracticePage() {
 
   const handleRunCode = useCallback(async () => {
     if (!code.trim()) return;
-    setTermLines(prev => [...prev, { type: 'input', text: `> Running ${language}...` }]);
+    setConsoleOpen(true);
+    setConsoleTab('Output');
+    setTermLines(prev => [...prev, { type: 'input', text: `$ Running ${language}...` }]);
     try {
       const res = await runCode({ code, language });
       if (res.stdout) setTermLines(prev => [...prev, { type: 'output', text: res.stdout }]);
@@ -221,309 +326,270 @@ export function PracticePage() {
     }
   }, [code, language]);
 
-  const handleSave = useCallback(() => {
-    const key = `practice-save-${user.id}`;
-    localStorage.setItem(key, JSON.stringify({ code, language, projectName, savedAt: new Date().toISOString() }));
-  }, [code, language, projectName, user.id]);
+  const handleCreateNewProject = useCallback(() => {
+    setFiles(DEFAULT_FILES[language] ?? DEFAULT_FILES.python);
+    setCode(DEFAULT_FILES[language]?.[0]?.content ?? '');
+    setActiveFile(0);
+    setProjectName('Untitled Project');
+    setTermLines([]);
+    setUnsaved(true);
+  }, [language]);
 
-  // Load saved on mount
-  useEffect(() => {
+  const handleSavedProjectClick = useCallback((p: { name: string; language: string }) => {
     const key = `practice-save-${user.id}`;
     const saved = localStorage.getItem(key);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed.code) setCode(parsed.code);
-        if (parsed.language) setLanguage(parsed.language);
-        if (parsed.projectName) setProjectName(parsed.projectName);
-      } catch { /* ignore */ }
+        setCode(parsed.code ?? '');
+        setLanguage(parsed.language as Language ?? p.language as Language);
+        setProjectName(p.name);
+        setFiles(DEFAULT_FILES[parsed.language as Language ?? p.language as Language] ?? DEFAULT_FILES.python);
+        setActiveFile(0);
+      } catch {}
     }
   }, [user.id]);
 
-  // Ctrl+S
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); handleSave(); }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [handleSave]);
+  const handleQuickAction = useCallback((action: string) => {
+    setChatInput(action);
+  }, []);
+
+  const handleNewCode = useCallback((val: string | undefined) => {
+    setCode(val ?? '');
+    setUnsaved(true);
+  }, []);
+
+  // Current file info
+  const currentFile = files[activeFile];
+  const fileExt = currentFile ? getFileExt(currentFile.name) : '';
 
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden bg-[#F8F9FA]">
+    <div className="h-screen w-screen flex flex-col overflow-hidden bg-white">
       {/* ═══ TOP BAR ═══ */}
-      <div className="h-12 bg-white border-b border-[#E5E7EB] flex items-center px-3 shrink-0">
-        {/* Left */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-            <div className="w-7 h-7 bg-[#534AB7] rounded-[6px] flex items-center justify-center">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-            </div>
-            <span className="text-[13px] font-medium text-[#111827] hidden sm:inline">AICodeTutor</span>
+      <div className="h-[38px] bg-white border-b border-[#E5E7EB] flex items-center px-3 shrink-0">
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
+          <div className="w-6 h-6 bg-[#534AB7] rounded-md flex items-center justify-center">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
           </div>
-          <div className="w-px h-5 bg-[#E5E7EB]" />
-          {isEditingName ? (
-            <input
-              autoFocus
-              value={projectName}
-              onChange={e => setProjectName(e.target.value)}
-              onBlur={() => setIsEditingName(false)}
-              onKeyDown={e => e.key === 'Enter' && setIsEditingName(false)}
-              className="text-[13px] font-medium text-[#111827] bg-white border border-[#534AB7] rounded px-2 py-0.5 outline-none w-36"
-            />
-          ) : (
-            <span className="text-[13px] font-medium text-[#111827] cursor-pointer hover:text-[#534AB7]" onClick={() => setIsEditingName(true)}>
-              {projectName}
-            </span>
-          )}
-          <select
-            value={language}
-            onChange={e => setLanguage(e.target.value as Language)}
-            className="bg-[#EEEDFE] text-[#3C3489] text-[11px] font-medium rounded-full px-[10px] py-[2px] border-none outline-none cursor-pointer"
-          >
-            <option value="javascript">JavaScript</option>
-            <option value="typescript">TypeScript</option>
-            <option value="python">Python</option>
-            <option value="java">Java</option>
-            <option value="cpp">C++</option>
-          </select>
+          <span className="text-[12px] font-medium text-[#111827] hidden sm:inline">AICodeTutor</span>
         </div>
-
-        {/* Right */}
-        <div className="ml-auto flex items-center gap-2">
-          <button onClick={handleRunCode} className="flex items-center gap-1.5 bg-[#059669] text-white px-3 py-[6px] rounded-lg text-[12px] font-medium hover:opacity-90 transition-opacity">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Run
-          </button>
-          <button onClick={handleAnalyze} className="flex items-center gap-1.5 bg-[#534AB7] text-white px-3 py-[6px] rounded-lg text-[12px] font-medium hover:opacity-90 transition-opacity">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            Analyze
-          </button>
-          <button onClick={handleSave} className="border border-[#E5E7EB] text-[#111827] px-3 py-[6px] rounded-lg text-[12px] font-medium hover:bg-gray-50 transition-colors">
-            Save
-          </button>
-          <div className="w-8 h-8 bg-[#534AB7] rounded-full flex items-center justify-center text-white text-[12px] font-medium">
-            {user.username?.charAt(0).toUpperCase() || 'U'}
-          </div>
-        </div>
+        <div className="w-px h-4 bg-[#E5E7EB] mx-2" />
+        {isEditingName ? (
+          <input autoFocus value={projectName} onChange={e => setProjectName(e.target.value)} onBlur={() => setIsEditingName(false)} onKeyDown={e => e.key === 'Enter' && setIsEditingName(false)} className="text-[12px] font-medium text-[#111827] bg-white border border-[#534AB7] rounded px-2 py-0.5 outline-none w-36" />
+        ) : (
+          <span className="text-[12px] font-medium text-[#111827] cursor-pointer hover:text-[#534AB7]" onClick={() => setIsEditingName(true)}>{projectName}</span>
+        )}
+        <div className="flex-1" />
+        <button onClick={handleSave} className="border border-[#E5E7EB] text-[#6B7280] px-2.5 py-1 rounded-md text-[11px] font-medium hover:bg-[#F9FAFB] cursor-pointer">Save</button>
+        <div className="w-6 h-6 bg-[#534AB7] rounded-full flex items-center justify-center text-white text-[10px] font-medium ml-2">{user.username?.charAt(0).toUpperCase() || 'U'}</div>
       </div>
 
       {/* ═══ MAIN AREA ═══ */}
       <div className="flex flex-1 overflow-hidden relative">
-        {/* SIDEBAR */}
-        <div className="w-14 bg-[#F0F1F3] border-r border-[#E5E7EB] flex flex-col items-center py-2 gap-1 shrink-0">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${sidebarOpen ? 'bg-[#EEEDFE]' : 'hover:bg-white'}`}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={sidebarOpen ? '#534AB7' : '#9CA3AF'} strokeWidth="1.5"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
-          </button>
-          <button
-            onClick={() => setConsoleOpen(!consoleOpen)}
-            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${consoleOpen ? 'bg-[#EEEDFE]' : 'hover:bg-white'}`}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={consoleOpen ? '#534AB7' : '#9CA3AF'} strokeWidth="1.5"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-          </button>
-          <div className="mt-auto">
-            <button onClick={() => navigate('/')} className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-white transition-colors">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        {/* ═══ LEFT SIDEBAR ═══ */}
+        <div className="w-[200px] bg-[#F8F9FA] border-r border-[#E5E7EB] flex flex-col shrink-0 overflow-hidden">
+          {/* New project button */}
+          <div className="p-2.5 border-b border-[#E5E7EB]">
+            <button onClick={handleCreateNewProject} className="w-full flex items-center justify-center gap-1.5 bg-[#534AB7] text-white rounded-lg px-3 py-2 text-[11px] font-medium cursor-pointer hover:opacity-90 transition-opacity">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              New project
             </button>
+          </div>
+
+          {/* Current project files */}
+          <div className="flex-1 overflow-y-auto px-2 py-1">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-[#9CA3AF] px-1 py-1">Current</p>
+            <div className="flex items-center gap-2 bg-[#EEEDFE] rounded-lg px-2 py-1.5 mb-1">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#534AB7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              <span className="text-[11px] font-medium text-[#3C3489] truncate">{projectName}</span>
+            </div>
+            <div className="pl-[18px]">
+              {files.map((f, i) => (
+                <div
+                  key={i}
+                  onClick={() => setActiveFile(i)}
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded-md cursor-pointer transition-colors ${i === activeFile ? 'bg-[#EEEDFE]' : 'hover:bg-[#F3F4F6]'}`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: getFileDotColor(f.name) }} />
+                  <span className={`text-[11px] truncate ${i === activeFile ? 'text-[#534AB7] font-medium' : 'text-[#6B7280]'}`}>{f.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Saved projects */}
+          <div className="border-t border-[#E5E7EB] px-2 py-2 overflow-y-auto max-h-[180px]">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-[#9CA3AF] px-1 py-0.5">Saved projects</p>
+            {savedProjects.length === 0 && <p className="text-[10px] text-[#9CA3AF] px-1 py-1">No saved projects yet</p>}
+            {savedProjects.map((p, i) => (
+              <div key={i} onClick={() => handleSavedProjectClick(p)} className="flex items-center gap-1.5 px-1.5 py-1 rounded-md cursor-pointer hover:bg-[#F3F4F6] transition-colors">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                <span className="text-[11px] text-[#9CA3AF] truncate hover:text-[#6B7280]">{p.name}</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* FILE EXPLORER (collapsible) */}
-        {sidebarOpen && (
-          <div className="w-[220px] bg-white border-r border-[#E5E7EB] flex flex-col shrink-0">
-            <div className="px-4 py-3 border-b border-[#E5E7EB]">
-              <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#9CA3AF]">Explorer</p>
-            </div>
-            <div className="flex-1 flex items-center justify-center p-4">
-              <p className="text-[13px] text-[#9CA3AF] text-center">Open or create a file to start.</p>
-            </div>
-          </div>
-        )}
-
-        {/* CENTER: Editor + Console */}
+        {/* ═══ CENTER: Editor + Console ═══ */}
         <div className="flex flex-col flex-1 overflow-hidden">
-          {/* EXERCISE CONTEXT PANEL */}
+          {/* Exercise context panel */}
           {exerciseContext && !isCreatingProject && (
-            <ExerciseContextPanel
-              context={exerciseContext}
-              onDismiss={() => {
-                setExerciseContext(null);
-                setIsPanelCollapsed(false);
-              }}
-              isCollapsed={isPanelCollapsed}
-              onToggleCollapse={() => setIsPanelCollapsed(p => !p)}
-            />
+            <ExerciseContextPanel context={exerciseContext} onDismiss={() => { setExerciseContext(null); setIsPanelCollapsed(false); }} isCollapsed={isPanelCollapsed} onToggleCollapse={() => setIsPanelCollapsed(p => !p)} />
           )}
-          {/* EDITOR */}
-          <div className="flex-1 overflow-hidden">
-            {code || true ? (
-              <MonacoEditor
-                height="100%"
-                language={LANG_MAP[language] ?? 'plaintext'}
-                value={code}
-                onChange={val => setCode(val ?? '')}
-                theme="vs"
-                options={{
-                  fontSize: 14,
-                  fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                  lineHeight: 1.6,
-                  minimap: { enabled: false },
-                  scrollBeyondLastLine: false,
-                  renderLineHighlight: 'line',
-                  lineNumbers: 'on',
-                  padding: { top: 12 },
-                  wordWrap: 'on',
-                }}
-              />
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#E5E7EB" strokeWidth="1"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                <p className="text-[14px] text-[#9CA3AF] mt-4">Open a file from the explorer to start</p>
-                <p className="text-[12px] text-[#C4C4C4] mt-1">Ctrl+S to save</p>
-              </div>
-            )}
-          </div>
 
-          {/* STATUS BAR */}
-          <div className="h-6 bg-[#534AB7] flex items-center px-3 text-white text-[11px] shrink-0">
-            <span>{language}</span>
-            <span className="mx-3">UTF-8</span>
-            <span className="ml-auto flex items-center gap-1.5">
-              <span className="w-2 h-2 bg-[#22C55E] rounded-full" />
-              Conectado
-            </span>
-          </div>
-
-          {/* CONSOLE */}
-          {consoleOpen && (
-            <div className="h-[200px] bg-[#1E1E2E] border-t border-[#E5E7EB] flex flex-col shrink-0">
-              <div className="h-8 bg-[#2A2A3E] flex items-center px-3 shrink-0">
-                <span className="text-[12px] text-white font-medium">{'>_'} Console</span>
-                <div className="ml-auto flex items-center gap-2">
-                  <button onClick={() => setTermLines([])} className="text-[#9CA3AF] hover:text-white text-[11px]">Clear</button>
-                  <button onClick={() => setConsoleOpen(false)} className="text-[#9CA3AF] hover:text-white">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
-                  </button>
+          {/* Tab bar */}
+          <div className="h-[38px] bg-[#F9FAFB] border-b border-[#E5E7EB] flex items-center shrink-0">
+            <div className="flex items-center h-full flex-1 overflow-x-auto">
+              {files.map((f, i) => (
+                <div
+                  key={i}
+                  onClick={() => setActiveFile(i)}
+                  className={`flex items-center gap-1.5 px-3 h-full text-[11px] border-b-2 cursor-pointer transition-colors shrink-0 ${
+                    i === activeFile ? 'bg-white border-[#534AB7] text-[#534AB7]' : 'border-transparent text-[#9CA3AF] hover:bg-[#F3F4F6]'
+                  }`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: getFileDotColor(f.name) }} />
+                  <span className="truncate max-w-[100px]">{f.name}</span>
+                  {unsaved && i === activeFile && <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] shrink-0" />}
                 </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 px-3 shrink-0">
+              <span className="bg-[#EEEDFE] text-[#3C3489] rounded-sm px-2 py-0.5 text-[10px] font-medium">{LANG_VERSION[language]}</span>
+              <button onClick={handleRunCode} className="flex items-center gap-1 bg-[#E1F5EE] text-[#0F6E56] border border-[#9FE1CB] rounded-md px-2.5 py-1 text-[11px] font-medium cursor-pointer hover:bg-[#D1FAE5] transition-colors">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                Run
+              </button>
+            </div>
+          </div>
+
+          {/* Editor area */}
+          <div className="flex-1 flex overflow-hidden">
+            <MonacoEditor
+              height="100%"
+              width="100%"
+              language={LANG_MAP[language] ?? 'plaintext'}
+              value={code}
+              onChange={handleNewCode}
+              theme="vs"
+              options={{
+                fontSize: 13,
+                fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                lineHeight: 1.7,
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                renderLineHighlight: 'all',
+                lineNumbers: 'on',
+                padding: { top: 14 },
+                wordWrap: 'on',
+                glyphMargin: false,
+                folding: false,
+                lineNumbersMinChars: 3,
+                cursorBlinking: 'smooth',
+                smoothScrolling: true,
+              }}
+            />
+          </div>
+
+          {/* Status bar */}
+          <div className="h-[22px] bg-[#F3F4F6] border-t border-[#E5E7EB] flex items-center px-3 text-[10px] text-[#9CA3AF] gap-4 shrink-0">
+            <span className="flex items-center gap-1 text-[#0F6E56]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#5DCAA5]" />
+              Connected
+            </span>
+            <span>Ln {editorLine}, Col 1</span>
+            <span className="capitalize">{language}</span>
+            <span className="ml-auto">UTF-8</span>
+            <span>Ctrl+S to save</span>
+          </div>
+
+          {/* Console */}
+          {consoleOpen && (
+            <div className="h-[110px] border-t border-[#E5E7EB] flex flex-col shrink-0">
+              <div className="h-7 bg-[#F3F4F6] border-b border-[#E5E7EB] flex items-center px-3 gap-3 shrink-0">
+                <ConsoleTab label="Terminal" active={consoleTab === 'Terminal'} onClick={() => setConsoleTab('Terminal')} />
+                <ConsoleTab label="Output" active={consoleTab === 'Output'} onClick={() => setConsoleTab('Output')} />
+                <ConsoleTab label="Problems" active={consoleTab === 'Problems'} onClick={() => setConsoleTab('Problems')} />
+                <span className="text-[10px] text-[#9CA3AF] ml-auto cursor-pointer hover:text-[#6B7280]" onClick={() => setTermLines([])}>Clear</span>
               </div>
-              <div className="flex-1 overflow-y-auto p-2 font-mono text-[13px]">
-                {termLines.length === 0 && <p className="text-[#6B7280]">Run your code to see output here...</p>}
-                {termLines.map((line, i) => (
-                  <div key={i} className={line.type === 'error' ? 'text-red-400' : line.type === 'input' ? 'text-[#6B7280]' : 'text-[#A6E3A1]'}>
-                    {line.text}
-                  </div>
+              <div className="flex-1 overflow-y-auto bg-[#FAFAFA] px-3.5 py-2 font-mono text-[11px] leading-relaxed">
+                {termLines.length === 0 && consoleTab !== 'Problems' && <span className="text-[#9CA3AF]">Run your code to see output here...</span>}
+                {consoleTab === 'Problems' && <span className="text-[#9CA3AF]">No problems detected</span>}
+                {consoleTab !== 'Problems' && termLines.map((line, i) => (
+                  <div key={i} className={
+                    line.type === 'error' ? 'text-[#DC2626]'
+                    : line.type === 'input' ? 'text-[#534AB7]'
+                    : line.type === 'output' ? 'text-[#059669]'
+                    : 'text-[#9CA3AF]'
+                  }>{line.text}</div>
                 ))}
               </div>
             </div>
           )}
         </div>
 
-        {/* AI PANEL */}
-        {aiPanelOpen && (
-          <div className="w-[320px] bg-white border-l border-[#E5E7EB] flex flex-col shrink-0">
-            {/* Header */}
-            <div className="h-12 border-b border-[#E5E7EB] flex items-center px-4 shrink-0">
-              <span className="w-2 h-2 bg-[#22C55E] rounded-full mr-2" />
-              <span className="text-[13px] font-medium text-[#111827]">AI Tutor</span>
-              <button onClick={() => setAiPanelOpen(false)} className="ml-auto text-[#9CA3AF] hover:text-[#111827]">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
-              </button>
-            </div>
+        {/* ═══ RIGHT AI PANEL ═══ */}
+        <div className="w-[300px] bg-white border-l border-[#E5E7EB] flex flex-col shrink-0">
+          {/* Panel header */}
+          <div className="h-11 border-b border-[#E5E7EB] flex items-center px-3.5 gap-2 shrink-0">
+            <span className="w-2 h-2 rounded-full bg-[#5DCAA5]" />
+            <span className="text-[13px] font-medium text-[#111827] flex-1">AI Tutor</span>
+            <button className="border border-[#E5E7EB] bg-transparent text-[#6B7280] rounded-md px-2.5 py-1 text-[11px] font-medium cursor-pointer hover:bg-[#F9FAFB]">History</button>
+            <button onClick={handleAnalyze} className="bg-[#534AB7] text-white rounded-md px-2.5 py-1 text-[11px] font-medium cursor-pointer hover:opacity-90">Analyze</button>
+          </div>
 
-            {/* Chat area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {messages.map(msg => (
-                <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  {msg.role === 'ai' && (
-                    <div className="w-9 h-9 bg-[#EEEDFE] rounded-full flex items-center justify-center mr-2 shrink-0">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#534AB7" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                    </div>
-                  )}
-                  <div className={`max-w-[80%] rounded-xl px-3 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap ${
-                    msg.role === 'user'
-                      ? 'bg-[#534AB7] text-white rounded-tr-none'
-                      : 'bg-[#F8F9FA] border border-[#E5E7EB] text-[#111827] rounded-tl-none'
-                  }`}>
-                    {msg.content}
-                  </div>
+          {/* Messages area */}
+          <div className="flex-1 overflow-y-auto px-3 py-3">
+            {messages.map(msg => <AiMessageBubble key={msg.id} msg={msg} />)}
+            {chatLoading && (
+              <div className="flex items-start gap-2 mb-4">
+                <div className="w-6 h-6 bg-[#EEEDFE] rounded-md flex items-center justify-center shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#534AB7" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
                 </div>
-              ))}
-              {chatLoading && (
-                <div className="flex justify-start">
-                  <div className="w-9 h-9 bg-[#EEEDFE] rounded-full flex items-center justify-center mr-2 shrink-0">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#534AB7" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                  </div>
-                  <div className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-xl rounded-tl-none px-4 py-3 flex gap-1">
-                    <span className="w-2 h-2 bg-[#9CA3AF] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-2 h-2 bg-[#9CA3AF] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-2 h-2 bg-[#9CA3AF] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                  </div>
+                <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-tr-md rounded-br-md rounded-bl-md px-3 py-2 flex gap-1">
+                  <span className="w-1.5 h-1.5 bg-[#9CA3AF] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-1.5 h-1.5 bg-[#9CA3AF] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1.5 h-1.5 bg-[#9CA3AF] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                 </div>
-              )}
-              <div ref={chatEndRef} />
-            </div>
-
-            {/* Quick actions */}
-            <div className="px-4 py-2 border-t border-[#E5E7EB] flex flex-wrap gap-[6px]">
-              <button
-                onClick={handleAnalyze}
-                className="bg-[#F0F1F3] text-[#4B5563] border border-[#E5E7EB] rounded-full px-3 py-1 text-[11px] font-medium hover:bg-[#EEEDFE] hover:text-[#534AB7] hover:border-[#CECBF6] transition-colors"
-              >
-                Analizar código
-              </button>
-              <button
-                onClick={() => { setChatInput('¿Qué debería hacer ahora?'); }}
-                className="bg-[#F0F1F3] text-[#4B5563] border border-[#E5E7EB] rounded-full px-3 py-1 text-[11px] font-medium hover:bg-[#EEEDFE] hover:text-[#534AB7] hover:border-[#CECBF6] transition-colors"
-              >
-                Sugerir siguiente paso
-              </button>
-            </div>
-
-            {/* Input */}
-            <div className="p-3 border-t border-[#E5E7EB]">
-              <div className="relative">
-                <textarea
-                  value={chatInput}
-                  onChange={e => setChatInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
-                  placeholder="Escribe un mensaje..."
-                  className="w-full bg-[#F8F9FA] border border-[#E5E7EB] rounded-[10px] px-3 py-[10px] pr-11 text-[13px] text-[#111827] placeholder-[#9CA3AF] resize-none outline-none focus:border-[#534AB7] min-h-[44px] max-h-[120px]"
-                  rows={1}
-                />
-                <button
-                  onClick={handleSendMessage}
-                  disabled={!chatInput.trim()}
-                  className={`absolute right-2 bottom-2 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                    chatInput.trim() ? 'bg-[#534AB7] text-white' : 'bg-[#E5E7EB] text-[#9CA3AF]'
-                  }`}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-                </button>
               </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+
+          {/* Quick action chips */}
+          <div className="px-3 pb-2 flex flex-wrap gap-1.5">
+            <button onClick={() => handleQuickAction('Analyze my code')} className="bg-[#EEEDFE] text-[#3C3489] border border-[#AFA9EC] rounded-full px-2.5 py-1 text-[10px] font-medium cursor-pointer hover:bg-[#CECBF6] transition-colors">Analyze code</button>
+            <button onClick={() => handleQuickAction('What should I do next?')} className="bg-[#EEEDFE] text-[#3C3489] border border-[#AFA9EC] rounded-full px-2.5 py-1 text-[10px] font-medium cursor-pointer hover:bg-[#CECBF6] transition-colors">Next step?</button>
+            <button onClick={() => handleQuickAction('Explain what my code does')} className="bg-[#EEEDFE] text-[#3C3489] border border-[#AFA9EC] rounded-full px-2.5 py-1 text-[10px] font-medium cursor-pointer hover:bg-[#CECBF6] transition-colors">Explain this</button>
+          </div>
+
+          {/* Input area */}
+          <div className="border-t border-[#E5E7EB] px-3 py-2.5 bg-[#FAFAFA]">
+            <div className="flex items-center gap-1.5">
+              <input
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+                placeholder="Ask the AI tutor..."
+                className="flex-1 border border-[#E5E7EB] rounded-lg px-2.5 py-1.5 text-[11px] text-[#111827] placeholder-[#9CA3AF] outline-none h-8 focus:border-[#534AB7]"
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={!chatInput.trim()}
+                className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 cursor-pointer ${
+                  chatInput.trim() ? 'bg-[#534AB7] text-white' : 'bg-[#E5E7EB] text-[#9CA3AF]'
+                }`}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+              </button>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* AI Panel toggle (when closed) */}
-        {!aiPanelOpen && (
-          <button
-            onClick={() => setAiPanelOpen(true)}
-            className="w-10 bg-white border-l border-[#E5E7EB] flex items-center justify-center hover:bg-[#F8F9FA] transition-colors shrink-0"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
-          </button>
-        )}
-
-        {/* Loading overlay while creating project */}
+        {/* Loading overlay */}
         {isCreatingProject && (
           <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center z-50 gap-3">
-            <svg className="animate-spin h-6 w-6 text-[#534AB7]" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-            </svg>
+            <svg className="animate-spin h-6 w-6 text-[#534AB7]" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
             <p className="text-[#534AB7] text-sm font-medium">Preparing your exercise...</p>
           </div>
         )}
