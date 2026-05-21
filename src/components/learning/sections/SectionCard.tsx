@@ -18,11 +18,14 @@ interface Props {
   currentIndex: number;
   revealedHints: Record<number, number>;
   language: string;
+  lessonTitle: string;
+  level: string;
   onHintReveal: (i: number) => void;
   onOpenInEditor: (prompt: string, hints: string[]) => void;
+  onSectionComplete: () => void;
 }
 
-export function SectionCard({ section, index, currentIndex, revealedHints, language: _language, onHintReveal, onOpenInEditor }: Props) {
+export function SectionCard({ section, index, currentIndex, revealedHints, language: _language, lessonTitle, level, onHintReveal, onOpenInEditor, onSectionComplete }: Props) {
   const isCurrent = index === currentIndex;
   const isLocked = index > currentIndex;
   const isDone = index < currentIndex;
@@ -50,6 +53,10 @@ export function SectionCard({ section, index, currentIndex, revealedHints, langu
           hints={section.hints}
           hintsRevealed={revealedHints[index] ?? 0}
           onHintReveal={() => onHintReveal(index)}
+          selectedLanguage={_language}
+          lessonTitle={lessonTitle}
+          level={level}
+          onSectionComplete={onSectionComplete}
           onOpenInEditor={onOpenInEditor}
         />
       )}

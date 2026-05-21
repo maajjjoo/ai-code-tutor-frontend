@@ -31,6 +31,7 @@ interface Props {
   onBookmarkToggle: () => void;
   onPracticeClick: () => void;
   onRetry: () => void;
+  onSectionComplete: () => void;
 }
 
 export function LessonView({
@@ -39,7 +40,7 @@ export function LessonView({
   revealedHints, scrollRef, displayTitle, levelsDone,
   onLevelTabClick, onPrevious, onNext, onComplete, onStepClick,
   onHintReveal, onOpenInEditor, onBookmarkToggle, onPracticeClick,
-  onRetry,
+  onRetry, onSectionComplete,
 }: Props) {
   const isLoading = isLoadingLesson && !currentLesson;
 
@@ -119,15 +120,11 @@ export function LessonView({
         ) : sections.length > 0 ? (
           sections.map((s, i) => (
             <SectionCard
-              key={i}
-              section={s}
-              index={i}
-              totalSections={sections.length}
-              currentIndex={currentSectionIndex}
-              revealedHints={revealedHints}
-              language={course.name}
-              onHintReveal={onHintReveal}
-              onOpenInEditor={onOpenInEditor}
+              key={i} section={s} index={i} totalSections={sections.length}
+              currentIndex={currentSectionIndex} revealedHints={revealedHints}
+              language={course.name} lessonTitle={displayTitle} level={selectedLevel}
+              onHintReveal={onHintReveal} onOpenInEditor={onOpenInEditor}
+              onSectionComplete={onSectionComplete}
             />
           ))
         ) : lessonError ? null : (

@@ -77,6 +77,7 @@ export function LearningPage() {
             onBookmarkToggle={handleBookmarkToggle}
             onPracticeClick={() => navigate(`/practice?language=${encodeURIComponent(selectedCourse.name)}`)}
             onRetry={() => loadLesson(selectedCourse.id, selectedLevel, currentLessonNumber)}
+            onSectionComplete={handleNext}
           />
         )}
       </div>

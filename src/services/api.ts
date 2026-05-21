@@ -5,7 +5,7 @@ import type {
   CreateProjectRequest, SaveSnapshotRequest, AnalyzeCodeRequest,
   AnalyzeCodePedagogicalRequest, CodeAnalysisResponse,
   LearnTopic, LearnCategory, Exercise, ExerciseEvaluation, UserProgress,
-  GenerateExerciseRequest, EvaluateSolutionRequest,
+  GenerateExerciseRequest, EvaluateSolutionRequest, ExerciseVerifyResponse,
 } from '../types';
 
 const client = axios.create({
@@ -82,6 +82,15 @@ export const evaluateSolution = (body: EvaluateSolutionRequest) =>
 
 export const getProgress = (userId: number) =>
   client.get<UserProgress[]>(`/learn/progress/${userId}`).then(r => r.data);
+
+// ─── Exercise Verify ───────────────────────────────────────────────────────────
+export const verifyExercise = (body: {
+  code: string;
+  language: string;
+  exercisePrompt: string;
+  lessonTitle: string;
+  level: string;
+}) => client.post<ExerciseVerifyResponse>('/lessons/exercise/verify', body).then(r => r.data);
 
 // ─── Helper para extraer mensaje de error del backend ─────────────────────────
 export function getErrorMessage(err: unknown): string {

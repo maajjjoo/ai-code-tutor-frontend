@@ -125,6 +125,13 @@ export interface ExerciseContext {
 }
 export interface GenerateExerciseRequest { topicId: number; language: Language; userId: number; }
 export interface EvaluateSolutionRequest { exerciseId: number; userCode: string; language: Language; userId: number; }
+export interface ExerciseVerifyResponse {
+  summary: string;
+  isCorrect: boolean;
+  explanation: string;
+  suggestions: string[];
+  encouragement: string;
+}
 
 // ─── UI only ──────────────────────────────────────────────────────────────────
 export interface ChatMessage { id: string; role: 'user' | 'assistant'; content: string; timestamp: number; }

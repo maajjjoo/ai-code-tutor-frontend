@@ -1,12 +1,28 @@
+import { InlineExerciseEditor } from './InlineExerciseEditor';
+
 interface Props {
   prompt?: string;
   hints?: string[];
   hintsRevealed: number;
   onHintReveal: () => void;
+  selectedLanguage: string;
+  lessonTitle: string;
+  level: string;
+  onSectionComplete: () => void;
   onOpenInEditor: (prompt: string, hints: string[]) => void;
 }
 
-export function ExerciseSection({ prompt, hints = [], hintsRevealed, onHintReveal, onOpenInEditor }: Props) {
+export function ExerciseSection({
+  prompt,
+  hints = [],
+  hintsRevealed,
+  onHintReveal,
+  selectedLanguage,
+  lessonTitle,
+  level,
+  onSectionComplete,
+  onOpenInEditor,
+}: Props) {
   const hintsLeft = hints.length - hintsRevealed;
 
   return (
@@ -33,15 +49,6 @@ export function ExerciseSection({ prompt, hints = [], hintsRevealed, onHintRevea
 
       <div className="flex items-center gap-2 mt-3">
         <button
-          onClick={() => onOpenInEditor(prompt ?? '', hints)}
-          className="flex items-center gap-1.5 px-4 py-2 bg-[#534AB7] text-white rounded-lg text-[13px] font-medium hover:opacity-90 cursor-pointer transition-opacity"
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
-          </svg>
-          Open in editor
-        </button>
-        <button
           onClick={onHintReveal}
           disabled={hintsLeft === 0}
           className="flex items-center gap-1.5 px-4 py-2 border border-[#E5E7EB] text-[#374151] rounded-lg text-[13px] hover:bg-[#F8F9FA] cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
@@ -49,6 +56,16 @@ export function ExerciseSection({ prompt, hints = [], hintsRevealed, onHintRevea
           {hintsLeft > 0 ? `Show hint (${hintsLeft} left)` : 'All hints shown'}
         </button>
       </div>
+
+      <InlineExerciseEditor
+        exercisePrompt={prompt ?? ''}
+        hints={hints}
+        language={selectedLanguage}
+        lessonTitle={lessonTitle}
+        level={level}
+        onSectionComplete={onSectionComplete}
+        onOpenInEditor={onOpenInEditor}
+      />
     </div>
   );
 }
