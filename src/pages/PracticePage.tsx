@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import MonacoEditor from '@monaco-editor/react';
 import { FolderPlus, Bot, Send } from 'lucide-react';
 import {
@@ -149,6 +149,7 @@ function AiMessageBubble({ msg }: { msg: ChatMsg }) {
 }
 
 export function PracticePage() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const user: StoredUser = JSON.parse(localStorage.getItem('user') ?? '{}');
 
@@ -509,6 +510,16 @@ export function PracticePage() {
 
       {/* ═══ COLUMN 1 — SIDEBAR ═══ */}
       <div className="bg-white border-r border-[#E5E7EB] flex flex-col overflow-hidden p-3">
+        <div onClick={() => navigate('/')} className="flex items-center gap-[8px] px-[12px] pt-[12px] pb-[8px] cursor-pointer border-b border-[#E5E7EB] mb-[8px] hover:opacity-85 transition-opacity">
+          <div className="w-[24px] h-[24px] bg-[#534AB7] rounded-[6px] flex items-center justify-center shrink-0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </div>
+          <span className="text-[13px] font-medium">
+            <span className="text-[#111827]">AI</span>
+            <span className="text-[#534AB7]">Code</span>
+            <span className="text-[#111827]">Tutor</span>
+          </span>
+        </div>
         <button
           onClick={() => setIsNewProjectModalOpen(true)}
           className="w-full flex items-center gap-[10px] bg-white border border-[#E5E7EB] rounded-[10px] px-[14px] py-[10px] text-[13px] font-medium text-[#111827] cursor-pointer hover:bg-[#F9FAFB] transition-colors"
