@@ -4,6 +4,7 @@ import { LearningSidebar } from '../components/learning/sidebar/LearningSidebar'
 import { LevelSelectionScreen } from '../components/learning/screens/LevelSelectionScreen';
 import { LessonView } from '../components/learning/lesson/LessonView';
 import { CompletionModal } from '../components/learning/modals/CompletionModal';
+import { RestartModal } from '../components/learning/modals/RestartModal';
 
 export function LearningPage() {
   const navigate = useNavigate();
@@ -16,6 +17,8 @@ export function LearningPage() {
     handleLessonComplete, handlePrevious, handleNext,
     handleNextLevel, handleBookmarkToggle, handleHintReveal,
     handleOpenInEditor, handleStepClick, setIsCompletionModalOpen,
+    isRestartModalOpen, restartTarget,
+    handleRestartClick, handleRestartLevel, setIsRestartModalOpen,
     loadLesson,
   } = useLearning();
 
@@ -48,6 +51,7 @@ export function LearningPage() {
             levelsDone={levelsDone[selectedCourse.id] ?? []}
             doneLessons={doneLessons}
             onLevelSelect={handleLevelSelect}
+            onRestartClick={handleRestartClick}
           />
         )}
 
@@ -78,9 +82,18 @@ export function LearningPage() {
             onPracticeClick={() => navigate(`/practice?language=${encodeURIComponent(selectedCourse.name)}`)}
             onRetry={() => loadLesson(selectedCourse.id, selectedLevel, currentLessonNumber)}
             onSectionComplete={handleNext}
+            onRestartClick={handleRestartClick}
           />
         )}
       </div>
+
+      <RestartModal
+        courseName={selectedCourse?.name ?? ''}
+        level={restartTarget?.level ?? ''}
+        isOpen={isRestartModalOpen}
+        onConfirm={handleRestartLevel}
+        onCancel={() => setIsRestartModalOpen(false)}
+      />
 
       <CompletionModal
         courseName={selectedCourse?.name ?? ''}

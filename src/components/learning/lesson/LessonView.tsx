@@ -1,4 +1,5 @@
-import type { RefObject } from 'react';
+import { useState, useRef, useEffect, type RefObject } from 'react';
+import { MoreVertical, RefreshCw } from 'lucide-react';
 import type { Lesson, LessonSection, Level } from '../../../types/learning.types';
 import type { Course } from '../../../data/courses';
 import { LessonHero } from './LessonHero';
@@ -32,6 +33,7 @@ interface Props {
   onPracticeClick: () => void;
   onRetry: () => void;
   onSectionComplete: () => void;
+  onRestartClick: (courseId: string, level: string) => void;
 }
 
 export function LessonView({
@@ -40,9 +42,22 @@ export function LessonView({
   revealedHints, scrollRef, displayTitle, levelsDone,
   onLevelTabClick, onPrevious, onNext, onComplete, onStepClick,
   onHintReveal, onOpenInEditor, onBookmarkToggle, onPracticeClick,
-  onRetry, onSectionComplete,
+  onRetry, onSectionComplete, onRestartClick,
 }: Props) {
   const isLoading = isLoadingLesson && !currentLesson;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [menuOpen]);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -71,6 +86,25 @@ export function LessonView({
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             Practice in editor
           </button>
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen(o => !o)}
+              className="p-[6px] rounded-lg text-[#9CA3AF] hover:bg-[#F3F4F6] transition-colors cursor-pointer"
+            >
+              <MoreVertical size={16} />
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-50 py-1">
+                <button
+                  onClick={() => { setMenuOpen(false); onRestartClick(course.id, selectedLevel); }}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-[13px] text-[#374151] hover:bg-[#F9FAFB] transition-colors cursor-pointer"
+                >
+                  <RefreshCw size={14} />
+                  Restart level
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -1,3 +1,4 @@
+import { RefreshCw } from 'lucide-react';
 import type { Level } from '../../../types/learning.types';
 import type { Course } from '../../../data/courses';
 
@@ -14,9 +15,10 @@ interface Props {
   levelsDone: string[];
   doneLessons: number[];
   onLevelSelect: (level: Level) => void;
+  onRestartClick: (courseId: string, level: string) => void;
 }
 
-export function LevelSelectionScreen({ course, levelsDone, onLevelSelect }: Props) {
+export function LevelSelectionScreen({ course, levelsDone, onLevelSelect, onRestartClick }: Props) {
   return (
     <div className="flex-1 flex items-start justify-center overflow-y-auto">
       <div className="max-w-[480px] w-full px-10 py-10">
@@ -60,38 +62,54 @@ export function LevelSelectionScreen({ course, levelsDone, onLevelSelect }: Prop
               );
             }
 
-            const doneCount = 0;
-            const buttonText = isComplete ? 'Review' : doneCount > 0 ? 'Continue' : 'Start';
             const cardBorder = isComplete ? 'border-[#9FE1CB] bg-[#E1F5EE]' : 'border-[#E5E7EB]';
-            const btnStyle = isComplete
-              ? 'border border-[#0F6E56] text-[#0F6E56] hover:bg-[#D1FAE5]'
-              : 'bg-[#534AB7] text-white hover:opacity-90';
 
             return (
-              <button
+              <div
                 key={level}
-                onClick={() => onLevelSelect(level)}
-                className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all text-left ${cardBorder}`}
+                className={`p-4 rounded-xl border ${cardBorder}`}
               >
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0"
-                  style={{ backgroundColor: isComplete ? '#D1FAE5' : '#F3F4F6' }}
-                >
-                  {meta.icon}
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0"
+                    style={{ backgroundColor: isComplete ? '#D1FAE5' : '#F3F4F6' }}
+                  >
+                    {meta.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[14px] font-medium text-[#111827]">{meta.label}</div>
+                    <div className="text-[12px] text-[#4B5563]">{meta.desc}</div>
+                    <div className="text-[11px] text-[#9CA3AF] mt-0.5">10 lessons</div>
+                  </div>
+                  {isComplete && <span className="text-[12px] text-[#0F6E56] font-medium shrink-0">Completed ✓</span>}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[14px] font-medium text-[#111827]">{meta.label}</div>
-                  <div className="text-[12px] text-[#4B5563]">{meta.desc}</div>
-                  <div className="text-[11px] text-[#9CA3AF] mt-0.5">10 lessons</div>
+                <div className={`flex gap-2 ${isComplete ? 'mt-3' : 'mt-0'}`}>
+                  {isComplete ? (
+                    <>
+                      <button
+                        onClick={() => onLevelSelect(level)}
+                        className="flex-1 py-2 text-sm font-medium rounded-lg border border-[#0F6E56] text-[#0F6E56] hover:bg-[#D1FAE5] cursor-pointer"
+                      >
+                        Continue reviewing
+                      </button>
+                      <button
+                        onClick={() => onRestartClick(course.id, level)}
+                        className="flex-1 py-2 text-sm font-medium rounded-lg border border-[#534AB7] text-[#534AB7] hover:bg-[#EEEDFE] cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        <RefreshCw size={14} />
+                        Restart from beginning
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => onLevelSelect(level)}
+                      className="flex-1 py-2 text-sm font-medium rounded-lg bg-[#534AB7] text-white hover:opacity-90 cursor-pointer text-center"
+                    >
+                      Start <span className="ml-1">→</span>
+                    </button>
+                  )}
                 </div>
-                <div className="flex flex-col items-end gap-1 shrink-0">
-                  {isComplete && <span className="text-[12px] text-[#0F6E56] font-medium">Completed ✓</span>}
-                  <span className={`text-[12px] font-medium px-4 py-1.5 rounded-lg ${btnStyle}`}>
-                    {buttonText}
-                    {!isComplete && <span className="ml-1">→</span>}
-                  </span>
-                </div>
-              </button>
+              </div>
             );
           })}
         </div>

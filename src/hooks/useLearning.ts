@@ -4,7 +4,7 @@ import type { Lesson, Level } from '../types/learning.types';
 import { parseSections } from '../types/learning.types';
 import {
   getCachedLesson, setCachedLesson,
-  getDoneLessons, setDoneLesson,
+  getDoneLessons, setDoneLesson, resetDoneLessons,
   isBookmarked, setBookmark,
 } from '../utils/lessonCache';
 import { COURSES } from '../data/courses';
@@ -31,6 +31,8 @@ export function useLearning() {
   const [revealedHints, setRevealedHints] = useState<Record<number, number>>({});
   const [topicMap, setTopicMap] = useState<Record<string, string>>({});
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isRestartModalOpen, setIsRestartModalOpen] = useState(false);
+  const [restartTarget, setRestartTarget] = useState<{ courseId: string; level: Level } | null>(null);
 
   const selectedCourse = useMemo(
     () => COURSES.find(c => c.id === selectedCourseId) ?? null,
@@ -188,6 +190,21 @@ export function useLearning() {
     loadLesson(selectedCourseId, level, nextLesson);
   }, [selectedCourseId, getNextLessonNumber, loadLesson, preloadLevel]);
 
+  const handleRestartClick = useCallback((courseId: string, level: string) => {
+    setRestartTarget({ courseId, level: level as Level });
+    setIsRestartModalOpen(true);
+  }, []);
+
+  const handleRestartLevel = useCallback(() => {
+    if (!restartTarget) return;
+    const { courseId, level } = restartTarget;
+    resetDoneLessons(courseId, level);
+    setRefreshKey(k => k + 1);
+    setIsRestartModalOpen(false);
+    setRestartTarget(null);
+    handleLevelSelect(level);
+  }, [restartTarget, handleLevelSelect]);
+
   const handleLevelTabClick = useCallback((level: Level) => {
     if (!selectedCourseId) return;
     if (level === selectedLevel) return;
@@ -255,6 +272,9 @@ export function useLearning() {
     handleLessonComplete, handlePrevious, handleNext,
     handleNextLevel, handleBookmarkToggle,
     setIsCompletionModalOpen,
+    isRestartModalOpen, restartTarget,
+    handleRestartClick, handleRestartLevel,
+    setIsRestartModalOpen,
     loadLesson,
     handleHintReveal: (i: number) => setRevealedHints(p => ({ ...p, [i]: (p[i] ?? 0) + 1 })),
     handleOpenInEditor: (prompt: string, hints: string[]) => {

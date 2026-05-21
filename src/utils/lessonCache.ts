@@ -39,6 +39,12 @@ export function setDoneLesson(courseId: string, level: string, lessonNumber: num
   } catch {}
 }
 
+export function resetDoneLessons(courseId: string, level: string): void {
+  try {
+    localStorage.removeItem(`${DONE_PREFIX}${courseId}_${level}`);
+  } catch {}
+}
+
 export function isBookmarked(courseId: string, level: string, lessonNumber: number): boolean {
   try {
     return localStorage.getItem(`${BOOKMARK_PREFIX}${courseId}_${level}_${lessonNumber}`) === 'true';
