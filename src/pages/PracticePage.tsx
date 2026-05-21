@@ -173,7 +173,6 @@ export function PracticePage() {
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const [editorLine, setEditorLine] = useState(1);
 
   // Saved projects list
   const [savedProjects, setSavedProjects] = useState<{ name: string; language: string }[]>([]);
@@ -359,10 +358,6 @@ export function PracticePage() {
     setUnsaved(true);
   }, []);
 
-  // Current file info
-  const currentFile = files[activeFile];
-  const fileExt = currentFile ? getFileExt(currentFile.name) : '';
-
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-white">
       {/* ═══ TOP BAR ═══ */}
@@ -497,7 +492,7 @@ export function PracticePage() {
               <span className="w-1.5 h-1.5 rounded-full bg-[#5DCAA5]" />
               Connected
             </span>
-            <span>Ln {editorLine}, Col 1</span>
+            <span>Ln 1, Col 1</span>
             <span className="capitalize">{language}</span>
             <span className="ml-auto">UTF-8</span>
             <span>Ctrl+S to save</span>
