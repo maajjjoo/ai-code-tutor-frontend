@@ -7,7 +7,7 @@ import {
   createProject, saveSnapshot, getProjectsByUser, loadEditor,
   getErrorMessage,
 } from '../services/api';
-import type { Language, ExerciseContext, CodeAnalysisResponse, Project as BackendProject } from '../types';
+import type { Language, ExerciseContext, Project as BackendProject } from '../types';
 import type { VNode, VFile } from '../types/vfs';
 import { uid, detectLang } from '../types/vfs';
 import { ExerciseContextPanel } from '../components/practice/ExerciseContextPanel';
@@ -17,6 +17,15 @@ import { SaveIndicatorBar } from '../components/editor/SaveIndicatorBar';
 import { useEditorPersistence } from '../hooks/useEditorPersistence';
 
 interface StoredUser { id: number; username: string; email: string; }
+
+interface ChatMsg {
+  id: string;
+  role: 'user' | 'ai';
+  content: string;
+  quality?: { structure: number; readability: number };
+  suggestions?: string[];
+  timestamp: number;
+}
 
 const FS_STORAGE_KEY = 'codetutor-fs-nodes';
 const ACTIVE_PROJECT_KEY = 'codetutor-active-project';
@@ -46,6 +55,97 @@ function getFileExt(filename: string): string {
 
 function getFileDotColor(filename: string): string {
   return FILE_EXT_COLORS[getFileExt(filename)] ?? '#D1D5DB';
+}
+
+function AiMessageBubble({ msg }: { msg: ChatMsg }) {
+  const isAi = msg.role === 'ai';
+  const hasQuality = msg.quality && msg.quality.structure !== undefined;
+  const hasSuggestions = msg.suggestions && msg.suggestions.length > 0;
+
+  if (isAi && (hasQuality || hasSuggestions)) {
+    return (
+      <div className="mb-5">
+        <div className="flex items-center gap-2 mb-[8px]">
+          <div className="w-[28px] h-[28px] bg-[#EEEDFE] rounded-[8px] flex items-center justify-center shrink-0">
+            <Bot className="w-3.5 h-3.5 text-[#534AB7]" />
+          </div>
+          <span className="text-[12px] font-medium text-[#534AB7]">AI Tutor</span>
+        </div>
+        <div className="bg-white border border-[#E5E7EB] rounded-tl-none rounded-tr-[10px] rounded-br-[10px] rounded-bl-[10px] p-[12px_14px] space-y-[10px]">
+          {hasQuality && msg.quality && (
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mb-[8px]">Code quality</p>
+              <div className="flex items-center gap-[10px]">
+                <span className="text-[12px] text-[#6B7280] min-w-[80px]">Structure</span>
+                <div className="flex-1 h-[4px] bg-[#E5E7EB] rounded-full overflow-hidden">
+                  <div className="h-full rounded-full bg-[#534AB7]" style={{ width: `${msg.quality.structure}%` }} />
+                </div>
+                <span className="text-[12px] font-semibold min-w-[32px] text-right text-[#534AB7]">{msg.quality.structure}%</span>
+              </div>
+              <div className="flex items-center gap-[10px] mt-[6px]">
+                <span className="text-[12px] text-[#6B7280] min-w-[80px]">Readability</span>
+                <div className="flex-1 h-[4px] bg-[#E5E7EB] rounded-full overflow-hidden">
+                  <div className="h-full rounded-full" style={{ width: `${msg.quality.readability}%`, backgroundColor: msg.quality.readability < 70 ? '#F59E0B' : '#534AB7' }} />
+                </div>
+                <span className="text-[12px] font-semibold min-w-[32px] text-right" style={{ color: msg.quality.readability < 70 ? '#F59E0B' : '#534AB7' }}>{msg.quality.readability}%</span>
+              </div>
+            </div>
+          )}
+          {hasQuality && <div className="h-[0.5px] bg-[#F3F4F6]" />}
+          {msg.content && (
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mb-[8px]">What your code does</p>
+              <p className="text-[12px] text-[#4B5563] leading-relaxed whitespace-pre-wrap">
+                {msg.content.split(/(`[^`]+`)/).map((part, i) =>
+                  part.startsWith('`') && part.endsWith('`')
+                    ? <code key={i} className="bg-[#EEEDFE] text-[#3C3489] rounded-[4px] px-[6px] py-[1px] text-[11px] font-mono">{part.slice(1, -1)}</code>
+                    : <span key={i}>{part}</span>
+                )}
+              </p>
+            </div>
+          )}
+          {hasSuggestions && msg.suggestions && <div className="h-[0.5px] bg-[#F3F4F6]" />}
+          {hasSuggestions && msg.suggestions && (
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mb-[8px]">Suggestions</p>
+              {msg.suggestions.map((s, i) => (
+                <div key={i} className={`flex items-start gap-[8px] py-[6px] ${i < msg.suggestions!.length - 1 ? 'border-b border-[#F9FAFB]' : ''}`}>
+                  <div className="w-[20px] h-[20px] bg-[#534AB7] text-white text-[11px] font-semibold rounded-full flex items-center justify-center shrink-0 mt-[1px]">
+                    {i + 1}
+                  </div>
+                  <span className="text-[12px] text-[#4B5563] leading-relaxed">{s}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (isAi) {
+    return (
+      <div className="mb-5">
+        <div className="flex items-center gap-2 mb-[8px]">
+          <div className="w-[28px] h-[28px] bg-[#EEEDFE] rounded-[8px] flex items-center justify-center shrink-0">
+            <Bot className="w-3.5 h-3.5 text-[#534AB7]" />
+          </div>
+          <span className="text-[12px] font-medium text-[#534AB7]">AI Tutor</span>
+        </div>
+        <div className="bg-white border border-[#E5E7EB] rounded-tl-none rounded-tr-[10px] rounded-br-[10px] rounded-bl-[10px] p-[12px_14px]">
+          <p className="text-[12px] text-[#4B5563] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex justify-end mb-5">
+      <div className={`${msg.content === 'Analyzing your code...' ? 'bg-[#F9FAFB] border border-[#E5E7EB] text-[#9CA3AF] text-[11px] rounded-[10px] px-[12px] py-[6px]' : 'bg-[#534AB7] text-white rounded-tl-[10px] rounded-tr-[10px] rounded-br-[10px] rounded-bl-none px-[14px] py-[10px] max-w-[85%] text-[12px]'}`}>
+        {msg.content}
+      </div>
+    </div>
+  );
 }
 
 export function PracticePage() {
@@ -84,7 +184,7 @@ export function PracticePage() {
   const [, setTerminalRunning] = useState(false);
 
   // AI Chat
-  const [aiMessages, setAiMessages] = useState<{ id: string; role: 'user' | 'ai'; content: string; timestamp: number }[]>([]);
+  const [aiMessages, setAiMessages] = useState<ChatMsg[]>([]);
   const [aiInput, setAiInput] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const aiBottomRef = useRef<HTMLDivElement>(null);
@@ -96,7 +196,6 @@ export function PracticePage() {
   const {
     hasUnsavedChanges,
     saveIndicatorState,
-    lastSavedAt,
     saveManually,
   } = useEditorPersistence({ projectId, fileName, currentContent: code });
 
@@ -204,7 +303,7 @@ export function PracticePage() {
   }, [saveCurrentProject]);
 
   // Create project
-  const handleCreateProject = async (name: string) => {
+  const handleCreateProject = async (name: string, projectLanguage: string) => {
     setModalLoading(true);
     setModalError(null);
     try {
@@ -212,7 +311,7 @@ export function PracticePage() {
         await saveCurrentProject();
       }
       const newProject = await createProject({
-        name, description: name, programmingLanguage: 'javascript', userId: user.id,
+        name, description: name, programmingLanguage: projectLanguage as Language, userId: user.id,
       });
       setOpenFile(null);
       setCode('');
@@ -276,14 +375,29 @@ export function PracticePage() {
     setToast('Project deleted');
   };
 
+  // Try to parse AI response as structured JSON
+  const parseStructuredResponse = (text: string): { content: string; quality?: { structure: number; readability: number }; suggestions?: string[] } => {
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed === 'object') {
+        return {
+          content: parsed.whatItDoes || parsed.summary || '',
+          quality: parsed.quality,
+          suggestions: parsed.suggestions,
+        };
+      }
+    } catch {}
+    return { content: text };
+  };
+
   // Analysis
   const handleAnalyze = useCallback(async () => {
     if (!code.trim()) return;
     const now = Date.now();
-    setAiMessages(prev => [...prev, { id: uid(), role: 'user', content: 'Analyze my code', timestamp: now }]);
+    setAiMessages(prev => [...prev, { id: uid(), role: 'user', content: 'Analyzing your code...', timestamp: now }]);
     setAiLoading(true);
     try {
-      const result: CodeAnalysisResponse = await analyzeCodePedagogical({
+      const result = await analyzeCodePedagogical({
         code, language: openFile?.language ?? 'python', projectDescription: activeProject?.name ?? 'Project',
         exerciseContext: exerciseContext ? { prompt: exerciseContext.exercisePrompt, lessonTitle: exerciseContext.lessonTitle, level: exerciseContext.level } : undefined,
       });
@@ -291,11 +405,13 @@ export function PracticePage() {
       if (result.hasErrors && result.errorHint) {
         fullContent += `\n\nError detected: ${result.errorHint}`;
       }
-      if (result.suggestions.length > 0) {
-        fullContent += '\n\nSuggestions:';
-        result.suggestions.forEach(s => { fullContent += `\n• ${s.title}: ${s.description}`; });
-      }
-      setAiMessages(prev => [...prev, { id: uid(), role: 'ai', content: fullContent, timestamp: Date.now() }]);
+      const structured = parseStructuredResponse(fullContent);
+      const aiMsg: ChatMsg = {
+        id: uid(), role: 'ai', content: structured.content, timestamp: Date.now(),
+        quality: structured.quality || result.quality,
+        suggestions: structured.suggestions || result.suggestions.map(s => `${s.title}: ${s.description}`),
+      };
+      setAiMessages(prev => [...prev, aiMsg]);
     } catch {
       setAiMessages(prev => [...prev, { id: uid(), role: 'ai', content: 'Could not analyze your code right now. Please try again.', timestamp: Date.now() }]);
     } finally {
@@ -313,7 +429,8 @@ export function PracticePage() {
     try {
       const history = aiMessages.slice(-10).map(m => ({ role: m.role === 'ai' ? 'ai' as const : 'user' as const, content: m.content }));
       const res = await sendChatMessage({ message: text, history, currentCode: code, language: openFile?.language });
-      setAiMessages(prev => [...prev, { id: uid(), role: 'ai', content: res.message.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}]/gu, '').replace(/\s{2,}/g, ' ').trim(), timestamp: Date.now() }]);
+      const cleanMsg = res.message.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}]/gu, '').replace(/\s{2,}/g, ' ').trim();
+      setAiMessages(prev => [...prev, { id: uid(), role: 'ai', content: cleanMsg, timestamp: Date.now() }]);
     } catch {
       setAiMessages(prev => [...prev, { id: uid(), role: 'ai', content: 'Connection error. Please try again.', timestamp: Date.now() }]);
     } finally {
@@ -597,12 +714,22 @@ export function PracticePage() {
             Connected
           </span>
           {hasUnsavedChanges ? (
-            <span className="text-[#F59E0B]">● Unsaved</span>
-          ) : lastSavedAt ? (
-            <span className="text-[#0F6E56]">✓ Saved</span>
-          ) : null}
+            <span className="text-[#F59E0B] font-medium">● Unsaved</span>
+          ) : (
+            <span className="text-[#0F6E56] font-medium">✓ Saved</span>
+          )}
           <span className="capitalize">{openFile?.language ?? 'plaintext'}</span>
-          <span className="ml-auto">UTF-8</span>
+          <div className="ml-auto flex items-center gap-3">
+            <span>UTF-8</span>
+            <button
+              onClick={saveCurrentProject}
+              disabled={!hasUnsavedChanges || backupSaving}
+              className="flex items-center gap-1 bg-[#534AB7] text-white rounded-[6px] px-[10px] py-[2px] text-[10px] font-medium cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed border-none"
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Save
+            </button>
+          </div>
         </div>
 
         {/* Console */}
@@ -650,7 +777,7 @@ export function PracticePage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               {showHistory ? 'Chat' : 'History'}
             </button>
-            <button onClick={handleAnalyze} className="flex items-center gap-1 bg-[#534AB7] text-white rounded-[8px] px-[12px] py-[5px] text-[12px] font-medium cursor-pointer hover:opacity-90 border-none">
+            <button onClick={handleAnalyze} disabled={!code.trim()} className="flex items-center gap-1 bg-[#534AB7] text-white rounded-[8px] px-[12px] py-[5px] text-[12px] font-medium cursor-pointer hover:opacity-90 border-none disabled:opacity-40 disabled:cursor-not-allowed">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
               Analyze
             </button>
@@ -673,24 +800,18 @@ export function PracticePage() {
           )}
           {!showHistory && (
             <>
-              {aiMessages.map(msg => {
-                const isAi = msg.role === 'ai';
-                return (
-                  <div key={msg.id} className={`mb-5 ${isAi ? '' : 'flex justify-end'}`}>
-                    {isAi && (
-                      <div className="flex items-center gap-2 mb-[8px]">
-                        <div className="w-[28px] h-[28px] bg-[#EEEDFE] rounded-[8px] flex items-center justify-center shrink-0">
-                          <Bot className="w-3.5 h-3.5 text-[#534AB7]" />
-                        </div>
-                        <span className="text-[12px] font-medium text-[#534AB7]">AI Tutor</span>
-                      </div>
-                    )}
-                    <div className={`${isAi ? 'bg-white border border-[#E5E7EB] rounded-tl-none rounded-tr-[10px] rounded-br-[10px] rounded-bl-[10px] p-[12px_14px]' : 'bg-[#534AB7] text-white rounded-tl-[10px] rounded-tr-[10px] rounded-br-[10px] rounded-bl-none px-[14px] py-[10px] max-w-[85%]'}`}>
-                      <p className={`${isAi ? 'text-[12px] text-[#4B5563]' : 'text-[12px]'} leading-relaxed whitespace-pre-wrap break-words`}>{msg.content}</p>
-                    </div>
+              {aiMessages.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full text-center gap-3 py-10">
+                  <div className="w-12 h-12 rounded-2xl bg-[#EEEDFE] flex items-center justify-center">
+                    <Bot className="w-6 h-6 text-[#534AB7]" />
                   </div>
-                );
-              })}
+                  <div>
+                    <p className="text-sm text-[#111827] font-medium">Hi, I'm your AI tutor</p>
+                    <p className="text-xs text-[#9CA3AF] mt-1">Ask a question or analyze your code.</p>
+                  </div>
+                </div>
+              )}
+              {aiMessages.map(msg => <AiMessageBubble key={msg.id} msg={msg} />)}
               {aiLoading && (
                 <div className="mb-5">
                   <div className="flex items-center gap-2 mb-[8px]">
@@ -716,9 +837,6 @@ export function PracticePage() {
           <>
             <div className="px-3 pb-2 pt-1">
               <div className="flex flex-wrap gap-[6px] mb-[10px]">
-                <button onClick={() => setAiInput('Analyze my code')} className="bg-[#EEEDFE] text-[#3C3489] border border-[#AFA9EC] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] transition-colors">
-                  Analyze code
-                </button>
                 <button onClick={() => setAiInput('What should I do next?')} className="bg-[#EEEDFE] text-[#3C3489] border border-[#AFA9EC] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] transition-colors">
                   Next step?
                 </button>
