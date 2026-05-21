@@ -725,7 +725,7 @@ export function PracticePage() {
                     setRenamingFileId(f.id);
                     setRenamingFileName(f.name);
                   }}
-                  className={`flex items-center gap-[8px] px-[8px] py-[6px] rounded-[6px] ${isRenaming ? '' : 'cursor-pointer'} transition-colors ${isActive ? 'bg-[#EEEDFE]' : 'hover:bg-[#F9FAFB]'}`}
+                  className={`flex items-center gap-[8px] px-[8px] py-[6px] rounded-[6px] group ${isRenaming ? '' : 'cursor-pointer'} transition-colors ${isActive ? 'bg-[#EEEDFE]' : 'hover:bg-[#F9FAFB]'}`}
                   style={{ paddingLeft: '22px' }}
                 >
                   <span className="w-[8px] h-[8px] rounded-full shrink-0" style={{ backgroundColor: getFileDotColor(isRenaming ? renamingFileName : f.name) }} />
@@ -781,7 +781,25 @@ export function PracticePage() {
                       )}
                     </div>
                   ) : (
-                    <span className={`text-[13px] truncate ${isActive ? 'font-medium text-[#111827]' : 'text-[#9CA3AF]'}`}>{f.name}</span>
+                    <>
+                      <span className={`text-[13px] truncate flex-1 ${isActive ? 'font-medium text-[#111827]' : 'text-[#9CA3AF]'}`}>{f.name}</span>
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          setFsNodes(prev => prev.filter(n => n.id !== f.id));
+                          if (fsActiveId === f.id) {
+                            setFsActiveId(null);
+                            setOpenFile(null);
+                            setCode('');
+                          }
+                          delete fileContentsRef.current[f.id];
+                          setToast('File deleted');
+                        }}
+                        className="ml-auto text-[#9CA3AF] hover:text-[#EF4444] cursor-pointer shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                      </button>
+                    </>
                   )}
                 </div>
               );
