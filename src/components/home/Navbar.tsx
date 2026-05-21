@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface UserData {
@@ -116,3 +116,5 @@ export function Navbar() {
     </nav>
   );
 }
+
+export default React.memo(Navbar);

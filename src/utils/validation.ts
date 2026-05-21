@@ -7,6 +7,7 @@ export const validateProjectName = (name: string) => {
 }
 
 export const validateFileName = (name: string) => {
+  if (name === '') return 'File name cannot be empty'
   if (!name) return 'File name is required'
   if (name.length < 3) return 'Min 3 characters including extension'
   if (name.length > 30) return 'Max 30 characters'

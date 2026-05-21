@@ -1,3 +1,5 @@
+import React from 'react';
+
 export function FeaturesRow() {
   return (
     <section className="bg-white py-12 px-5 sm:px-[80px]">
@@ -45,3 +47,5 @@ export function FeaturesRow() {
     </section>
   );
 }
+
+export default React.memo(FeaturesRow);

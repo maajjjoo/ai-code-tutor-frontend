@@ -1,3 +1,5 @@
+import React from 'react';
+
 export function Footer() {
   return (
     <footer className="bg-[#F9FAFB] border-t border-[#E5E7EB] h-[52px] px-5 sm:px-[80px] flex items-center justify-between">
@@ -15,3 +17,5 @@ export function Footer() {
     </footer>
   );
 }
+
+export default React.memo(Footer);

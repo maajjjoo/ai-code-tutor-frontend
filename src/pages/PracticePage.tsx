@@ -300,13 +300,13 @@ export function PracticePage() {
 
   useEffect(() => {
     const raw = searchParams.get('exercise');
-    if (!raw) return;
+    if (!raw || exerciseContext) return;
     try {
       const ctx = JSON.parse(decodeURIComponent(raw)) as ExerciseContext;
       setExerciseContext(ctx);
       autoCreateExerciseProject(ctx);
     } catch {}
-  }, []);
+  }, [autoCreateExerciseProject, exerciseContext, searchParams]);
 
   // File ops
   const switchToFile = useCallback((fileId: string) => {
