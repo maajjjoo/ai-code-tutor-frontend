@@ -15,6 +15,8 @@ import { NewProjectModal } from '../components/editor/NewProjectModal';
 import { DeleteProjectModal } from '../components/editor/DeleteProjectModal';
 import { SaveIndicatorBar } from '../components/editor/SaveIndicatorBar';
 import { useEditorPersistence } from '../hooks/useEditorPersistence';
+import { CharCounter } from '../components/ui/CharCounter';
+import { validateFileName } from '../utils/validation';
 
 interface StoredUser { id: number; username: string; email: string; }
 
@@ -354,7 +356,7 @@ export function PracticePage() {
   }, [saveCurrentProject]);
 
   // Create project
-  const handleCreateProject = async (name: string, projectLanguage: string) => {
+  const handleCreateProject = async (name: string) => {
     setModalLoading(true);
     setModalError(null);
     try {
@@ -363,7 +365,7 @@ export function PracticePage() {
       }
       fileContentsRef.current = {};
       const newProject = await createProject({
-        name, description: name, programmingLanguage: projectLanguage as Language, userId: user.id,
+        name, description: name, programmingLanguage: 'javascript' as Language, userId: user.id,
       });
       setOpenFile(null);
       setCode('');
@@ -728,15 +730,37 @@ export function PracticePage() {
                 >
                   <span className="w-[8px] h-[8px] rounded-full shrink-0" style={{ backgroundColor: getFileDotColor(isRenaming ? renamingFileName : f.name) }} />
                   {isRenaming ? (
-                    <input
-                      ref={renameInputRef}
-                      value={renamingFileName}
-                      onChange={e => setRenamingFileName(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
+                    <div className="flex-1">
+                      <input
+                        ref={renameInputRef}
+                        value={renamingFileName}
+                        onChange={e => {
+                          if (e.target.value.length <= 30) setRenamingFileName(e.target.value);
+                        }}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const name = renamingFileName.trim();
+                            if (name && name.length >= 3 && name.includes('.')) {
+                              setFsNodes(prev => prev.map(n =>
+                                n.id === renamingFileId && n.type === 'file'
+                                  ? { ...n, name, language: detectLang(name) }
+                                  : n
+                              ));
+                              if (fsActiveId === renamingFileId && openFile) {
+                                setOpenFile(prev => prev ? { ...prev, name, language: detectLang(name) } : null);
+                              }
+                            }
+                            setRenamingFileId(null);
+                            setRenamingFileName('');
+                          } else if (e.key === 'Escape') {
+                            setRenamingFileId(null);
+                            setRenamingFileName('');
+                          }
+                        }}
+                        onBlur={() => {
                           const name = renamingFileName.trim();
-                          if (name) {
+                          if (name && name.length >= 3 && name.includes('.') && renamingFileId) {
                             setFsNodes(prev => prev.map(n =>
                               n.id === renamingFileId && n.type === 'file'
                                 ? { ...n, name, language: detectLang(name) }
@@ -748,28 +772,14 @@ export function PracticePage() {
                           }
                           setRenamingFileId(null);
                           setRenamingFileName('');
-                        } else if (e.key === 'Escape') {
-                          setRenamingFileId(null);
-                          setRenamingFileName('');
-                        }
-                      }}
-                      onBlur={() => {
-                        const name = renamingFileName.trim();
-                        if (name && renamingFileId) {
-                          setFsNodes(prev => prev.map(n =>
-                            n.id === renamingFileId && n.type === 'file'
-                              ? { ...n, name, language: detectLang(name) }
-                              : n
-                          ));
-                          if (fsActiveId === renamingFileId && openFile) {
-                            setOpenFile(prev => prev ? { ...prev, name, language: detectLang(name) } : null);
-                          }
-                        }
-                        setRenamingFileId(null);
-                        setRenamingFileName('');
-                      }}
-                      className="flex-1 bg-transparent text-[13px] text-[#111827] outline-none border-b border-[#534AB7]"
-                    />
+                        }}
+                        className="w-full bg-transparent text-[13px] text-[#111827] outline-none border-b border-[#534AB7]"
+                      />
+                      <CharCounter current={renamingFileName.length} max={30} showAt={1} />
+                      {renamingFileName.length > 0 && validateFileName(renamingFileName) && (
+                        <p className="text-[10px] text-[#DC2626] mt-[1px]">{validateFileName(renamingFileName)}</p>
+                      )}
+                    </div>
                   ) : (
                     <span className={`text-[13px] truncate ${isActive ? 'font-medium text-[#111827]' : 'text-[#9CA3AF]'}`}>{f.name}</span>
                   )}
@@ -777,18 +787,38 @@ export function PracticePage() {
               );
             })}
             {isCreatingFile && (
-              <div className="flex items-center gap-[8px] px-[8px] py-[6px] rounded-[6px]" style={{ paddingLeft: '22px' }}>
-                <span className="w-[8px] h-[8px] rounded-full shrink-0" style={{ backgroundColor: getFileDotColor(creatingFileName) || '#D1D5DB' }} />
-                <input
-                  ref={creatingInputRef}
-                  value={creatingFileName}
-                  onChange={e => setCreatingFileName(e.target.value)}
-                  placeholder="filename.py"
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
+              <div className="flex flex-col gap-[2px] px-[8px] py-[6px] rounded-[6px]" style={{ paddingLeft: '22px' }}>
+                <div className="flex items-center gap-[8px]">
+                  <span className="w-[8px] h-[8px] rounded-full shrink-0" style={{ backgroundColor: getFileDotColor(creatingFileName) || '#D1D5DB' }} />
+                  <input
+                    ref={creatingInputRef}
+                    value={creatingFileName}
+                    onChange={e => {
+                      if (e.target.value.length <= 30) setCreatingFileName(e.target.value);
+                    }}
+                    placeholder="filename.py"
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const name = creatingFileName.trim();
+                        if (name && name.length >= 3 && name.includes('.')) {
+                          const lang = detectLang(name);
+                          const node: VFile = { id: uid(), type: 'file', name, content: '', language: lang, parentId: firstFolder?.id ?? null };
+                          setFsNodes(prev => [...prev, node]);
+                          fileContentsRef.current[node.id] = '';
+                          setFsActiveId(node.id);
+                          switchToFile(node.id);
+                        }
+                        setIsCreatingFile(false);
+                        setCreatingFileName('');
+                      } else if (e.key === 'Escape') {
+                        setIsCreatingFile(false);
+                        setCreatingFileName('');
+                      }
+                    }}
+                    onBlur={() => {
                       const name = creatingFileName.trim();
-                      if (name) {
+                      if (name && name.length >= 3 && name.includes('.')) {
                         const lang = detectLang(name);
                         const node: VFile = { id: uid(), type: 'file', name, content: '', language: lang, parentId: firstFolder?.id ?? null };
                         setFsNodes(prev => [...prev, node]);
@@ -798,26 +828,14 @@ export function PracticePage() {
                       }
                       setIsCreatingFile(false);
                       setCreatingFileName('');
-                    } else if (e.key === 'Escape') {
-                      setIsCreatingFile(false);
-                      setCreatingFileName('');
-                    }
-                  }}
-                  onBlur={() => {
-                    const name = creatingFileName.trim();
-                    if (name) {
-                      const lang = detectLang(name);
-                      const node: VFile = { id: uid(), type: 'file', name, content: '', language: lang, parentId: firstFolder?.id ?? null };
-                      setFsNodes(prev => [...prev, node]);
-                      fileContentsRef.current[node.id] = '';
-                      setFsActiveId(node.id);
-                      switchToFile(node.id);
-                    }
-                    setIsCreatingFile(false);
-                    setCreatingFileName('');
-                  }}
-                  className="flex-1 bg-transparent text-[13px] text-[#111827] outline-none border-b border-[#534AB7]"
-                />
+                    }}
+                    className="flex-1 bg-transparent text-[13px] text-[#111827] outline-none border-b border-[#534AB7]"
+                  />
+                </div>
+                <CharCounter current={creatingFileName.length} max={30} showAt={1} />
+                {creatingFileName.length > 0 && validateFileName(creatingFileName) && (
+                  <p className="text-[10px] text-[#DC2626]">{validateFileName(creatingFileName)}</p>
+                )}
               </div>
             )}
           </div>

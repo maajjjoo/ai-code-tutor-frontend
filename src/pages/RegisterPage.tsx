@@ -3,26 +3,29 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Code2 } from 'lucide-react';
 import { registerUser, getErrorMessage } from '../services/api';
 import { encodePassword } from '../utils/passwordUtils';
+import { CharCounter } from '../components/ui/CharCounter';
+import { validateUsername, validateEmail, validatePassword, getPasswordStrength } from '../utils/validation';
 
 export function RegisterPage() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ username: '', email: '', password: '' });
+  const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '' });
+  const [focusedField, setFocusedField] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const [focusedField, setFocusedField] = useState('');
+  const usernameErr = form.username ? validateUsername(form.username) : null;
+  const emailErr = form.email ? validateEmail(form.email) : null;
+  const passwordErr = form.password ? validatePassword(form.password) : null;
+  const confirmErr = form.confirmPassword && form.confirmPassword !== form.password ? 'Passwords do not match' : null;
 
-  const passwordRules = {
-    length: form.password.length >= 8,
-    uppercase: /[A-Z]/.test(form.password),
-    number: /[0-9]/.test(form.password),
-    special: /[!@#$%^&*]/.test(form.password),
-  };
-  const passwordValid = Object.values(passwordRules).every(Boolean);
+  const strength = form.password ? getPasswordStrength(form.password) : 'weak';
+
+  const canSubmit = !usernameErr && !emailErr && !passwordErr && !confirmErr
+    && form.username.length > 0 && form.email.length > 0 && form.password.length > 0 && form.confirmPassword.length > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!passwordValid) return;
+    if (!canSubmit) return;
     setError('');
     setLoading(true);
     try {
@@ -77,9 +80,12 @@ export function RegisterPage() {
                 required
                 placeholder="tunombre"
                 autoComplete="username"
+                maxLength={30}
                 value={form.username}
                 onChange={e => setForm({ ...form, username: e.target.value })}
                 className="bg-[#0d0d14] border border-[#ffffff12] rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#6f42c1] focus:ring-1 focus:ring-[#6f42c1]/30 transition-all" />
+              <CharCounter current={form.username.length} max={30} showAt={1} />
+              {usernameErr && <p className="text-xs text-red-400 mt-[2px]">{usernameErr}</p>}
             </div>
             <div className="flex flex-col gap-1.5">
               <label htmlFor="register-email" className="text-xs font-medium text-[#9ca3af]">Email</label>
@@ -90,9 +96,11 @@ export function RegisterPage() {
                 required
                 placeholder="tu@email.com"
                 autoComplete="email"
+                maxLength={254}
                 value={form.email}
                 onChange={e => setForm({ ...form, email: e.target.value })}
                 className="bg-[#0d0d14] border border-[#ffffff12] rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#6f42c1] focus:ring-1 focus:ring-[#6f42c1]/30 transition-all" />
+              {emailErr && <p className="text-xs text-red-400 mt-[2px]">{emailErr}</p>}
             </div>
             <div className="flex flex-col gap-1.5">
               <label htmlFor="register-password" className="text-xs font-medium text-[#9ca3af]">Contraseña</label>
@@ -103,35 +111,45 @@ export function RegisterPage() {
                 required
                 placeholder="••••••••"
                 autoComplete="new-password"
+                maxLength={64}
                 value={form.password}
                 onFocus={() => setFocusedField('password')}
                 onBlur={() => setFocusedField('')}
                 onChange={e => setForm({ ...form, password: e.target.value })}
                 className="bg-[#0d0d14] border border-[#ffffff12] rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#6f42c1] focus:ring-1 focus:ring-[#6f42c1]/30 transition-all" />
-              {(focusedField === 'password' || form.password.length > 0) && (
-                <div className="mt-1 flex flex-col gap-1">
-                  {[
-                    { key: 'length', label: 'Mínimo 8 caracteres' },
-                    { key: 'uppercase', label: 'Una mayúscula' },
-                    { key: 'number', label: 'Un número' },
-                    { key: 'special', label: 'Un caracter especial (!@#$%^&*)' },
-                  ].map(rule => {
-                    const ok = passwordRules[rule.key as keyof typeof passwordRules];
-                    return (
-                      <div key={rule.key} className="flex items-center gap-1.5">
-                        <span className={`text-xs ${ok ? 'text-green-400' : 'text-[#6b7280]'}`}>
-                          {ok ? '✓' : '○'}
-                        </span>
-                        <span className={`text-xs ${ok ? 'text-green-400' : 'text-[#6b7280]'}`}>
-                          {rule.label}
-                        </span>
-                      </div>
-                    );
-                  })}
+              <CharCounter current={form.password.length} max={64} showAt={1} />
+              {passwordErr && <p className="text-xs text-red-400 mt-[2px]">{passwordErr}</p>}
+              {(focusedField === 'password' || form.password.length > 0) && form.password.length > 0 && (
+                <div className="mt-1">
+                  <div className="flex gap-1 mb-1">
+                    <div className={`h-1 flex-1 rounded-full ${strength === 'weak' ? 'bg-red-400' : 'bg-gray-200'}`} />
+                    <div className={`h-1 flex-1 rounded-full ${strength === 'medium' || strength === 'strong' ? 'bg-amber-400' : 'bg-gray-200'}`} />
+                    <div className={`h-1 flex-1 rounded-full ${strength === 'strong' ? 'bg-green-400' : 'bg-gray-200'}`} />
+                  </div>
+                  <span className="text-xs text-gray-400">
+                    {strength === 'weak' && 'Weak — add uppercase and numbers'}
+                    {strength === 'medium' && 'Medium — add a symbol (!@#$)'}
+                    {strength === 'strong' && 'Strong password'}
+                  </span>
                 </div>
               )}
             </div>
-            <button type="submit" disabled={loading || !passwordValid}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="register-confirm-password" className="text-xs font-medium text-[#9ca3af]">Confirmar contraseña</label>
+              <input
+                id="register-confirm-password"
+                name="confirmPassword"
+                type="password"
+                required
+                placeholder="••••••••"
+                autoComplete="new-password"
+                maxLength={64}
+                value={form.confirmPassword}
+                onChange={e => setForm({ ...form, confirmPassword: e.target.value })}
+                className="bg-[#0d0d14] border border-[#ffffff12] rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#6f42c1] focus:ring-1 focus:ring-[#6f42c1]/30 transition-all" />
+              {confirmErr && <p className="text-xs text-red-400 mt-[2px]">{confirmErr}</p>}
+            </div>
+            <button type="submit" disabled={loading || !canSubmit}
               className="mt-1 w-full py-2.5 rounded-lg bg-gradient-to-r from-[#6f42c1] to-[#0e639c] hover:from-[#0e639c] hover:to-[#6f42c1] text-white text-sm font-semibold disabled:opacity-50 transition-all shadow-lg shadow-[#6f42c1]/20 cursor-pointer disabled:cursor-not-allowed">
               {loading ? 'Creando cuenta...' : 'Crear cuenta'}
             </button>

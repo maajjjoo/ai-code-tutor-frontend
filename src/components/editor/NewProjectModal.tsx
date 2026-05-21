@@ -1,30 +1,24 @@
 import { useState, useEffect, useRef } from 'react';
-
-const LANGUAGES = [
-  { value: 'python', label: 'Python' },
-  { value: 'javascript', label: 'JavaScript' },
-  { value: 'typescript', label: 'TypeScript' },
-  { value: 'java', label: 'Java' },
-  { value: 'cpp', label: 'C++' },
-];
+import { CharCounter } from '../ui/CharCounter';
+import { validateProjectName } from '../../utils/validation';
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  onCreate: (name: string, language: string) => void;
+  onCreate: (name: string) => void;
   loading: boolean;
   error: string | null;
 }
 
 export function NewProjectModal({ open, onClose, onCreate, loading, error }: Props) {
   const [name, setName] = useState('');
-  const [language, setLanguage] = useState('python');
   const inputRef = useRef<HTMLInputElement>(null);
+  const validationError = name ? validateProjectName(name.trim()) : null;
+  const canSubmit = name.trim().length > 0 && !validationError;
 
   useEffect(() => {
     if (open) {
       setName('');
-      setLanguage('python');
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
@@ -33,11 +27,11 @@ export function NewProjectModal({ open, onClose, onCreate, loading, error }: Pro
     if (!open) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
-      if (e.key === 'Enter' && name.trim()) onCreate(name.trim(), language);
+      if (e.key === 'Enter' && canSubmit) onCreate(name.trim());
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, name, language, onClose, onCreate]);
+  }, [open, name, canSubmit, onClose, onCreate]);
 
   if (!open) return null;
 
@@ -61,7 +55,7 @@ export function NewProjectModal({ open, onClose, onCreate, loading, error }: Pro
         </button>
 
         <h2 id="new-project-title" className="text-[15px] font-medium text-[#111827]">New Project</h2>
-        <p className="text-[12px] text-[#4B5563] mt-1 mb-4">Create a new project with a name and programming language.</p>
+        <p className="text-[12px] text-[#4B5563] mt-1 mb-4">Create a new project.</p>
 
         {error && (
           <div className="mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-[12px] text-red-600">
@@ -69,7 +63,7 @@ export function NewProjectModal({ open, onClose, onCreate, loading, error }: Pro
           </div>
         )}
 
-        <div className="mb-4">
+        <div className="mb-5">
           <label htmlFor="project-name" className="block text-[12px] font-medium text-[#111827] mb-1.5">
             Project name
           </label>
@@ -78,27 +72,16 @@ export function NewProjectModal({ open, onClose, onCreate, loading, error }: Pro
             id="project-name"
             type="text"
             value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder="e.g. My Calculator"
+            onChange={e => {
+              if (e.target.value.length <= 30) setName(e.target.value);
+            }}
+            placeholder="e.g. my-calculator"
             className="w-full border border-[#E5E7EB] rounded-lg px-3 py-2 text-[13px] text-[#111827] placeholder-[#9CA3AF] outline-none focus:border-[#534AB7] transition-colors"
           />
-        </div>
-
-        <div className="mb-5">
-          <label htmlFor="project-language" className="block text-[12px] font-medium text-[#111827] mb-1.5">
-            Language
-          </label>
-          <select
-            id="project-language"
-            value={language}
-            onChange={e => setLanguage(e.target.value)}
-            className="w-full border border-[#E5E7EB] rounded-lg px-3 py-2 text-[13px] text-[#111827] outline-none focus:border-[#534AB7] transition-colors bg-white cursor-pointer appearance-none"
-            style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239CA3AF' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', backgroundSize: '16px' }}
-          >
-            {LANGUAGES.map(l => (
-              <option key={l.value} value={l.value}>{l.label}</option>
-            ))}
-          </select>
+          <CharCounter current={name.length} max={30} />
+          {validationError && (
+            <p className="text-[11px] text-[#DC2626] mt-[2px]">{validationError}</p>
+          )}
         </div>
 
         <div className="flex gap-2">
@@ -109,8 +92,8 @@ export function NewProjectModal({ open, onClose, onCreate, loading, error }: Pro
             Cancel
           </button>
           <button
-            onClick={() => { if (name.trim()) onCreate(name.trim(), language); }}
-            disabled={!name.trim() || loading}
+            onClick={() => { if (canSubmit) onCreate(name.trim()); }}
+            disabled={!canSubmit || loading}
             className="flex-1 bg-[#534AB7] text-white py-2 rounded-lg text-[13px] font-medium hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading && (
