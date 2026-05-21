@@ -2,11 +2,11 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import MonacoEditor from '@monaco-editor/react';
 import { sendChatMessage, analyzeCodePedagogical, runCode, createProject, saveSnapshot } from '../services/api';
-import type { Language, ExerciseContext, CodeAnalysisResponse } from '../types';
+import type { Language, ExerciseContext, CodeAnalysisResponse, CodeSuggestion } from '../types';
 import { ExerciseContextPanel } from '../components/practice/ExerciseContextPanel';
 
 interface StoredUser { id: number; username: string; email: string; }
-interface ChatMsg { id: string; role: 'user' | 'ai'; content: string; quality?: { structure: number; readability: number }; }
+interface ChatMsg { id: string; role: 'user' | 'ai'; content: string; quality?: { structure: number; readability: number }; suggestions?: CodeSuggestion[]; timestamp: number; }
 interface TermLine { type: 'input' | 'output' | 'error'; text: string; }
 
 function uid() { return `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`; }
@@ -93,10 +93,18 @@ function ConsoleTab({ label, active, onClick }: { label: string; active: boolean
   );
 }
 
+function fmtTime(ts: number): string {
+  const d = new Date(ts);
+  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+const SUGGESTION_NUMBERS = ['①', '②', '③'];
+
 function AiMessageBubble({ msg }: { msg: ChatMsg }) {
   const isAi = msg.role === 'ai';
   if (isAi) {
     const hasQuality = msg.quality && msg.quality.structure !== undefined;
+    const hasSuggestions = msg.suggestions && msg.suggestions.length > 0;
     return (
       <div className="flex items-start gap-2 mb-4">
         <div className="w-6 h-6 bg-[#EEEDFE] rounded-md flex items-center justify-center shrink-0 mt-0.5">
@@ -107,6 +115,7 @@ function AiMessageBubble({ msg }: { msg: ChatMsg }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1.5">
             <span className="text-[11px] font-medium text-[#534AB7]">AI Tutor</span>
+            <span className="text-[10px] text-[#9CA3AF]">{fmtTime(msg.timestamp)}</span>
           </div>
           <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-tr-md rounded-br-md rounded-bl-md p-2.5 space-y-2.5">
             {hasQuality && msg.quality && (
@@ -126,6 +135,22 @@ function AiMessageBubble({ msg }: { msg: ChatMsg }) {
                 )}
               </p>
             </div>
+            {hasSuggestions && msg.suggestions && (
+              <div>
+                <p className="text-[10px] text-[#9CA3AF] font-medium uppercase tracking-wide mb-1">Suggestions</p>
+                <div className="space-y-2">
+                  {msg.suggestions.map((s, i) => (
+                    <div key={i} className="flex items-start gap-1.5">
+                      <span className="text-[11px] text-[#534AB7] mt-0.5 shrink-0">{SUGGESTION_NUMBERS[i] ?? `${i + 1}.`}</span>
+                      <div>
+                        <span className="text-[11px] font-medium text-[#111827]">{s.title}</span>
+                        <p className="text-[11px] text-[#6B7280] leading-relaxed">{s.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -133,6 +158,9 @@ function AiMessageBubble({ msg }: { msg: ChatMsg }) {
   }
   return (
     <div className="flex justify-end mb-4">
+      <div className="flex items-center gap-2 justify-end mb-0.5">
+        <span className="text-[10px] text-[#9CA3AF]">{fmtTime(msg.timestamp)}</span>
+      </div>
       <div className="bg-[#534AB7] text-white rounded-tr-md rounded-tl-md rounded-bl-md px-3 py-2 max-w-[85%] text-[11px] leading-relaxed">
         {msg.content}
       </div>
@@ -168,7 +196,7 @@ export function PracticePage() {
 
   // Chat
   const [messages, setMessages] = useState<ChatMsg[]>([
-    { id: 'welcome', role: 'ai', content: 'Welcome! I\'m your AI tutor. Ask me anything or analyze your code to get started.' }
+    { id: 'welcome', role: 'ai', content: 'Welcome! I\'m your AI tutor. Ask me anything or analyze your code to get started.', timestamp: Date.now() }
   ]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
@@ -267,7 +295,8 @@ export function PracticePage() {
 
   const handleAnalyze = useCallback(async () => {
     if (!code.trim()) return;
-    const userMsg: ChatMsg = { id: uid(), role: 'user', content: 'Analyze my code' };
+    const now = Date.now();
+    const userMsg: ChatMsg = { id: uid(), role: 'user', content: 'Analyze my code', timestamp: now };
     setMessages(prev => [...prev, userMsg]);
     setChatLoading(true);
     try {
@@ -276,17 +305,14 @@ export function PracticePage() {
         exerciseContext: exerciseContext ? { prompt: exerciseContext.exercisePrompt, lessonTitle: exerciseContext.lessonTitle, level: exerciseContext.level } : undefined,
       });
       let fullContent = result.summary;
-      if (result.suggestions.length > 0) {
-        fullContent += '\n\nSuggestions:\n' + result.suggestions.map(s => `- ${s.title}: ${s.description}`).join('\n');
-      }
       if (result.hasErrors && result.errorHint) {
         fullContent += `\n\nError detected: ${result.errorHint}`;
       }
-      const aiMsg: ChatMsg = { id: uid(), role: 'ai', content: fullContent };
+      const aiMsg: ChatMsg = { id: uid(), role: 'ai', content: fullContent, suggestions: result.suggestions, timestamp: Date.now() };
       if (result.quality) { aiMsg.quality = result.quality; }
       setMessages(prev => [...prev, aiMsg]);
     } catch {
-      setMessages(prev => [...prev, { id: uid(), role: 'ai', content: 'Could not analyze your code right now. Please try again.' }]);
+      setMessages(prev => [...prev, { id: uid(), role: 'ai', content: 'Could not analyze your code right now. Please try again.', timestamp: Date.now() }]);
     } finally {
       setChatLoading(false);
     }
@@ -296,15 +322,15 @@ export function PracticePage() {
     if (!chatInput.trim()) return;
     const text = chatInput.trim();
     setChatInput('');
-    const userMsg: ChatMsg = { id: uid(), role: 'user', content: text };
+    const userMsg: ChatMsg = { id: uid(), role: 'user', content: text, timestamp: Date.now() };
     setMessages(prev => [...prev, userMsg]);
     setChatLoading(true);
     try {
       const history = messages.slice(-10).map(m => ({ role: m.role === 'ai' ? 'ai' as const : 'user' as const, content: m.content }));
       const res = await sendChatMessage({ message: text, history, currentCode: code, language });
-      setMessages(prev => [...prev, { id: uid(), role: 'ai', content: res.message }]);
+      setMessages(prev => [...prev, { id: uid(), role: 'ai', content: res.message, timestamp: Date.now() }]);
     } catch {
-      setMessages(prev => [...prev, { id: uid(), role: 'ai', content: 'Connection error. Please try again.' }]);
+      setMessages(prev => [...prev, { id: uid(), role: 'ai', content: 'Connection error. Please try again.', timestamp: Date.now() }]);
     } finally {
       setChatLoading(false);
     }
