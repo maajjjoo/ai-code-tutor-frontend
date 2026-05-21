@@ -29,6 +29,15 @@ interface ChatMsg {
   timestamp: number;
 }
 
+interface MonacoMarker {
+  startLineNumber: number;
+  startColumn: number;
+  endLineNumber: number;
+  endColumn: number;
+  message: string;
+  severity: number;
+}
+
 const FS_STORAGE_KEY = 'codetutor-fs-nodes';
 const ACTIVE_PROJECT_KEY = 'codetutor-active-project';
 
@@ -185,9 +194,10 @@ export function PracticePage() {
   const [renamingFileName, setRenamingFileName] = useState('');
   const renameInputRef = useRef<HTMLInputElement>(null);
 
-  // Monaco refs
-  const editorRef = useRef<any>(null);
-  const monacoRef = useRef<any>(null);
+  // Monaco refs — typed via MonacoEditor's onMount callback shape
+  type OnMount = NonNullable<React.ComponentProps<typeof MonacoEditor>['onMount']>;
+  const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
+  const monacoRef = useRef<Parameters<OnMount>[1] | null>(null);
 
   // Tooltip for code explanation
   const [selectedText, setSelectedText] = useState('');
@@ -471,7 +481,7 @@ export function PracticePage() {
         const model = editorRef.current.getModel();
         if (model) {
           monacoRef.current.editor.setModelMarkers(model, 'syntax', []);
-          const markers: any[] = [];
+          const markers: MonacoMarker[] = [];
           if (result.errorHint) {
             const lineMatch = result.errorHint.match(/line\s*(\d+)/i) || result.errorHint.match(/Line\s*(\d+)/i);
             if (lineMatch) {
@@ -537,7 +547,7 @@ export function PracticePage() {
         if (editorRef.current && monacoRef.current) {
           const model = editorRef.current.getModel();
           if (model) {
-            const markers: any[] = [];
+            const markers: MonacoMarker[] = [];
             res.stderr.split('\n').forEach(line => {
               const match = line.match(/line\s*(\d+)/i) || line.match(/Line\s*(\d+)/i);
               if (match) {

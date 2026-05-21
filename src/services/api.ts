@@ -13,11 +13,12 @@ const client = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Attach JWT token to every request if available
+// Attach JWT token from memory (tokenRef) to every request if available
+import { tokenRef } from '../context/AuthContext';
+
 client.interceptors.request.use(config => {
-  const token = localStorage.getItem('codetutor_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  if (tokenRef.current) {
+    config.headers.Authorization = `Bearer ${tokenRef.current}`;
   }
   return config;
 });
@@ -27,8 +28,6 @@ client.interceptors.response.use(
   r => r,
   err => {
     if (err?.response?.status === 401) {
-      localStorage.removeItem('user');
-      localStorage.removeItem('codetutor_token');
       window.location.href = '/login';
     }
     return Promise.reject(err);

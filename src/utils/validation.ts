@@ -16,8 +16,10 @@ export const validateFileName = (name: string) => {
 
 export const validateUsername = (username: string) => {
   if (!username) return 'Username is required'
-  if (username.length < 3) return 'Username must be at least 3 characters'
-  if (username.length > 30) return 'Username cannot exceed 30 characters'
+  if (/^\s+$/.test(username)) return 'Username cannot be empty or contain only spaces'
+  const trimmed = username.trim()
+  if (trimmed.length < 3) return 'Username must be at least 3 characters'
+  if (trimmed.length > 50) return 'Username cannot exceed 50 characters'
   if (username.includes(' ')) return 'No spaces allowed. Use letters, numbers, - or _'
   if (!/^[a-zA-Z0-9_-]+$/.test(username))
     return 'Only letters, numbers, - and _ allowed'
@@ -25,25 +27,10 @@ export const validateUsername = (username: string) => {
 }
 
 export const validateEmail = (email: string) => {
-  if (!email) return 'Email is required'
-  if (email.length > 254) return 'Email too long'
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-    return 'Enter a valid email address'
+  const trimmed = email.trim()
+  if (!trimmed) return 'Email is required'
+  if (trimmed.length > 254) return 'Email too long'
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed))
+    return 'Please enter a valid email address'
   return null
-}
-
-export const validatePassword = (password: string) => {
-  if (!password) return 'Password is required'
-  if (password.length < 8) return 'Password must be at least 8 characters'
-  if (password.length > 64) return 'Password cannot exceed 64 characters'
-  return null
-}
-
-export const getPasswordStrength = (password: string): 'weak' | 'medium' | 'strong' => {
-  const hasUpper = /[A-Z]/.test(password)
-  const hasNumber = /[0-9]/.test(password)
-  const hasSymbol = /[!@#$%^&*]/.test(password)
-  if (hasUpper && hasNumber && hasSymbol) return 'strong'
-  if (hasUpper && hasNumber) return 'medium'
-  return 'weak'
 }

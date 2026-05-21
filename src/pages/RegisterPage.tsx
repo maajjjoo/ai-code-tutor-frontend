@@ -3,45 +3,79 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Code2 } from 'lucide-react';
 import { registerUser, getErrorMessage } from '../services/api';
 import { encodePassword } from '../utils/passwordUtils';
-import { CharCounter } from '../components/ui/CharCounter';
-import { validateUsername, validateEmail, validatePassword, getPasswordStrength } from '../utils/validation';
+import { validateUsername, validateEmail } from '../utils/validation';
+import { useAuth } from '../context/AuthContext';
+
+const PWD_CHECKS = [
+  { key: 'length', label: '8+ characters (not counting spaces)' },
+  { key: 'uppercase', label: 'One uppercase letter' },
+  { key: 'number', label: 'One number' },
+  { key: 'special', label: 'One special character (!@#$%^&*)' },
+] as const;
 
 export function RegisterPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '' });
-  const [focusedField, setFocusedField] = useState('');
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-  const usernameErr = form.username ? validateUsername(form.username) : null;
-  const emailErr = form.email ? validateEmail(form.email) : null;
-  const passwordErr = form.password ? validatePassword(form.password) : null;
-  const confirmErr = form.confirmPassword && form.confirmPassword !== form.password ? 'Passwords do not match' : null;
-
-  const strength = form.password ? getPasswordStrength(form.password) : 'weak';
-
-  const canSubmit = !usernameErr && !emailErr && !passwordErr && !confirmErr
-    && form.username.length > 0 && form.email.length > 0 && form.password.length > 0 && form.confirmPassword.length > 0;
+  const trimmedPwd = form.password.replace(/\s/g, '');
+  const passwordChecks = {
+    length: trimmedPwd.length >= 8,
+    uppercase: /[A-Z]/.test(trimmedPwd),
+    number: /[0-9]/.test(trimmedPwd),
+    special: /[!@#$%^&*]/.test(trimmedPwd),
+  };
+  const allChecksPass = Object.values(passwordChecks).every(Boolean);
+  const confirmMatch = form.confirmPassword === form.password;
+  const usernameOk = form.username.length > 0 && !validateUsername(form.username);
+  const emailOk = form.email.length > 0 && !validateEmail(form.email);
+  const canSubmit = usernameOk && emailOk && allChecksPass && confirmMatch && form.confirmPassword.length > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
-    setError('');
+    setErrors({});
     setLoading(true);
     try {
-      const res = await registerUser({ ...form, password: encodePassword(form.password) });
-      localStorage.setItem('user', JSON.stringify({ id: res.id, username: res.username, email: res.email }));
-      localStorage.setItem('codetutor_token', res.token);
-      navigate('/');
+      const payload = {
+        username: form.username.trim(),
+        email: form.email.trim(),
+        password: encodePassword(trimmedPwd),
+      };
+      const res = await registerUser(payload);
+      login({ id: res.id, username: res.username, email: res.email, createdAt: new Date().toISOString() }, res.token);
+      setSuccess(true);
+      setTimeout(() => navigate('/practice'), 1500);
     } catch (err) {
-      const msg = getErrorMessage(err).toLowerCase();
-      if (msg.includes('email')) setError('Este correo ya está registrado');
-      else if (msg.includes('username') || msg.includes('usuario')) setError('Este nombre de usuario ya está en uso');
-      else setError(getErrorMessage(err));
+      const msg = getErrorMessage(err);
+      const lower = msg.toLowerCase();
+      if (lower.includes('email') || lower.includes('already registered')) {
+        setErrors(prev => ({ ...prev, email: 'Email already registered' }));
+      } else if (lower.includes('username') || lower.includes('already taken')) {
+        setErrors(prev => ({ ...prev, username: 'Username already taken' }));
+      } else {
+        setErrors(prev => ({ ...prev, form: msg }));
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-[#0d0d14] flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="w-14 h-14 rounded-full bg-green-500 flex items-center justify-center mx-auto mb-4">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <p className="text-white text-sm font-medium">Account created! Redirecting...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0d0d14] flex items-center justify-center px-4 relative overflow-hidden">
@@ -64,9 +98,9 @@ export function RegisterPage() {
         <div className="bg-[#161622] border border-[#ffffff0f] rounded-2xl p-6 shadow-2xl shadow-black/40">
           <h2 className="text-base font-semibold text-white mb-5">Crear cuenta</h2>
 
-          {error && (
+          {errors.form && (
             <div className="mb-4 px-3 py-2.5 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400">
-              {error}
+              {errors.form}
             </div>
           )}
 
@@ -80,12 +114,16 @@ export function RegisterPage() {
                 required
                 placeholder="tunombre"
                 autoComplete="username"
-                maxLength={30}
+                maxLength={50}
                 value={form.username}
                 onChange={e => setForm({ ...form, username: e.target.value })}
                 className="bg-[#0d0d14] border border-[#ffffff12] rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#6f42c1] focus:ring-1 focus:ring-[#6f42c1]/30 transition-all" />
-              <CharCounter current={form.username.length} max={30} showAt={1} />
-              {usernameErr && <p className="text-xs text-red-400 mt-[2px]">{usernameErr}</p>}
+              {form.username.length > 0 && validateUsername(form.username) && (
+                <p className="text-[11px] text-[#DC2626] mt-[2px]">{validateUsername(form.username)}</p>
+              )}
+              {errors.username && (
+                <p className="text-[11px] text-[#DC2626] mt-[2px]">{errors.username}</p>
+              )}
             </div>
             <div className="flex flex-col gap-1.5">
               <label htmlFor="register-email" className="text-xs font-medium text-[#9ca3af]">Email</label>
@@ -100,7 +138,12 @@ export function RegisterPage() {
                 value={form.email}
                 onChange={e => setForm({ ...form, email: e.target.value })}
                 className="bg-[#0d0d14] border border-[#ffffff12] rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#6f42c1] focus:ring-1 focus:ring-[#6f42c1]/30 transition-all" />
-              {emailErr && <p className="text-xs text-red-400 mt-[2px]">{emailErr}</p>}
+              {form.email.length > 0 && validateEmail(form.email) && (
+                <p className="text-[11px] text-[#DC2626] mt-[2px]">{validateEmail(form.email)}</p>
+              )}
+              {errors.email && (
+                <p className="text-[11px] text-[#DC2626] mt-[2px]">{errors.email}</p>
+              )}
             </div>
             <div className="flex flex-col gap-1.5">
               <label htmlFor="register-password" className="text-xs font-medium text-[#9ca3af]">Contraseña</label>
@@ -113,24 +156,23 @@ export function RegisterPage() {
                 autoComplete="new-password"
                 maxLength={64}
                 value={form.password}
-                onFocus={() => setFocusedField('password')}
-                onBlur={() => setFocusedField('')}
                 onChange={e => setForm({ ...form, password: e.target.value })}
                 className="bg-[#0d0d14] border border-[#ffffff12] rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#6f42c1] focus:ring-1 focus:ring-[#6f42c1]/30 transition-all" />
-              <CharCounter current={form.password.length} max={64} showAt={1} />
-              {passwordErr && <p className="text-xs text-red-400 mt-[2px]">{passwordErr}</p>}
-              {(focusedField === 'password' || form.password.length > 0) && form.password.length > 0 && (
-                <div className="mt-1">
-                  <div className="flex gap-1 mb-1">
-                    <div className={`h-1 flex-1 rounded-full ${strength === 'weak' ? 'bg-red-400' : 'bg-gray-200'}`} />
-                    <div className={`h-1 flex-1 rounded-full ${strength === 'medium' || strength === 'strong' ? 'bg-amber-400' : 'bg-gray-200'}`} />
-                    <div className={`h-1 flex-1 rounded-full ${strength === 'strong' ? 'bg-green-400' : 'bg-gray-200'}`} />
-                  </div>
-                  <span className="text-xs text-gray-400">
-                    {strength === 'weak' && 'Weak — add uppercase and numbers'}
-                    {strength === 'medium' && 'Medium — add a symbol (!@#$)'}
-                    {strength === 'strong' && 'Strong password'}
-                  </span>
+              {form.password.length > 0 && (
+                <div className="mt-1 flex flex-col gap-1">
+                  {PWD_CHECKS.map(({ key, label }) => {
+                    const ok = passwordChecks[key];
+                    return (
+                      <div key={key} className="flex items-center gap-1.5">
+                        <span className={`text-[11px] ${ok ? 'text-[#0F6E56]' : 'text-[#9CA3AF]'}`}>
+                          {ok ? '✓' : '✗'}
+                        </span>
+                        <span className={`text-[11px] ${ok ? 'text-[#0F6E56]' : 'text-[#9CA3AF]'}`}>
+                          {label}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -147,7 +189,9 @@ export function RegisterPage() {
                 value={form.confirmPassword}
                 onChange={e => setForm({ ...form, confirmPassword: e.target.value })}
                 className="bg-[#0d0d14] border border-[#ffffff12] rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#6f42c1] focus:ring-1 focus:ring-[#6f42c1]/30 transition-all" />
-              {confirmErr && <p className="text-xs text-red-400 mt-[2px]">{confirmErr}</p>}
+              {form.confirmPassword.length > 0 && !confirmMatch && (
+                <p className="text-[11px] text-[#DC2626] mt-[2px]">Passwords do not match</p>
+              )}
             </div>
             <button type="submit" disabled={loading || !canSubmit}
               className="mt-1 w-full py-2.5 rounded-lg bg-gradient-to-r from-[#6f42c1] to-[#0e639c] hover:from-[#0e639c] hover:to-[#6f42c1] text-white text-sm font-semibold disabled:opacity-50 transition-all shadow-lg shadow-[#6f42c1]/20 cursor-pointer disabled:cursor-not-allowed">

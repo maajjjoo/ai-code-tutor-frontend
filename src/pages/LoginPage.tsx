@@ -4,9 +4,11 @@ import { Code2 } from 'lucide-react';
 import { loginUser, getErrorMessage } from '../services/api';
 import { encodePassword } from '../utils/passwordUtils';
 import { validateEmail } from '../utils/validation';
+import { useAuth } from '../context/AuthContext';
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,8 +23,7 @@ export function LoginPage() {
     setLoading(true);
     try {
       const res = await loginUser({ ...form, password: encodePassword(form.password) });
-      localStorage.setItem('user', JSON.stringify({ id: res.id, username: res.username, email: res.email }));
-      localStorage.setItem('codetutor_token', res.token);
+      login({ id: res.id, username: res.username, email: res.email, createdAt: new Date().toISOString() }, res.token);
       navigate('/');
     } catch (err) {
       setError(getErrorMessage(err));

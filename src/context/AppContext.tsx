@@ -1,7 +1,6 @@
 import { createContext, useContext, useReducer, useRef, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import type { Project, AnalysisHistory, CodeSnapshot, GuideStep, ChatMessage, EditorAction, FSNode, FileNode, FolderNode, Language } from '../types';
-import { Stack, Queue, LinkedList, HashMap, DoublyLinkedList, CircularLinkedList, Graph, NaryTree, NaryNode } from '../dataStructures';
 import { analyzeCode as apiAnalyzeCode, generateGuide as apiGenerateGuide, saveSnapshot as apiSaveSnapshot, loadEditor } from '../services/api';
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -169,58 +168,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const stateRef = useRef(state);
   stateRef.current = state;
 
-  // Pila (Stack): historial de acciones del editor para deshacer (undo)
-  const actionStack = useRef(new Stack<EditorAction>());
-
-  // Cola (Queue): solicitudes de análisis pendientes al backend
-  const analysisQueue = useRef(new Queue<string>());
-
-  // Lista simple enlazada: historial de versiones del código en memoria
-  const codeHistory = useRef(new LinkedList<string>());
-
-  // Lista doblemente enlazada: historial de análisis navegable (adelante/atrás)
-  const analysisHistory = useRef(new DoublyLinkedList<AnalysisHistory>());
-
-  // Lista circular: rotación de sugerencias de IA disponibles
-  const suggestionCycle = useRef(new CircularLinkedList<string>());
-
-  // HashMap: explicaciones de funciones detectadas, keyed por nombre de función
-  const explanationMap = useRef(new HashMap<string, string>());
-
-  // Grafo dirigido: mapa de dependencias entre archivos del proyecto
-  const fileDependencyGraph = useRef(new Graph<string>(true));
-
-  // Árbol N-ario: estructura de carpetas del explorador de archivos virtual
-  const folderTree = useRef(new NaryTree<string>());
-
+  const actionStack = useRef<EditorAction[]>([]);
+  const analysisQueue = useRef<string[]>([]);
   const isProcessingQueue = useRef(false);
 
   const loadProject = useCallback(async (project: Project) => {
     dispatch({ type: 'SET_PROJECT', payload: project });
 
-    // Reiniciar todas las estructuras de datos al cargar un nuevo proyecto
-    codeHistory.current = new LinkedList<string>();
-    actionStack.current = new Stack<EditorAction>();
-    explanationMap.current = new HashMap<string, string>();
-    analysisHistory.current = new DoublyLinkedList<AnalysisHistory>();
-    suggestionCycle.current = new CircularLinkedList<string>();
-    fileDependencyGraph.current = new Graph<string>(true);
-    folderTree.current = new NaryTree<string>();
+    actionStack.current = [];
+    analysisQueue.current = [];
 
-    // Inicializar el árbol N-ario con la raíz del proyecto
-    folderTree.current.root = new NaryNode<string>(project.name);
-
-    // Cargar el último snapshot guardado
     try {
       const data = await loadEditor(project.id);
       dispatch({ type: 'SET_CODE', payload: data.currentCode ?? '' });
-      codeHistory.current.append(data.currentCode ?? '');
-    } catch { /* sin snapshot aún */ }
+    } catch {}
 
-    // Historial de análisis — se carga desde el panel de feedback
     try {
       dispatch({ type: 'SET_RECENT_ANALYSIS', payload: [] });
-    } catch { /* ignorar */ }
+    } catch {}
   }, []);
 
   const setCode = (code: string) => dispatch({ type: 'SET_CODE', payload: code });
@@ -229,16 +194,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { currentProject, code } = stateRef.current;
     if (!currentProject || !code.trim()) return;
 
-    // Encolar el código actual para análisis (Cola FIFO)
-    analysisQueue.current.enqueue(code);
+    analysisQueue.current.push(code);
     if (isProcessingQueue.current) return;
 
     isProcessingQueue.current = true;
     dispatch({ type: 'SET_ANALYZING', payload: true });
 
-    while (!analysisQueue.current.isEmpty()) {
-      const snap = analysisQueue.current.dequeue();
-      if (snap !== undefined) {
+    while (analysisQueue.current.length > 0) {
+      const snap = analysisQueue.current.shift();
+      if (snap) {
         try {
           const result = await apiAnalyzeCode({
             code: snap,
@@ -246,23 +210,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             projectId: currentProject.id,
           });
           dispatch({ type: 'ADD_ANALYSIS', payload: result });
-
-          // Guardar en la lista doblemente enlazada para navegación adelante/atrás
-          analysisHistory.current.append(result);
-
-          // Guardar snapshot del código en la lista simple (historial de versiones)
-          codeHistory.current.append(snap);
-
-          // Guardar explicación en el HashMap keyed por projectId+timestamp
-          explanationMap.current.set(`${currentProject.id}_${Date.now()}`, result.explanation);
-
-          // Poblar la lista circular con las sugerencias para rotación
-          if (result.suggestions) {
-            result.suggestions.split('\n').filter(Boolean).forEach((s) => {
-              suggestionCycle.current.append(s);
-            });
-          }
-        } catch { /* ignorar errores de análisis */ }
+        } catch {}
       }
     }
 
@@ -304,7 +252,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleStepComplete = (stepId: string) => {
-    actionStack.current.push({ type: 'STEP_TOGGLE', payload: stepId, timestamp: Date.now() });
+    actionStack.current = [...actionStack.current, { type: 'STEP_TOGGLE', payload: stepId, timestamp: Date.now() }];
     dispatch({ type: 'TOGGLE_STEP', payload: stepId });
   };
 
@@ -347,15 +295,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const importFile = (node: FileNode) => dispatch({ type: 'FS_IMPORT_FILE', payload: node });
   const importFolder = (node: FolderNode) => dispatch({ type: 'FS_ADD_NODE', payload: node });
   const reset = () => {
-    // Limpiar todas las estructuras de datos al resetear el proyecto
-    codeHistory.current = new LinkedList<string>();
-    actionStack.current = new Stack<EditorAction>();
-    explanationMap.current = new HashMap<string, string>();
-    analysisQueue.current = new Queue<string>();
-    analysisHistory.current = new DoublyLinkedList<AnalysisHistory>();
-    suggestionCycle.current = new CircularLinkedList<string>();
-    fileDependencyGraph.current = new Graph<string>(true);
-    folderTree.current = new NaryTree<string>();
+    actionStack.current = [];
+    analysisQueue.current = [];
     dispatch({ type: 'RESET' });
   };
 

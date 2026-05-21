@@ -1,9 +1,10 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { User } from '../types';
 
 interface AuthContextValue {
   user: User | null;
+  token: string | null;
   login: (user: User, token: string) => void;
   logout: () => void;
 }
@@ -11,7 +12,6 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const USER_STORAGE_KEY = 'user';
-const TOKEN_STORAGE_KEY = 'codetutor_token';
 
 function loadUser(): User | null {
   try {
@@ -22,23 +22,36 @@ function loadUser(): User | null {
   }
 }
 
+// Exported so api.ts can read the token without causing re-renders
+export const tokenRef: { current: string | null } = { current: null };
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(loadUser);
+  const [token, setToken] = useState<string | null>(null);
 
-  const login = (authenticatedUser: User, token: string) => {
+  useEffect(() => {
+    const raw = localStorage.getItem(USER_STORAGE_KEY);
+    if (raw) {
+      setUser(JSON.parse(raw) as User);
+    }
+  }, []);
+
+  const login = (authenticatedUser: User, jwt: string) => {
     setUser(authenticatedUser);
+    setToken(jwt);
+    tokenRef.current = jwt;
     localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(authenticatedUser));
-    localStorage.setItem(TOKEN_STORAGE_KEY, token);
   };
 
   const logout = () => {
     setUser(null);
+    setToken(null);
+    tokenRef.current = null;
     localStorage.removeItem(USER_STORAGE_KEY);
-    localStorage.removeItem(TOKEN_STORAGE_KEY);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, token, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
