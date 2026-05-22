@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { COURSES } from '../../../data/courses';
 import { CourseItem } from './CourseItem';
@@ -21,43 +21,43 @@ export function LearningSidebar({ selectedCourseId, completionCounts, levelsDone
   );
 
   return (
-    <div className="w-[280px] h-full flex flex-col bg-[#F9FAFB] border-r border-[#E5E7EB] shrink-0 overflow-hidden">
-      <div className="h-12 px-3 flex items-center border-b border-[#E5E7EB] shrink-0">
+    <div className='w-[280px] h-full flex flex-col bg-[#F9FAFB] dark:bg-gray-900 border-r border-[#E5E7EB] dark:border-gray-800 shrink-0 overflow-hidden transition-colors'>
+      <div className='h-12 px-3 flex items-center border-b border-[#E5E7EB] dark:border-gray-800 shrink-0'>
         <button
           onClick={() => navigate('/')}
-          className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+          className='flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity'
         >
-          <div className="w-6 h-6 rounded-md bg-[#534AB7] flex items-center justify-center">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+          <div className='w-6 h-6 rounded-md bg-[#534AB7] flex items-center justify-center'>
+            <svg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' strokeWidth='2.5' strokeLinecap='round' strokeLinejoin='round'>
+              <polyline points='16 18 22 12 16 6'/><polyline points='8 6 2 12 8 18'/>
             </svg>
           </div>
-          <span className="text-[13px] font-medium text-[#111827]">
-            AI<span className="text-[#534AB7]">Code</span>Tutor
+          <span className='text-[13px] font-medium text-[#111827] dark:text-gray-100'>
+            AI<span className='text-[#534AB7] dark:text-indigo-400'>Code</span>Tutor
           </span>
         </button>
       </div>
 
-      <div className="px-3 py-3">
-        <div className="flex items-center gap-2 bg-white border border-[#E5E7EB] rounded-lg px-[10px] py-[7px]">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      <div className='px-3 py-3'>
+        <div className='flex items-center gap-2 bg-white dark:bg-gray-800 border border-[#E5E7EB] dark:border-gray-700 rounded-lg px-[10px] py-[7px]'>
+          <svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='#9CA3AF' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' className='shrink-0'>
+            <circle cx='11' cy='11' r='8'/><line x1='21' y1='21' x2='16.65' y2='16.65'/>
           </svg>
           <input
-            type="text"
-            placeholder="Search topics..."
+            type='text'
+            placeholder='Search topics...'
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="flex-1 text-[12px] text-[#111827] outline-none bg-transparent placeholder:text-[#9CA3AF]"
+            className='flex-1 text-[12px] text-[#111827] dark:text-gray-100 outline-none bg-transparent placeholder:text-[#9CA3AF]'
           />
         </div>
       </div>
 
-      <div className="px-3 pb-1">
-        <span className="text-[11px] font-medium uppercase tracking-wide text-[#9CA3AF] px-[4px]">Courses</span>
+      <div className='px-3 pb-1'>
+        <span className='text-[11px] font-medium uppercase tracking-wide text-[#9CA3AF] px-[4px]'>Courses</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 pb-2">
+      <div className='flex-1 overflow-y-auto px-3 pb-2'>
         {filtered.map(course => {
           const counts = completionCounts[course.id] ?? {};
           const totalDone = Object.values(counts).reduce((a, b) => a + b, 0);
