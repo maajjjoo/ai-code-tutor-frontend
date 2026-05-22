@@ -5,6 +5,7 @@ import type { User } from '../types';
 interface AuthContextValue {
   user: User | null;
   token: string | null;
+  isAuthenticated: boolean;
   login: (user: User, token: string) => void;
   logout: () => void;
 }
@@ -40,7 +41,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(authenticatedUser);
     setToken(jwt);
     tokenRef.current = jwt;
-    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(authenticatedUser));
+    const safeUser = { id: authenticatedUser.id, username: authenticatedUser.username };
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(safeUser));
   };
 
   const logout = () => {
@@ -48,10 +50,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     tokenRef.current = null;
     localStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem('codetutor-fs-nodes');
   };
 
+  const isAuthenticated = user !== null && tokenRef.current !== null;
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

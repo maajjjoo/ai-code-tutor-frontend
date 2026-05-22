@@ -46,7 +46,7 @@ export function RegisterPage() {
       const payload = {
         username: form.username.trim(),
         email: form.email.trim(),
-        password: btoa(unescape(encodeURIComponent(trimmedPwd))),
+        password: trimmedPwd,
       };
       const res = await registerUser(payload);
       login({ id: res.id, username: res.username, email: res.email, createdAt: new Date().toISOString() }, res.token);

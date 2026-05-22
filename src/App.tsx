@@ -5,18 +5,22 @@ import { RegisterPage } from './pages/RegisterPage';
 import { PracticePage } from './pages/PracticePage';
 import { LearningPage } from './pages/LearningPage';
 import ErrorBoundary from './components/ErrorBoundary';
+import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { useBackendStatus } from './hooks/useBackendStatus';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const user = localStorage.getItem('user');
-  return user ? <>{children}</> : <Navigate to="/login" replace />;
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return <>{children}</>;
 }
 
 export default function App() {
   const backendStatus = useBackendStatus();
 
   return (
+    <AuthProvider>
     <BrowserRouter>
       <ErrorBoundary>
         {backendStatus === 'waking' && (
@@ -67,5 +71,6 @@ export default function App() {
         </ToastProvider>
       </ErrorBoundary>
     </BrowserRouter>
+    </AuthProvider>
   );
 }

@@ -25,7 +25,7 @@ export function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const res = await loginUser({ ...form, password: btoa(unescape(encodeURIComponent(form.password))) });
+      const res = await loginUser({ ...form, password: form.password });
       login({ id: res.id, username: res.username, email: res.email, createdAt: new Date().toISOString() }, res.token);
       showToast('Welcome back!', 'success');
       navigate('/');

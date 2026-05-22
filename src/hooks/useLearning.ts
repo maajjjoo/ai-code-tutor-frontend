@@ -7,6 +7,7 @@ import {
   getDoneLessons, setDoneLesson, resetDoneLessons,
   isBookmarked, setBookmark,
 } from '../utils/lessonCache';
+import { tokenRef } from '../context/AuthContext';
 import { COURSES } from '../data/courses';
 import { LESSON_TITLES } from '../data/lessonTitles';
 
@@ -67,9 +68,8 @@ export function useLearning() {
   }, [refreshKey]);
 
   useEffect(() => {
-    const token = localStorage.getItem('codetutor_token');
     const headers: Record<string, string> = {};
-    if (token) headers.Authorization = `Bearer ${token}`;
+    if (tokenRef.current) headers.Authorization = `Bearer ${tokenRef.current}`;
     fetch(`${API_BASE}/topics`, { headers })
       .then(r => r.json())
       .then((data: Array<{ id: number; name: string }>) => {
@@ -102,9 +102,8 @@ export function useLearning() {
     const topicId = topicMap[course.name];
     if (!topicId) return;
     try {
-      const token = localStorage.getItem('codetutor_token');
       const headers: Record<string, string> = {};
-      if (token) headers.Authorization = `Bearer ${token}`;
+      if (tokenRef.current) headers.Authorization = `Bearer ${tokenRef.current}`;
       const res = await fetch(
         `${API_BASE}/lessons/topic/${topicId}/level/${encodeURIComponent(level)}`,
         { headers },
@@ -139,9 +138,8 @@ export function useLearning() {
       if (!course) throw new Error('Course not found');
       const topicId = topicMap[course.name];
       if (!topicId) throw new Error('Topic not loaded');
-      const token = localStorage.getItem('codetutor_token');
       const headers: Record<string, string> = {};
-      if (token) headers.Authorization = `Bearer ${token}`;
+      if (tokenRef.current) headers.Authorization = `Bearer ${tokenRef.current}`;
       const res = await fetch(
         `${API_BASE}/lessons/topic/${topicId}?level=${encodeURIComponent(level)}&lessonNumber=${lessonNumber}`,
         { headers },

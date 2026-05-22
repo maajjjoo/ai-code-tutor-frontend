@@ -11,10 +11,9 @@ import type { VNode } from '../types/vfs';
 import { uid } from '../types/vfs';
 import { useEditorPersistence } from './useEditorPersistence';
 import { useVirtualFileSystem } from './useVirtualFileSystem';
+import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { usePageTitle } from './usePageTitle';
-
-interface StoredUser { id: number; username: string; email: string; }
 
 export interface ChatMsg {
   id: string;
@@ -44,8 +43,9 @@ function buildFileName(language: Language): string {
 export function usePracticePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const user: StoredUser = JSON.parse(localStorage.getItem('user') ?? '{}');
+  const { user } = useAuth();
   const { showToast } = useToast();
+  const userId = user?.id ?? 0;
 
   const vfs = useVirtualFileSystem();
 
@@ -113,10 +113,10 @@ export function usePracticePage() {
   useEffect(() => { aiBottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [aiMessages, aiLoading]);
 
   useEffect(() => {
-    if (user.id) {
-      getProjectsByUser(user.id).then(setSavedProjects).catch(() => {});
+    if (userId) {
+      getProjectsByUser(userId).then(setSavedProjects).catch(() => {});
     }
-  }, [user.id]);
+  }, [userId]);
 
   const createExerciseNodes = useCallback((project: BackendProject, folderId: string, fileName: string, content: string, lang: Language): VNode[] => {
     return [
@@ -129,7 +129,8 @@ export function usePracticePage() {
     vfs.setFsNodes(nodes);
     localStorage.setItem('codetutor-fs-nodes', JSON.stringify(nodes));
     setActiveProject(project);
-    localStorage.setItem(ACTIVE_PROJECT_KEY, JSON.stringify(project));
+    const minimalProject = { id: project.id, name: project.name, programmingLanguage: project.programmingLanguage };
+    localStorage.setItem(ACTIVE_PROJECT_KEY, JSON.stringify(minimalProject));
     vfs.setOpenFile({ name: fileName, content, language: lang });
     vfs.setCode(content);
     vfs.setFsActiveId(nodes[1]?.id ?? null);
@@ -138,12 +139,12 @@ export function usePracticePage() {
   const autoCreateExerciseProject = useCallback(async (ctx: ExerciseContext) => {
     setIsCreatingProject(true);
     try {
-      if (!user.id) throw new Error('No user found');
+      if (!userId) throw new Error('No user found');
       const project = await createProject({
         name: `${ctx.lessonTitle} — ${ctx.language}`,
         description: ctx.exercisePrompt,
         programmingLanguage: ctx.language.toLowerCase() as Language,
-        userId: user.id,
+        userId: userId,
       });
       const fileName = buildFileName(ctx.language as Language);
       const content = `// Exercise: ${ctx.exercisePrompt}\n\n`;
@@ -153,13 +154,13 @@ export function usePracticePage() {
       const nodes = createExerciseNodes(project, folderId, fileName, content, lang);
       persistProject(project, nodes, fileName, content, lang);
       try { await saveSnapshot({ content, versionLabel: 'Initial exercise code', projectId: project.id }); } catch {}
-      try { const projects = await getProjectsByUser(user.id); setSavedProjects(projects); } catch {}
+      try { if (userId) { const projects = await getProjectsByUser(userId); setSavedProjects(projects); } } catch {}
     } catch (err) {
       console.error('Auto-create exercise project failed:', err);
     } finally {
       setIsCreatingProject(false);
     }
-  }, [user.id, createExerciseNodes, persistProject]);
+  }, [userId, createExerciseNodes, persistProject]);
 
   useEffect(() => {
     const raw = searchParams?.get('exercise');
@@ -213,7 +214,7 @@ export function usePracticePage() {
       }
       vfs.fileContentsRef.current = {};
       const newProject = await createProject({
-        name, description: name, programmingLanguage: 'javascript' as Language, userId: user.id,
+        name, description: name, programmingLanguage: 'javascript' as Language, userId: userId,
       });
       vfs.setOpenFile(null);
       vfs.setCode('');
@@ -224,8 +225,9 @@ export function usePracticePage() {
       vfs.setFsNodes(newNodes);
       localStorage.setItem('codetutor-fs-nodes', JSON.stringify(newNodes));
       setActiveProject(newProject);
-      localStorage.setItem(ACTIVE_PROJECT_KEY, JSON.stringify(newProject));
-      const projects = await getProjectsByUser(user.id);
+      const minimalProject = { id: newProject.id, name: newProject.name, programmingLanguage: newProject.programmingLanguage };
+      localStorage.setItem(ACTIVE_PROJECT_KEY, JSON.stringify(minimalProject));
+      const projects = await getProjectsByUser(userId);
       setSavedProjects(projects);
       setIsNewProjectModalOpen(false);
     } catch {
@@ -268,7 +270,8 @@ export function usePracticePage() {
     vfs.setFsNodes(projectNodes);
     localStorage.setItem('codetutor-fs-nodes', JSON.stringify(projectNodes));
     setActiveProject(project);
-    localStorage.setItem(ACTIVE_PROJECT_KEY, JSON.stringify(project));
+    const minimalProject = { id: project.id, name: project.name, programmingLanguage: project.programmingLanguage };
+    localStorage.setItem(ACTIVE_PROJECT_KEY, JSON.stringify(minimalProject));
     setLoadingProject(false);
     showToast('Project loaded', 'success');
   };

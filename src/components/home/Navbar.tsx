@@ -1,28 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-interface UserData {
-  id: number;
-  username: string;
-  email: string;
-}
+import { useAuth } from '../../context/AuthContext';
 
 export function Navbar() {
   const navigate = useNavigate();
-  const [user, setUser] = useState<UserData | null>(null);
+  const { user, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (stored) {
-      try {
-        setUser(JSON.parse(stored));
-      } catch {
-        setUser(null);
-      }
-    }
-  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -36,9 +20,7 @@ export function Navbar() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('codetutor_token');
-    setUser(null);
+    logout();
     setDropdownOpen(false);
     navigate('/');
   };
