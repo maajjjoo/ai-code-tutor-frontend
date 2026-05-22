@@ -1,40 +1,6 @@
 ﻿import { useNavigate } from 'react-router-dom';
 
-const CODE_LINES = [
-  { type: 'comment', text: '# Calculadora simple en Python' },
-  { type: 'blank' },
-  { type: 'keyword', text: 'def ' },
-  { type: 'function', text: 'calcular' },
-  { type: 'plain', text: '(a, b, operacion):' },
-  { type: 'keyword', text: '    if ' },
-  { type: 'plain', text: 'operacion == ' },
-  { type: 'string', text: "'+'" },
-  { type: 'keyword', text: '        return ' },
-  { type: 'plain', text: 'a + b' },
-  { type: 'keyword', text: '    elif ' },
-  { type: 'plain', text: 'operacion == ' },
-  { type: 'string', text: "'-'" },
-  { type: 'keyword', text: '        return ' },
-  { type: 'plain', text: 'a - b' },
-  { type: 'blank' },
-  { type: 'function', text: 'print' },
-  { type: 'plain', text: '(calcular(' },
-  { type: 'number', text: '5' },
-  { type: 'plain', text: ', ' },
-  { type: 'number', text: '3' },
-  { type: 'plain', text: ", '" },
-  { type: 'string', text: '+' },
-  { type: 'plain', text: "'))" },
-];
 
-const STYLES: Record<string, string> = {
-  comment: 'text-gray-500 italic',
-  keyword: 'text-purple-400',
-  function: 'text-blue-400',
-  string: 'text-green-400',
-  number: 'text-orange-400',
-  plain: 'text-gray-300',
-};
 
 export function HeroSection() {
   const navigate = useNavigate();
@@ -103,18 +69,28 @@ export function HeroSection() {
             </div>
             <span className="text-[11px] font-mono text-[#6B7280] ml-[8px]">calculadora.py</span>
           </div>
-          <div className="px-5 py-4 font-mono text-xs leading-[1.8]">
-            {CODE_LINES.map((line, i) => (
-              line.type === 'blank' ? (
-                <div key={i} className="h-[18px]" />
-              ) : line.type === 'comment' ? (
-                <div key={i} className="text-gray-500 italic">{line.text}</div>
-              ) : (
-                <div key={i} className={STYLES[line.type]}>{line.text}</div>
-              )
-            ))}
-            <span className="inline-block w-[2px] h-[14px] bg-[#534AB7] ml-[1px] align-text-bottom animate-blink" />
-          </div>
+          <pre style={{
+            background: '#1E1E2E', padding: '16px 20px', margin: 0,
+            fontFamily: "'JetBrains Mono', 'Fira Code', 'Courier New', monospace",
+            fontSize: '13px', lineHeight: '1.8', overflowX: 'auto', textAlign: 'left',
+          }}>
+            <code>
+              <span style={{ color: '#546E7A', fontStyle: 'italic' }}># Calculadora simple en Python</span>
+              <br /><br />
+              <span style={{ color: '#C792EA' }}>def </span><span style={{ color: '#82AAFF' }}>calcular</span><span style={{ color: '#EEFFFF' }}>(a, b, operacion):</span>
+              <br />
+              <span style={{ color: '#EEFFFF' }}>    </span><span style={{ color: '#C792EA' }}>if </span><span style={{ color: '#EEFFFF' }}>operacion == </span><span style={{ color: '#C3E88D' }}>'+'</span><span style={{ color: '#EEFFFF' }}>:</span>
+              <br />
+              <span style={{ color: '#EEFFFF' }}>        </span><span style={{ color: '#C792EA' }}>return </span><span style={{ color: '#EEFFFF' }}>a + b</span>
+              <br />
+              <span style={{ color: '#EEFFFF' }}>    </span><span style={{ color: '#C792EA' }}>elif </span><span style={{ color: '#EEFFFF' }}>operacion == </span><span style={{ color: '#C3E88D' }}>'-'</span><span style={{ color: '#EEFFFF' }}>:</span>
+              <br />
+              <span style={{ color: '#EEFFFF' }}>        </span><span style={{ color: '#C792EA' }}>return </span><span style={{ color: '#EEFFFF' }}>a - b</span>
+              <br /><br />
+              <span style={{ color: '#82AAFF' }}>print</span><span style={{ color: '#EEFFFF' }}>(calcular(</span><span style={{ color: '#F78C6C' }}>5</span><span style={{ color: '#EEFFFF' }}>, </span><span style={{ color: '#F78C6C' }}>3</span><span style={{ color: '#EEFFFF' }}>, </span><span style={{ color: '#C3E88D' }}>'+'</span><span style={{ color: '#EEFFFF' }}>))</span>
+              <span id="cursor" style={{ display: 'inline-block', width: 2, height: 14, background: '#534AB7', verticalAlign: 'middle', marginLeft: 2, animation: 'blink 1s step-end infinite' }} />
+            </code>
+          </pre>
         </div>
 
         {/* Stats row */}
