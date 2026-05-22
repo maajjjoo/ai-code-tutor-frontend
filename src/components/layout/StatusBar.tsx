@@ -29,8 +29,8 @@ export function StatusBar({ language, projectName, version, username, errorCount
         {/* Save status */}
         {projectName && projectName !== 'No file open' && projectName !== '—' && (
           hasUnsavedChanges
-            ? <span className="opacity-80">● Sin guardar</span>
-            : <span className="opacity-80">✓ Guardado</span>
+            ? <span className="opacity-80">● Unsaved</span>
+            : <span className="opacity-80">✓ Saved</span>
         )}
 
         {projectName !== 'No file open' && projectName && (

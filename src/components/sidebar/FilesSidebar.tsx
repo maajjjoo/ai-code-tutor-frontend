@@ -10,7 +10,7 @@ import type { Project, Language } from '../../types';
 import type { VNode, VFile, VFolder } from '../../types/vfs';
 import { uid, detectLang } from '../../types/vfs';
 
-// ─── Nodo del árbol con drag & drop ──────────────────────────────────────────
+// ─── Tree node with drag & drop ──────────────────────────────────────────────
 function TreeNode({ node, depth, nodes, activeId, onOpen, onToggle, onDelete, onRename, onCreateFileIn, onDrop }:
   { node: VNode; depth: number; nodes: VNode[]; activeId: string | null;
     onOpen: (n: VFile) => void; onToggle: (id: string) => void;
@@ -126,6 +126,7 @@ interface Props {
 export function FilesSidebar({ userId, nodes, setNodes, activeId, setActiveId, onOpenFile, refreshTrigger, onNewProject, onLoadProject, onDeleteProject, savedProjects: externalProjects, activeProjectId }: Props) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectsOpen, setProjectsOpen] = useState(false);
+  const [projectLoadError, setProjectLoadError] = useState<string | null>(null);
   const [newFileName, setNewFileName] = useState('');
   const [creatingFile, setCreatingFile] = useState(false);
   const [creatingFileParent, setCreatingFileParent] = useState<string | null>(null);
@@ -297,6 +298,7 @@ export function FilesSidebar({ userId, nodes, setNodes, activeId, setActiveId, o
   };
 
   const handleLoadProject = async (p: Project) => {
+    setProjectLoadError(null);
     try {
       // First try to load from localStorage (has full node structure)
       const localNodes = localStorage.getItem(`codetutor-project-${p.id}-nodes`);
@@ -335,7 +337,10 @@ export function FilesSidebar({ userId, nodes, setNodes, activeId, setActiveId, o
       } else {
         setNodes(projectNodes);
       }
-    } catch (err) { console.error(getErrorMessage(err)); }
+    } catch (err) {
+      console.error('Failed to load project:', err);
+      setProjectLoadError(getErrorMessage(err));
+    }
   };
 
   const roots = nodes.filter(n => n.parentId === null);
@@ -386,7 +391,7 @@ export function FilesSidebar({ userId, nodes, setNodes, activeId, setActiveId, o
           </div>
         )}
 
-        {/* Input para nueva carpeta/proyecto */}
+        {/* Input for new folder/project */}
         {creatingFolder && (
           <div className="flex items-center gap-1 px-3 py-0.5">
             <Folder className="w-4 h-4 text-[#D97706] shrink-0" />
@@ -399,7 +404,7 @@ export function FilesSidebar({ userId, nodes, setNodes, activeId, setActiveId, o
           </div>
         )}
 
-        {/* Input para nuevo archivo */}
+        {/* Input for new file */}
         {creatingFile && (
           <div className="flex items-center gap-1 px-3 py-0.5" style={{ paddingLeft: creatingFileParent ? '22px' : undefined }}>
             <File className="w-4 h-4 text-[#534AB7] shrink-0" />
@@ -433,6 +438,9 @@ export function FilesSidebar({ userId, nodes, setNodes, activeId, setActiveId, o
         </button>
         {projectsOpen && (
           <div className="max-h-48 overflow-y-auto pb-1">
+            {projectLoadError && (
+              <p className="text-xs text-[#EF4444] px-4 py-2">{projectLoadError}</p>
+            )}
             {(externalProjects ?? projects).length === 0 && <p className="text-xs text-[#9CA3AF] px-4 py-2">No saved projects.</p>}
             {(externalProjects ?? projects).map(p => {
               const isActive = activeProjectId === p.id;

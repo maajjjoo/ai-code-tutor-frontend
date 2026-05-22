@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
-import MonacoEditor from '@monaco-editor/react';
+import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import type * as Monaco from 'monaco-editor';
+
+const MonacoEditor = lazy(() => import('@monaco-editor/react'));
 import { saveSnapshot, getErrorMessage } from '../../services/api';
 import type { EditorData } from '../../types';
 import { useEditorPersistence } from '../../hooks/useEditorPersistence';
@@ -123,8 +124,8 @@ export function CodeEditor({ editorData, code, onChange, onErrorCountChange }: P
       <div className="flex-1 flex items-center justify-center bg-white select-none">
         <div className="text-center">
           <p className="text-5xl mb-4 opacity-20 text-[#9CA3AF]">{'</>'}</p>
-          <p className="text-sm text-[#9CA3AF]">Abre un archivo del explorador para empezar</p>
-          <p className="text-xs mt-2 text-[#C4C4C4]">Ctrl+S para guardar</p>
+          <p className="text-sm text-[#9CA3AF]">Open a file from the explorer to start</p>
+          <p className="text-xs mt-2 text-[#C4C4C4]">Ctrl+S to save</p>
         </div>
       </div>
     );
@@ -146,7 +147,7 @@ export function CodeEditor({ editorData, code, onChange, onErrorCountChange }: P
           {hasUnsavedChanges && (
             <div
               className="w-1.5 h-1.5 rounded-full shrink-0 bg-[#F59E0B]"
-              title="Cambios sin guardar"
+              title="Unsaved changes"
             />
           )}
         </div>
@@ -155,7 +156,7 @@ export function CodeEditor({ editorData, code, onChange, onErrorCountChange }: P
         <div className="ml-auto flex items-center gap-3 px-3">
           {lastSavedAt && !hasUnsavedChanges && (
             <span className="text-[10px] text-[#9CA3AF]">
-              Guardado {lastSavedAt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+              Saved {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
 
@@ -164,7 +165,7 @@ export function CodeEditor({ editorData, code, onChange, onErrorCountChange }: P
             <button
               onClick={() => setShowVersionHistory(previous => !previous)}
               className="flex items-center gap-1 text-[10px] px-2 py-1 rounded cursor-pointer transition-colors hover:bg-[#F0F1F3] text-[#9CA3AF]"
-              aria-label="Ver historial de versiones"
+              aria-label="View version history"
             >
               <Clock className="w-3 h-3" />
               {versionHistory.length}
@@ -187,28 +188,34 @@ export function CodeEditor({ editorData, code, onChange, onErrorCountChange }: P
 
       {/* Monaco Editor */}
       <div className="flex-1 overflow-hidden">
-        <MonacoEditor
-          height="100%"
-          language={monacoLanguage}
-          value={code}
-          theme="vs"
-          onMount={handleEditorMount}
-          onChange={value => onChange(value ?? '')}
-          aria-label="Editor de código"
-          options={{
-            fontSize: 14,
-            fontFamily: "'Cascadia Code', 'Fira Code', 'Consolas', monospace",
-            minimap: { enabled: false },
-            scrollBeyondLastLine: false,
-            wordWrap: 'on',
-            lineNumbers: 'on',
-            renderLineHighlight: 'line',
-            tabSize: 2,
-            automaticLayout: true,
-            padding: { top: 12 },
-            cursorBlinking: 'smooth',
-          }}
-        />
+        <Suspense fallback={
+          <div className="flex items-center justify-center h-full bg-white">
+            <div className="animate-spin h-6 w-6 border-2 border-[#534AB7] rounded-full border-t-transparent" />
+          </div>
+        }>
+          <MonacoEditor
+            height="100%"
+            language={monacoLanguage}
+            value={code}
+            theme="vs"
+            onMount={handleEditorMount}
+            onChange={value => onChange(value ?? '')}
+            aria-label="Code editor"
+            options={{
+              fontSize: 14,
+              fontFamily: "'Cascadia Code', 'Fira Code', 'Consolas', monospace",
+              minimap: { enabled: false },
+              scrollBeyondLastLine: false,
+              wordWrap: 'on',
+              lineNumbers: 'on',
+              renderLineHighlight: 'line',
+              tabSize: 2,
+              automaticLayout: true,
+              padding: { top: 12 },
+              cursorBlinking: 'smooth',
+            }}
+          />
+        </Suspense>
       </div>
 
       {/* Version history panel */}

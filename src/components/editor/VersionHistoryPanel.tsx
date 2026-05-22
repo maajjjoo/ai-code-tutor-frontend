@@ -58,12 +58,12 @@ export function VersionHistoryPanel({ versions, currentContent, onRestore, onClo
       <div className="flex items-center justify-between px-4 py-3 border-b shrink-0" style={{ borderColor: '#1e1e2e' }}>
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4" style={{ color: '#89b4fa' }} />
-          <span className="text-sm font-semibold" style={{ color: '#cdd6f4' }}>Historial de versiones</span>
+          <span className="text-sm font-semibold" style={{ color: '#cdd6f4' }}>Version history</span>
         </div>
         <button
           onClick={onClose}
           className="p-1 rounded cursor-pointer transition-colors hover:bg-[#1e1e2e]"
-          aria-label="Cerrar historial"
+          aria-label="Close history"
         >
           <X className="w-4 h-4" style={{ color: '#585b70' }} />
         </button>
@@ -73,7 +73,7 @@ export function VersionHistoryPanel({ versions, currentContent, onRestore, onClo
         {/* Version list */}
         <div className="w-40 border-r flex flex-col overflow-y-auto shrink-0" style={{ borderColor: '#1e1e2e' }}>
           {versions.length === 0 && (
-            <p className="text-xs p-3 text-center" style={{ color: '#585b70' }}>Sin versiones guardadas</p>
+            <p className="text-xs p-3 text-center" style={{ color: '#585b70' }}>No saved versions</p>
           )}
           {[...versions].reverse().map(version => (
             <button
@@ -85,13 +85,13 @@ export function VersionHistoryPanel({ versions, currentContent, onRestore, onClo
                 background: selectedVersion?.versionNumber === version.versionNumber ? '#1e1e2e' : 'transparent',
                 color: selectedVersion?.versionNumber === version.versionNumber ? '#cdd6f4' : '#a6adc8',
               }}
-              aria-label={`Versión ${version.versionNumber}`}
+              aria-label={`Version ${version.versionNumber}`}
             >
               <p className="text-[11px] font-medium">v{version.versionNumber}</p>
               <p className="text-[10px] mt-0.5" style={{ color: '#585b70' }}>
-                {new Date(version.savedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                {new Date(version.savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </p>
-              <p className="text-[10px]" style={{ color: '#45475a' }}>{version.linesCount} líneas</p>
+              <p className="text-[10px]" style={{ color: '#45475a' }}>{version.linesCount} lines</p>
             </button>
           ))}
         </div>
@@ -100,7 +100,7 @@ export function VersionHistoryPanel({ versions, currentContent, onRestore, onClo
         <div className="flex-1 flex flex-col overflow-hidden">
           {!selectedVersion ? (
             <div className="flex-1 flex items-center justify-center">
-              <p className="text-xs" style={{ color: '#585b70' }}>Selecciona una versión</p>
+              <p className="text-xs" style={{ color: '#585b70' }}>Select a version</p>
             </div>
           ) : (
             <>
@@ -127,32 +127,32 @@ export function VersionHistoryPanel({ versions, currentContent, onRestore, onClo
                     onClick={() => setShowRestoreConfirm(true)}
                     className="w-full flex items-center justify-center gap-2 py-2 text-xs rounded-lg cursor-pointer transition-colors border"
                     style={{ borderColor: '#89b4fa', color: '#89b4fa' }}
-                    aria-label="Restaurar esta versión"
+                    aria-label="Restore this version"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    Restaurar esta versión
+                    Restore this version
                   </button>
                 ) : (
                   <div className="flex flex-col gap-2">
                     <p className="text-[11px] text-center" style={{ color: '#a6adc8' }}>
-                      ¿Reemplazar el contenido actual?
+                      Replace current content?
                     </p>
                     <div className="flex gap-2">
                       <button
                         onClick={handleRestoreConfirm}
                         className="flex-1 py-1.5 text-xs rounded cursor-pointer transition-colors"
                         style={{ background: '#89b4fa', color: '#1e1e2e' }}
-                        aria-label="Confirmar restauración"
+                        aria-label="Confirm restore"
                       >
-                        Confirmar
+                        Confirm
                       </button>
                       <button
                         onClick={() => setShowRestoreConfirm(false)}
                         className="flex-1 py-1.5 text-xs rounded cursor-pointer transition-colors border"
                         style={{ borderColor: '#313244', color: '#585b70' }}
-                        aria-label="Cancelar restauración"
+                        aria-label="Cancel restore"
                       >
-                        Cancelar
+                        Cancel
                       </button>
                     </div>
                   </div>

@@ -1,7 +1,7 @@
-// ─── Lenguajes soportados ─────────────────────────────────────────────────────
+// ─── Supported languages ──────────────────────────────────────────────────────
 export type Language = 'javascript' | 'python' | 'java' | 'typescript' | 'cpp' | 'plaintext';
 
-// ─── Entidades del backend ────────────────────────────────────────────────────
+// ─── Backend entities ─────────────────────────────────────────────────────────
 export interface User {
   id: number;
   username: string;
