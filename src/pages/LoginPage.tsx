@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Code2 } from 'lucide-react';
 import { loginUser, getErrorMessage } from '../services/api';
-import { encodePassword } from '../utils/passwordUtils';
 import { validateEmail } from '../utils/validation';
 import { useAuth } from '../context/AuthContext';
 
@@ -22,7 +21,7 @@ export function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const res = await loginUser({ ...form, password: encodePassword(form.password) });
+      const res = await loginUser({ ...form, password: btoa(unescape(encodeURIComponent(form.password))) });
       login({ id: res.id, username: res.username, email: res.email, createdAt: new Date().toISOString() }, res.token);
       navigate('/');
     } catch (err) {
@@ -46,12 +45,12 @@ export function LoginPage() {
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-bold text-white tracking-tight">CodeTutor</h1>
-            <p className="text-sm text-[#6b7280] mt-1">Tu tutor de programación con IA</p>
+            <p className="text-sm text-[#6b7280] mt-1">Your AI programming tutor</p>
           </div>
         </div>
 
         <div className="bg-[#161622] border border-[#ffffff0f] rounded-2xl p-6 shadow-2xl shadow-black/40">
-          <h2 className="text-base font-semibold text-white mb-5">Iniciar sesión</h2>
+          <h2 className="text-base font-semibold text-white mb-5">Log in</h2>
 
           {error && (
             <div className="mb-4 px-3 py-2.5 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400">
@@ -70,13 +69,13 @@ export function LoginPage() {
                 maxLength={254}
                 value={form.email}
                 onChange={e => setForm({ ...form, email: e.target.value })}
-                placeholder="tu@email.com"
+                placeholder="you@email.com"
                 autoComplete="email"
                 className="bg-[#0d0d14] border border-[#ffffff12] rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#0e639c] focus:ring-1 focus:ring-[#0e639c]/30 transition-all" />
               {emailErr && <p className="text-xs text-red-400 mt-[2px]">{emailErr}</p>}
             </div>
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="login-password" className="text-xs font-medium text-[#9ca3af]">Contraseña</label>
+              <label htmlFor="login-password" className="text-xs font-medium text-[#9ca3af]">Password</label>
               <input
                 id="login-password"
                 name="password"
@@ -94,14 +93,14 @@ export function LoginPage() {
             </div>
             <button type="submit" disabled={loading || !canSubmit}
               className="mt-1 w-full py-2.5 rounded-lg bg-gradient-to-r from-[#0e639c] to-[#1177bb] hover:from-[#1177bb] hover:to-[#0e639c] text-white text-sm font-semibold disabled:opacity-50 transition-all shadow-lg shadow-[#0e639c]/20 cursor-pointer">
-              {loading ? 'Entrando...' : 'Entrar'}
+              {loading ? 'Logging in...' : 'Log in'}
             </button>
           </form>
         </div>
 
         <p className="text-center text-xs text-[#6b7280] mt-5">
-          ¿No tienes cuenta?{' '}
-          <Link to="/register" className="text-[#60a5fa] hover:text-white transition-colors">Regístrate</Link>
+          Don't have an account?{' '}
+           <Link to="/register" className="text-[#60a5fa] hover:text-white transition-colors">Register</Link>
         </p>
       </div>
     </div>

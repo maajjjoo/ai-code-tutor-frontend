@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Code2 } from 'lucide-react';
 import { registerUser, getErrorMessage } from '../services/api';
-import { encodePassword } from '../utils/passwordUtils';
 import { validateUsername, validateEmail } from '../utils/validation';
 import { useAuth } from '../context/AuthContext';
 
@@ -43,7 +42,7 @@ export function RegisterPage() {
       const payload = {
         username: form.username.trim(),
         email: form.email.trim(),
-        password: encodePassword(trimmedPwd),
+        password: btoa(unescape(encodeURIComponent(trimmedPwd))),
       };
       const res = await registerUser(payload);
       login({ id: res.id, username: res.username, email: res.email, createdAt: new Date().toISOString() }, res.token);
@@ -91,12 +90,12 @@ export function RegisterPage() {
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-bold text-white tracking-tight">CodeTutor</h1>
-            <p className="text-sm text-[#6b7280] mt-1">Empieza a aprender hoy</p>
+            <p className="text-sm text-[#6b7280] mt-1">Start learning today</p>
           </div>
         </div>
 
         <div className="bg-[#161622] border border-[#ffffff0f] rounded-2xl p-6 shadow-2xl shadow-black/40">
-          <h2 className="text-base font-semibold text-white mb-5">Crear cuenta</h2>
+          <h2 className="text-base font-semibold text-white mb-5">Create account</h2>
 
           {errors.form && (
             <div className="mb-4 px-3 py-2.5 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400">
@@ -106,13 +105,13 @@ export function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="register-username" className="text-xs font-medium text-[#9ca3af]">Usuario</label>
+              <label htmlFor="register-username" className="text-xs font-medium text-[#9ca3af]">Username</label>
               <input
                 id="register-username"
                 name="username"
                 type="text"
                 required
-                placeholder="tunombre"
+                placeholder="yourusername"
                 autoComplete="username"
                 maxLength={50}
                 value={form.username}
@@ -132,7 +131,7 @@ export function RegisterPage() {
                 name="email"
                 type="email"
                 required
-                placeholder="tu@email.com"
+                placeholder="you@email.com"
                 autoComplete="email"
                 maxLength={254}
                 value={form.email}
@@ -146,7 +145,7 @@ export function RegisterPage() {
               )}
             </div>
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="register-password" className="text-xs font-medium text-[#9ca3af]">Contraseña</label>
+              <label htmlFor="register-password" className="text-xs font-medium text-[#9ca3af]">Password</label>
               <input
                 id="register-password"
                 name="password"
@@ -177,7 +176,7 @@ export function RegisterPage() {
               )}
             </div>
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="register-confirm-password" className="text-xs font-medium text-[#9ca3af]">Confirmar contraseña</label>
+              <label htmlFor="register-confirm-password" className="text-xs font-medium text-[#9ca3af]">Confirm password</label>
               <input
                 id="register-confirm-password"
                 name="confirmPassword"
@@ -195,14 +194,14 @@ export function RegisterPage() {
             </div>
             <button type="submit" disabled={loading || !canSubmit}
               className="mt-1 w-full py-2.5 rounded-lg bg-gradient-to-r from-[#6f42c1] to-[#0e639c] hover:from-[#0e639c] hover:to-[#6f42c1] text-white text-sm font-semibold disabled:opacity-50 transition-all shadow-lg shadow-[#6f42c1]/20 cursor-pointer disabled:cursor-not-allowed">
-              {loading ? 'Creando cuenta...' : 'Crear cuenta'}
+              {loading ? 'Creating account...' : 'Create account'}
             </button>
           </form>
         </div>
 
         <p className="text-center text-xs text-[#6b7280] mt-5">
-          ¿Ya tienes cuenta?{' '}
-          <Link to="/login" className="text-[#60a5fa] hover:text-white transition-colors">Inicia sesión</Link>
+          Already have an account?{' '}
+           <Link to="/login" className="text-[#60a5fa] hover:text-white transition-colors">Log in</Link>
         </p>
       </div>
     </div>

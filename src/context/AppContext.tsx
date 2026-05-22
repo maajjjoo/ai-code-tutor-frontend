@@ -3,7 +3,6 @@ import type { ReactNode } from 'react';
 import type { Project, AnalysisHistory, CodeSnapshot, GuideStep, ChatMessage, EditorAction, FSNode, FileNode, FolderNode, Language } from '../types';
 import { analyzeCode as apiAnalyzeCode, generateGuide as apiGenerateGuide, saveSnapshot as apiSaveSnapshot, loadEditor } from '../services/api';
 
-// ─── State ────────────────────────────────────────────────────────────────────
 interface AppState {
   currentProject: Project | null;
   code: string;
@@ -130,7 +129,6 @@ function reducer(state: AppState, action: Action): AppState {
   }
 }
 
-// ─── Context value ────────────────────────────────────────────────────────────
 interface AppContextValue {
   state: AppState;
   loadProject: (project: Project) => Promise<void>;
@@ -153,7 +151,6 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-// ─── Provider ─────────────────────────────────────────────────────────────────
 function uid() { return `id_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`; }
 function detectLanguage(name: string): Language {
   if (name.endsWith('.py')) return 'python';
@@ -277,7 +274,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_CHAT_LOADING', payload: false });
   }, []);
 
-  // ─── File system ────────────────────────────────────────────────────────────
   const createFile = (name: string, parentId: string | null) => {
     const lang = detectLanguage(name);
     const node: FileNode = { id: uid(), type: 'file', name, content: '', language: lang, parentId };

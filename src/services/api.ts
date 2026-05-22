@@ -16,7 +16,6 @@ const client = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Attach JWT token from memory (tokenRef) to every request if available
 import { tokenRef } from '../context/AuthContext';
 
 client.interceptors.request.use(config => {
@@ -37,14 +36,12 @@ client.interceptors.response.use(
   }
 );
 
-// ─── Auth ─────────────────────────────────────────────────────────────────────
 export const registerUser = (body: RegisterRequest) =>
   client.post<LoginResponse>('/users', body).then(r => r.data);
 
 export const loginUser = (body: LoginRequest) =>
   client.post<LoginResponse>('/users/login', body).then(r => r.data);
 
-// ─── Proyectos ────────────────────────────────────────────────────────────────
 export const createProject = (body: CreateProjectRequest) =>
   client.post<Project>('/projects', body).then(r => r.data);
 
@@ -57,7 +54,7 @@ export const loadEditor = (projectId: number) =>
 export const saveSnapshot = (body: SaveSnapshotRequest) =>
   client.post<CodeSnapshot>('/projects/snapshots', body).then(r => r.data);
 
-// ─── IA ───────────────────────────────────────────────────────────────────────
+
 export const analyzeCode = (body: AnalyzeCodeRequest) =>
   client.post<AnalysisHistory>('/code/analyze', body).then(r => r.data);
 
@@ -69,7 +66,7 @@ export const generateGuide = (description: string) =>
     headers: { 'Content-Type': 'text/plain' },
   }).then(r => r.data);
 
-// ─── Learn ────────────────────────────────────────────────────────────────────
+
 export const getTopicsByCategory = (category: LearnCategory) =>
   client.get<LearnTopic[]>(`/learn/topics/category/${category}`).then(r => r.data);
 
@@ -85,7 +82,6 @@ export const evaluateSolution = (body: EvaluateSolutionRequest) =>
 export const getProgress = (userId: number) =>
   client.get<UserProgress[]>(`/learn/progress/${userId}`).then(r => r.data);
 
-// ─── Exercise Verify ───────────────────────────────────────────────────────────
 export const verifyExercise = (body: {
   code: string;
   language: string;
@@ -94,7 +90,6 @@ export const verifyExercise = (body: {
   level: string;
 }) => client.post<ExerciseVerifyResponse>('/lessons/exercise/verify', body).then(r => r.data);
 
-// ─── Helper para extraer mensaje de error del backend ─────────────────────────
 export function getErrorMessage(err: unknown): string {
   if (typeof err === 'object' && err !== null && 'response' in err) {
     const e = err as { response?: { data?: Record<string, unknown> } };
@@ -106,10 +101,9 @@ export function getErrorMessage(err: unknown): string {
       return JSON.stringify(data);
     }
   }
-  return 'Error inesperado. Intenta de nuevo.';
+  return 'Unexpected error. Please try again.';
 }
 
-// ─── Chat unificado ───────────────────────────────────────────────────────────
 export const sendChatMessage = (body: {
   message: string;
   history: { role: 'user' | 'ai'; content: string }[];
@@ -117,10 +111,8 @@ export const sendChatMessage = (body: {
   language?: string;
 }) => client.post<{ message: string }>('/chat', body).then(r => r.data);
 
-// ─── Explain ──────────────────────────────────────────────────────────────────
 export const explainCode = (body: { selectedText: string; language: string; context: string }) =>
   client.post<{ explanation: string }>('/editor/explain', body).then(r => r.data);
 
-// ─── Terminal ─────────────────────────────────────────────────────────────────
 export const runCode = (body: { code: string; language: string; stdin?: string }) =>
   client.post<{ stdout: string; stderr: string; exitCode: number }>('/terminal/run', body).then(r => r.data);

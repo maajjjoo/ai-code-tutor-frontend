@@ -10,27 +10,21 @@ import { TerminalPanel, type TerminalLine } from '../components/editor/TerminalP
 import { AIPanel } from '../components/ai/AIPanel';
 import { createProject, saveSnapshot, getProjectsByUser, loadEditor } from '../services/api';
 import type { Language, Project } from '../types';
-import type { VNode, VFile } from '../types/vfs';
+import type { VNode } from '../types/vfs';
 import { uid } from '../types/vfs';
 import { Terminal, Save, FolderPlus } from 'lucide-react';
+import { useVirtualFileSystem } from '../hooks/useVirtualFileSystem';
 
 interface StoredUser { id: number; username: string; email: string; }
-interface OpenFile { name: string; content: string; language: Language; }
 
-const FS_STORAGE_KEY = 'codetutor-fs-nodes';
 const ACTIVE_PROJECT_KEY = 'codetutor-active-project';
 
 export function EditorPage() {
   const navigate = useNavigate();
   const user: StoredUser = JSON.parse(localStorage.getItem('user') ?? '{}');
+  const vfs = useVirtualFileSystem();
 
   const [activity, setActivity] = useState<ActivityView>('files');
-  const [openFile, setOpenFile] = useState<OpenFile | null>(null);
-  const [code, setCode] = useState('');
-  const [fsNodes, setFsNodes] = useState<VNode[]>(() => {
-    try { return JSON.parse(localStorage.getItem(FS_STORAGE_KEY) ?? '[]'); } catch { return []; }
-  });
-  const [fsActiveId, setFsActiveId] = useState<string | null>(null);
   const [errorCount, setErrorCount] = useState(0);
   const [canValidate, setCanValidate] = useState(false);
   const [hasAiWarning, setHasAiWarning] = useState(false);
@@ -41,8 +35,6 @@ export function EditorPage() {
   const [isSaved, setIsSaved] = useState(true);
   const [isResizingAiPanel, setIsResizingAiPanel] = useState(false);
   const [savingToBackend, setSavingToBackend] = useState(false);
-
-  // Active project from backend
   const [activeProject, setActiveProject] = useState<Project | null>(() => {
     try { return JSON.parse(localStorage.getItem(ACTIVE_PROJECT_KEY) ?? 'null'); } catch { return null; }
   });
@@ -56,14 +48,12 @@ export function EditorPage() {
 
   const aiPanelResizerRef = useRef<HTMLDivElement>(null);
 
-  // Load saved projects list
   useEffect(() => {
     if (user.id) {
       getProjectsByUser(user.id).then(setSavedProjects).catch(() => {});
     }
   }, [user.id]);
 
-  // Toast auto-dismiss
   useEffect(() => {
     if (toast) {
       const t = setTimeout(() => setToast(null), 3000);
@@ -71,7 +61,6 @@ export function EditorPage() {
     }
   }, [toast]);
 
-  // Warn before closing
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if (!isSaved) { event.preventDefault(); event.returnValue = ''; }
@@ -80,25 +69,19 @@ export function EditorPage() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isSaved]);
 
-  // ─── SAVE current project ──────────────────────────────────────────────────
   const saveCurrentProject = async () => {
     if (!activeProject || savingToBackend) return;
     setSavingToBackend(true);
-
-    // Update file content in nodes
-    const updatedNodes = fsNodes.map(n =>
-      n.id === fsActiveId && n.type === 'file' ? { ...n, content: code } : n
+    const updatedNodes = vfs.fsNodes.map(n =>
+      n.id === vfs.fsActiveId && n.type === 'file' ? { ...n, content: vfs.code } : n
     );
-    setFsNodes(updatedNodes);
-    localStorage.setItem(FS_STORAGE_KEY, JSON.stringify(updatedNodes));
-
+    vfs.setFsNodes(updatedNodes);
     try {
       await saveSnapshot({
         content: JSON.stringify({ nodes: updatedNodes }),
         versionLabel: `Save - ${new Date().toLocaleTimeString()}`,
         projectId: activeProject.id,
       });
-      // Save locally too
       localStorage.setItem(`codetutor-project-${activeProject.id}-nodes`, JSON.stringify(updatedNodes));
       setIsSaved(true);
       setToast('Project saved');
@@ -109,46 +92,43 @@ export function EditorPage() {
     }
   };
 
-  // ─── CREATE new project ────────────────────────────────────────────────────
+  const clearEditor = useCallback(() => {
+    vfs.setOpenFile(null);
+    vfs.setCode('');
+    vfs.setFsActiveId(null);
+    setTerminalLines([]);
+  }, [vfs]);
+
+  const handleOpenFile = useCallback((name: string, content: string, language: Language) => {
+    vfs.setOpenFile({ name, content, language });
+    vfs.setCode(content);
+    setErrorCount(0);
+    setCanValidate(false);
+    setHasAiWarning(false);
+  }, [vfs]);
+
   const handleCreateProject = async (name: string) => {
     setModalLoading(true);
     setModalError(null);
-
     try {
-      // Step 1: Save current project if active
       if (activeProject && !isSaved) {
         await saveCurrentProject();
       }
-
-      // Step 2: Create new project in backend
-      const newProject = await createProject({
-        name,
-        description: name,
-        programmingLanguage: 'javascript',
-        userId: user.id,
-      });
-
-      // Step 3: Clear editor
-      setOpenFile(null);
-      setCode('');
-      setFsActiveId(null);
+      vfs.setOpenFile(null);
+      vfs.setCode('');
+      vfs.setFsActiveId(null);
       setTerminalLines([]);
-
-      // Step 4: Set up new project with empty folder
       const folderId = uid();
       const newNodes: VNode[] = [{ id: folderId, type: 'folder', name, parentId: null, open: true }];
-      setFsNodes(newNodes);
-      localStorage.setItem(FS_STORAGE_KEY, JSON.stringify(newNodes));
-
-      // Step 5: Set active project
+      vfs.setFsNodes(newNodes);
+      const newProject = await createProject({
+        name, description: name, programmingLanguage: 'javascript', userId: user.id,
+      });
       setActiveProject(newProject);
       localStorage.setItem(ACTIVE_PROJECT_KEY, JSON.stringify(newProject));
       setIsSaved(true);
-
-      // Step 6: Refresh saved projects list
       const projects = await getProjectsByUser(user.id);
       setSavedProjects(projects);
-
       setIsNewProjectModalOpen(false);
     } catch (err) {
       setModalError('Error creating project. Check your connection.');
@@ -158,50 +138,33 @@ export function EditorPage() {
     }
   };
 
-  // ─── LOAD a saved project ─────────────────────────────────────────────────
-  const handleLoadSavedProject = async (project: Project) => {
-    // Save current first
-    if (activeProject && !isSaved) {
-      await saveCurrentProject();
-    }
-
-    // Clear editor
-    setOpenFile(null);
-    setCode('');
-    setFsActiveId(null);
-    setTerminalLines([]);
-    setLoadingProject(true);
-
-    // Try to load from localStorage first (instant)
-    const localNodes = localStorage.getItem(`codetutor-project-${project.id}-nodes`);
+  const loadProjectNodes = useCallback(async (project: Project): Promise<VNode[]> => {
     let projectNodes: VNode[] = [];
-
+    const localNodes = localStorage.getItem(`codetutor-project-${project.id}-nodes`);
     if (localNodes) {
-      try {
-        const parsed = JSON.parse(localNodes);
-        if (Array.isArray(parsed) && parsed.length > 0) projectNodes = parsed;
-      } catch { /* ignore */ }
+      try { const parsed = JSON.parse(localNodes); if (Array.isArray(parsed) && parsed.length > 0) projectNodes = parsed; } catch {}
     }
-
-    // If no local data, load from backend
     if (projectNodes.length === 0) {
       try {
         const data = await loadEditor(project.id);
-        try {
-          const parsed = JSON.parse(data.currentCode ?? '');
-          if (parsed.nodes && Array.isArray(parsed.nodes)) projectNodes = parsed.nodes;
-        } catch { /* not JSON, ignore */ }
-      } catch { /* backend failed */ }
+        try { const parsed = JSON.parse(data.currentCode ?? ''); if (parsed.nodes && Array.isArray(parsed.nodes)) projectNodes = parsed.nodes; } catch {}
+      } catch {}
     }
-
-    // If still empty, just create the folder
     if (projectNodes.length === 0) {
       const folderId = uid();
       projectNodes = [{ id: folderId, type: 'folder', name: project.name, parentId: null, open: true }];
     }
+    return projectNodes;
+  }, []);
 
-    setFsNodes(projectNodes);
-    localStorage.setItem(FS_STORAGE_KEY, JSON.stringify(projectNodes));
+  const handleLoadSavedProject = async (project: Project) => {
+    if (activeProject && !isSaved) {
+      await saveCurrentProject();
+    }
+    clearEditor();
+    setLoadingProject(true);
+    const projectNodes = await loadProjectNodes(project);
+    vfs.setFsNodes(projectNodes);
     setActiveProject(project);
     localStorage.setItem(ACTIVE_PROJECT_KEY, JSON.stringify(project));
     setIsSaved(true);
@@ -209,53 +172,21 @@ export function EditorPage() {
     setToast('Project loaded');
   };
 
-  // ─── DELETE a project ────────────────────────────────────────────────────────
   const handleDeleteProject = async () => {
     if (!deleteTarget) return;
-    try {
-      // Call backend to delete (we'll use a simple approach - remove from list)
-      // For now remove from local state and localStorage
-      localStorage.removeItem(`codetutor-project-${deleteTarget.id}-nodes`);
-      setSavedProjects(prev => prev.filter(p => p.id !== deleteTarget.id));
-      setDeleteTarget(null);
-      setToast('Project deleted');
-    } catch {
-      throw new Error('Delete failed');
-    }
+    localStorage.removeItem(`codetutor-project-${deleteTarget.id}-nodes`);
+    setSavedProjects(prev => prev.filter(p => p.id !== deleteTarget.id));
+    setDeleteTarget(null);
+    setToast('Project deleted');
   };
 
-  // ─── File operations ───────────────────────────────────────────────────────
-  const handleOpenFile = (name: string, content: string, language: Language) => {
-    setOpenFile({ name, content, language });
-    setCode(content);
-    setErrorCount(0);
-    setCanValidate(false);
-    setHasAiWarning(false);
-  };
-
-  useEffect(() => {
-    if (!fsActiveId || !openFile) return;
-    const activeNode = fsNodes.find(n => n.id === fsActiveId);
-    if (activeNode && activeNode.type === 'file') {
-      const file = activeNode as VFile;
-      if (file.name !== openFile.name || file.language !== openFile.language) {
-        setOpenFile({ name: file.name, content: code, language: file.language });
-      }
-    }
-  }, [fsNodes, fsActiveId]);
-
-  useEffect(() => {
-    if (fsActiveId === null && openFile) { setOpenFile(null); setCode(''); }
-  }, [fsActiveId]);
-
-  // Ctrl+S
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveCurrentProject(); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [activeProject, fsNodes, fsActiveId, code, isSaved]);
+  }, [activeProject, vfs.fsNodes, vfs.fsActiveId, vfs.code, isSaved]);
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -281,24 +212,22 @@ export function EditorPage() {
     document.addEventListener('mouseup', handleMouseUp);
   }, [aiPanelWidth]);
 
-  const editorData = openFile ? {
+  const editorData = vfs.openFile ? {
     projectId: activeProject?.id ?? 0,
-    projectName: openFile.name,
-    language: openFile.language,
-    currentCode: openFile.content,
+    projectName: vfs.openFile.name,
+    language: vfs.openFile.language,
+    currentCode: vfs.openFile.content,
     versionNumber: 0,
   } : null;
 
   return (
     <div className="flex flex-col h-screen bg-[#F8F9FA] text-[#111827] overflow-hidden">
-      {/* Toast */}
       {toast && (
         <div className="fixed top-4 right-4 z-[200] bg-[#111827] text-white text-[12px] px-4 py-2 rounded-lg shadow-lg animate-fade-in">
           {toast}
         </div>
       )}
 
-      {/* New Project Modal */}
       <NewProjectModal
         open={isNewProjectModalOpen}
         onClose={() => { setIsNewProjectModalOpen(false); setModalError(null); }}
@@ -307,7 +236,6 @@ export function EditorPage() {
         error={modalError}
       />
 
-      {/* Delete Project Modal */}
       <DeleteProjectModal
         open={!!deleteTarget}
         projectName={deleteTarget?.name ?? ''}
@@ -316,18 +244,16 @@ export function EditorPage() {
       />
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Activity Bar */}
         <ActivityBar active={activity} onChange={setActivity} />
 
-        {/* Sidebar */}
         <div className="w-56 bg-white border-r border-[#E5E7EB] flex flex-col overflow-hidden shrink-0">
           {activity === 'files' && (
             <FilesSidebar
               userId={user.id}
-              nodes={fsNodes}
-              setNodes={setFsNodes}
-              activeId={fsActiveId}
-              setActiveId={setFsActiveId}
+              nodes={vfs.fsNodes}
+              setNodes={vfs.setFsNodes}
+              activeId={vfs.fsActiveId}
+              setActiveId={vfs.setFsActiveId}
               onOpenFile={handleOpenFile}
               onNewProject={() => setIsNewProjectModalOpen(true)}
               onLoadProject={(_nodes, projId) => {
@@ -371,25 +297,20 @@ export function EditorPage() {
           )}
         </div>
 
-        {/* Editor area */}
         <div className="flex flex-1 overflow-hidden">
           <div className="flex flex-col flex-1 overflow-hidden">
-            {/* Top bar with project info — NO language badge */}
             {activeProject && (
               <div className="h-9 bg-white border-b border-[#E5E7EB] flex items-center px-3 shrink-0 gap-3">
                 <span className="text-[13px] font-medium text-[#111827]">{activeProject.name}</span>
                 <div className="ml-auto">
-                  <button
-                    onClick={() => setIsNewProjectModalOpen(true)}
-                    className="flex items-center gap-1 text-[11px] text-[#9CA3AF] hover:text-[#534AB7] cursor-pointer transition-colors"
-                  >
+                  <button onClick={() => setIsNewProjectModalOpen(true)}
+                    className="flex items-center gap-1 text-[11px] text-[#9CA3AF] hover:text-[#534AB7] cursor-pointer transition-colors">
                     <FolderPlus className="w-3.5 h-3.5" /> New
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Editor */}
             <div className="flex flex-1 overflow-hidden relative">
               {loadingProject && (
                 <div className="absolute inset-0 z-10 bg-white/80 flex flex-col items-center justify-center">
@@ -402,13 +323,12 @@ export function EditorPage() {
               )}
               <CodeEditor
                 editorData={editorData}
-                code={code}
-                onChange={newCode => { setCode(newCode); setIsSaved(false); }}
+                code={vfs.code}
+                onChange={newCode => { vfs.setCode(newCode); setIsSaved(false); }}
                 onErrorCountChange={(count, validate) => { setErrorCount(count); setCanValidate(validate); }}
               />
             </div>
 
-            {/* Bottom bar */}
             {!terminalOpen && (
               <div className="flex items-center justify-between px-3 py-1.5 bg-white border-t border-[#E5E7EB] shrink-0">
                 <button onClick={() => setTerminalOpen(true)}
@@ -425,10 +345,9 @@ export function EditorPage() {
               </div>
             )}
 
-            {/* Terminal */}
             {terminalOpen && (
               <div className="h-48 shrink-0">
-                <TerminalPanel code={code} language={openFile?.language ?? 'javascript'}
+                <TerminalPanel code={vfs.code} language={vfs.openFile?.language ?? 'javascript'}
                   lines={terminalLines} running={terminalRunning}
                   onLines={setTerminalLines} onRunning={setTerminalRunning}
                   onClose={() => setTerminalOpen(false)} />
@@ -436,14 +355,13 @@ export function EditorPage() {
             )}
           </div>
 
-          {/* AI Panel */}
           <>
             <div ref={aiPanelResizerRef} onMouseDown={handleAiPanelResizerMouseDown}
               className="relative shrink-0 cursor-col-resize group" style={{ width: 6 }}>
               <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-0.5 transition-colors group-hover:bg-[#534AB7]/40"
                 style={{ background: isResizingAiPanel ? 'rgba(83,74,183,0.5)' : 'transparent' }} />
             </div>
-            <AIPanel editorData={editorData} code={code} exerciseContext={null} width={aiPanelWidth}
+            <AIPanel editorData={editorData} code={vfs.code} exerciseContext={null} width={aiPanelWidth}
               onAiResponse={(msg) => {
                 if (['error', 'falta', 'incorrecto'].some(w => msg.toLowerCase().includes(w))) setHasAiWarning(true);
               }} />
@@ -451,8 +369,7 @@ export function EditorPage() {
         </div>
       </div>
 
-      {/* Status Bar — language from file extension */}
-      <StatusBar language={openFile?.language ?? (activeProject ? 'plaintext' : '—')} projectName={activeProject?.name ?? 'No project'}
+      <StatusBar language={vfs.openFile?.language ?? (activeProject ? 'plaintext' : '—')} projectName={activeProject?.name ?? 'No project'}
         version={0} username={user.username ?? ''} errorCount={errorCount}
         canValidate={canValidate} hasAiWarning={hasAiWarning} hasUnsavedChanges={!isSaved} />
     </div>
