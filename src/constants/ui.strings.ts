@@ -49,21 +49,14 @@ export const UI = {
     // AI Panel
     AI_TUTOR: 'Tutor IA',
     AI_WELCOME: 'Hola, soy tu tutor de programación',
-    AI_SUBTITLE: 'Escribe un mensaje o analiza tu código',
-    ANALYZE_CODE: 'Analizar',
-    ANALYZING: 'Analizando...',
+    AI_SUBTITLE: 'Escribe un mensaje o envía tu código al chat',
     NEXT_STEP_QUESTION: '¿Qué sigue?',
     EXPLAIN_THIS: 'Explícame esto',
     ASK_PLACEHOLDER: 'Escribe un mensaje...',
     CHAT: 'Chat',
     HISTORY: 'Historial',
-    CODE_QUALITY: 'CALIDAD DEL CÓDIGO',
-    WHAT_IT_DOES: 'QUÉ HACE TU CÓDIGO',
-    SUGGESTIONS: 'SUGERENCIAS',
     NO_CONVERSATIONS: 'No hay conversaciones anteriores.',
-    EXPLAIN_CODE_HINT: 'Presiona Ctrl+K para explicar',
-    EXPLAINING: 'Explicando...',
-    PREVIOUS_CONVERSATION: 'Conversación anterior',
+    SEND_CODE: 'Enviar código al chat',
 
     // Learning
     COURSES: 'Cursos',

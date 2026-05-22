@@ -12,7 +12,7 @@ import { useCodeExecution } from './useCodeExecution';
 import { useAIChat } from './useAIChat';
 import { storage } from '../utils/storage';
 
-export type { ChatMsg } from './useAIChat';
+export type { ConversationMessage as ChatMsg } from '../types/conversation.types';
 
 const ACTIVE_PROJECT_KEY = 'codetutor-active-project';
 
@@ -67,11 +67,7 @@ export function usePracticePage() {
     setTermLines: exec.setTermLines,
   });
 
-  const ai = useAIChat({
-    vfs, editorRef, monacoRef,
-    activeProject,
-    exerciseContext: project.exerciseContext,
-  });
+  const ai = useAIChat({ vfs, activeProject });
 
   const handleExplainCode = useCallback(async () => {
     const text = selectedText;
@@ -107,15 +103,11 @@ export function usePracticePage() {
   saveRef.current = project.saveCurrentProject;
   const runRef = useRef(exec.handleRunCode);
   runRef.current = exec.handleRunCode;
-  const analyzeRef = useRef(ai.handleAnalyze);
-  analyzeRef.current = ai.handleAnalyze;
-
   useEffect(() => {
     const handler = async (e: KeyboardEvent) => {
       const ctrl = e.ctrlKey || e.metaKey;
       if (ctrl && e.key === 's') { e.preventDefault(); await saveRef.current(); }
       if (ctrl && e.key === 'Enter') { e.preventDefault(); runRef.current(); }
-      if (ctrl && e.shiftKey && e.key === 'A') { e.preventDefault(); analyzeRef.current(); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);

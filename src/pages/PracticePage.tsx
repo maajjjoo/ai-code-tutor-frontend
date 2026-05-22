@@ -244,7 +244,7 @@ export function PracticePage() {
                 <p className="text-[11px] leading-relaxed whitespace-pre-wrap">{p.tooltipContent}</p>
               ) : (
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-[#9CA3AF] dark:text-gray-500">{UI.EXPLAIN_CODE_HINT}</span>
+                  <span className="text-[11px] text-[#9CA3AF] dark:text-gray-500">Presiona Ctrl+K para explicar</span>
                 </div>
               )}
             </div>
@@ -257,8 +257,14 @@ export function PracticePage() {
       </div>
 
       <div className="bg-white dark:bg-gray-900 border-l border-[#E5E7EB] dark:border-gray-700 flex flex-col overflow-hidden relative">
-        <AiChatPanel aiMessages={p.aiMessages} aiInput={p.aiInput} aiLoading={p.aiLoading} showHistory={p.showHistory} code={p.code} aiBottomRef={p.aiBottomRef}
-          onInputChange={p.setAiInput} onSend={p.handleAiSend} onAnalyze={p.handleAnalyze} onToggleHistory={() => p.setShowHistory((prev: boolean) => !prev)}
+        <AiChatPanel messages={p.messages} aiInput={p.aiInput} aiLoading={p.aiLoading} showHistory={p.showHistory}
+          conversations={p.conversations} activeConversationId={p.activeConversationId}
+          aiBottomRef={p.aiBottomRef}
+          onInputChange={p.setAiInput} onSend={p.handleAiSend} onSendCode={p.sendCodeAsMessage}
+          onToggleHistory={() => p.setShowHistory((prev: boolean) => !prev)}
+          onNewConversation={p.createConversation}
+          onSelectConversation={p.selectConversation}
+          onDeleteConversation={p.deleteConversation}
         />
         <div onMouseDown={e => { e.preventDefault(); p.resizing.current = 'ai'; p.resizeStartX.current = e.clientX; p.resizeStartWidth.current = p.aiPanelWidth; const onMove = (ev: MouseEvent) => { if (p.resizing.current !== 'ai') return; p.setAiPanelWidth(Math.max(240, Math.min(480, p.resizeStartWidth.current - (ev.clientX - p.resizeStartX.current)))); }; const onUp = () => { p.resizing.current = null; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); }; document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp); }}
           className="absolute left-0 top-0 bottom-0 w-[4px] cursor-col-resize hover:bg-[#534AB7]/30 transition-colors z-10"
