@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import MonacoEditor from '@monaco-editor/react';
 import { FolderPlus } from 'lucide-react';
-import type { VFile } from '../types/vfs';
+import type { VFile, VNode } from '../types/vfs';
 import { NewProjectModal } from '../components/editor/NewProjectModal';
 import { DeleteProjectModal } from '../components/editor/DeleteProjectModal';
 import { SaveIndicatorBar } from '../components/editor/SaveIndicatorBar';
@@ -126,7 +126,7 @@ export function PracticePage() {
                   ) : (
                     <>
                       <span className={`text-[13px] truncate flex-1 ${isActive ? 'font-medium text-[#111827]' : 'text-[#9CA3AF]'}`}>{f.name}</span>
-                      <button onClick={e => { e.stopPropagation(); p.setFsNodes((prev: any) => prev.filter((n: any) => n.id !== f.id)); if (p.fsActiveId === f.id) { p.setFsActiveId(null); p.setOpenFile(null); p.setCode(''); } delete p.fileContentsRef.current[f.id]; p.setToast('File deleted'); }}
+                      <button onClick={e => { e.stopPropagation(); p.setFsNodes((prev: VNode[]) => prev.filter((n: VNode) => n.id !== f.id)); if (p.fsActiveId === f.id) { p.setFsActiveId(null); p.setOpenFile(null); p.setCode(''); } delete p.fileContentsRef.current[f.id]; p.setToast('File deleted'); }}
                         className="ml-auto text-[#9CA3AF] hover:text-[#EF4444] cursor-pointer shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -173,7 +173,7 @@ export function PracticePage() {
         <div className="overflow-y-auto max-h-[180px]">
           <p className="text-[11px] font-medium uppercase tracking-wider text-[#9CA3AF] mb-2">Saved projects</p>
           {p.savedProjects.length === 0 && <p className="text-[11px] text-[#9CA3AF] px-1 py-1">No saved projects yet</p>}
-          {p.savedProjects.map((proj: any) => {
+          {p.savedProjects.map((proj) => {
             const isActive = p.activeProject?.id === proj.id;
             return (
               <div key={proj.id} onClick={() => !isActive && p.handleLoadSavedProject(proj)}

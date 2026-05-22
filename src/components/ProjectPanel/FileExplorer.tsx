@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import type { InputHTMLAttributes } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import type { FSNode, FolderNode, FileNode, Language } from '../../types';
 import {
@@ -170,8 +171,8 @@ export function FileExplorer() {
         className="hidden" onChange={handleOpenFiles}
       />
       <input ref={folderInputRef} type="file"
-        // @ts-expect-error — webkitdirectory not in TS types but supported in all modern browsers
-        webkitdirectory="" multiple className="hidden" onChange={handleOpenFolder}
+        {...({ webkitdirectory: '' } as InputHTMLAttributes<HTMLInputElement>)}
+        multiple className="hidden" onChange={handleOpenFolder}
       />
 
       {/* Toolbar */}

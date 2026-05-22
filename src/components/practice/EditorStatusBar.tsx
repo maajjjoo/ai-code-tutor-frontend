@@ -1,3 +1,5 @@
+import React from 'react';
+
 interface Props {
   hasUnsavedChanges: boolean;
   language: string;
@@ -5,7 +7,7 @@ interface Props {
   saving: boolean;
 }
 
-export function EditorStatusBar({ hasUnsavedChanges, language, onSave, saving }: Props) {
+export const EditorStatusBar = React.memo(function EditorStatusBar({ hasUnsavedChanges, language, onSave, saving }: Props) {
   return (
     <div className="h-[22px] bg-[#F9FAFB] border-t border-[#E5E7EB] flex items-center px-3 text-[11px] text-[#9CA3AF] gap-4 shrink-0">
       <span className="flex items-center gap-[4px] text-[#0F6E56]">
@@ -31,4 +33,4 @@ export function EditorStatusBar({ hasUnsavedChanges, language, onSave, saving }:
       </div>
     </div>
   );
-}
+});

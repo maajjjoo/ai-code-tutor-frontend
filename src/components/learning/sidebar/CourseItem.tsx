@@ -1,3 +1,4 @@
+import React from 'react';
 import type { Course } from '../../../data/courses';
 
 interface Props {
@@ -8,7 +9,7 @@ interface Props {
   onSelect: (courseId: string) => void;
 }
 
-export function CourseItem({ course, isSelected, totalDone, levelsDone, onSelect }: Props) {
+export const CourseItem = React.memo(function CourseItem({ course, isSelected, totalDone, levelsDone, onSelect }: Props) {
   const pct = Math.round((totalDone / 30) * 100);
 
   return (
@@ -54,4 +55,4 @@ export function CourseItem({ course, isSelected, totalDone, levelsDone, onSelect
       </div>
     </button>
   );
-}
+});

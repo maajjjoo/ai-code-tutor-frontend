@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import type { InputHTMLAttributes } from 'react';
 import {
   FilePlus, FolderPlus, FileInput, FolderInput,
   ChevronRight, ChevronDown, File, Folder, FolderOpen,
@@ -345,8 +346,8 @@ export function FilesSidebar({ userId, nodes, setNodes, activeId, setActiveId, o
         accept=".js,.ts,.jsx,.tsx,.py,.java,.cpp,.h,.json,.md,.txt,.css,.html"
         onChange={handleOpenFiles} />
       <input ref={folderInputRef} type="file" multiple className="hidden"
-        // @ts-expect-error webkitdirectory no está en los tipos TS
-        webkitdirectory="" onChange={handleOpenFolder} />
+        {...({ webkitdirectory: '' } as InputHTMLAttributes<HTMLInputElement>)}
+        onChange={handleOpenFolder} />
 
       <div className="flex items-center justify-between px-3 py-2 border-b border-[#E5E7EB] shrink-0">
         <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9CA3AF]">Explorer</span>

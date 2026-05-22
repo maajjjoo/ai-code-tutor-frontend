@@ -1,3 +1,4 @@
+import React from 'react';
 import type { VFile } from '../../types/vfs';
 
 const FILE_EXT_COLORS: Record<string, string> = {
@@ -31,7 +32,7 @@ interface Props {
   onRunCode: () => void;
 }
 
-export function EditorTopBar({ filesList, fsActiveId, language, hasUnsavedChanges, onSwitchFile, onRunCode }: Props) {
+export const EditorTopBar = React.memo(function EditorTopBar({ filesList, fsActiveId, language, hasUnsavedChanges, onSwitchFile, onRunCode }: Props) {
   const disp = LANG_DISPLAY[language] ?? { lang: language ? language.charAt(0).toUpperCase() + language.slice(1) : 'Python', ver: '' };
 
   return (
@@ -67,4 +68,4 @@ export function EditorTopBar({ filesList, fsActiveId, language, hasUnsavedChange
       </div>
     </div>
   );
-}
+});

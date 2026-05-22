@@ -1,3 +1,5 @@
+import React from 'react';
+
 const STEP_LABELS = ['Concept', 'Example', 'Deep dive', 'Tip', 'Exercise'];
 
 interface Props {
@@ -5,7 +7,7 @@ interface Props {
   onStepClick: (i: number) => void;
 }
 
-export function StepProgress({ currentIndex, onStepClick }: Props) {
+export const StepProgress = React.memo(function StepProgress({ currentIndex, onStepClick }: Props) {
   return (
     <div className="flex items-start w-full mb-6">
       {STEP_LABELS.map((label, i) => {
@@ -43,4 +45,4 @@ export function StepProgress({ currentIndex, onStepClick }: Props) {
       })}
     </div>
   );
-}
+});

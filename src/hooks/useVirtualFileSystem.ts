@@ -32,11 +32,18 @@ export function useVirtualFileSystem() {
     }
   }, [fsActiveId, fsNodes]);
 
+  const fsActiveIdRef = useRef(fsActiveId);
+  fsActiveIdRef.current = fsActiveId;
+  const codeRef = useRef(code);
+  codeRef.current = code;
+  const fsNodesRef = useRef(fsNodes);
+  fsNodesRef.current = fsNodes;
+
   const switchToFile = useCallback((fileId: string) => {
-    if (fsActiveId) {
-      fileContentsRef.current[fsActiveId] = code;
+    if (fsActiveIdRef.current !== null) {
+      fileContentsRef.current[fsActiveIdRef.current] = codeRef.current;
     }
-    const node = fsNodes.find(n => n.id === fileId);
+    const node = fsNodesRef.current.find(n => n.id === fileId);
     if (node && node.type === 'file') {
       const cached = fileContentsRef.current[fileId];
       const content = cached !== undefined ? cached : node.content;
@@ -44,7 +51,7 @@ export function useVirtualFileSystem() {
       setCode(content);
     }
     setFsActiveId(fileId);
-  }, [fsActiveId, code, fsNodes]);
+  }, []);
 
   const handleCodeChange = useCallback((val: string | undefined) => {
     const newVal = val ?? '';

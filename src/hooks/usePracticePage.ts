@@ -162,7 +162,7 @@ export function usePracticePage() {
     } finally {
       setIsCreatingProject(false);
     }
-  }, [user.id, createExerciseNodes, persistProject, vfs.fileContentsRef]);
+  }, [user.id, createExerciseNodes, persistProject]);
 
   useEffect(() => {
     const raw = searchParams?.get('exercise');
@@ -204,16 +204,19 @@ export function usePracticePage() {
     }
   }, [activeProject, backupSaving, saveManually, vfs.fsNodes, vfs.fsActiveId, vfs.code, vfs.setFsNodes, vfs.fileContentsRef]);
 
+  const saveRef = useRef(saveCurrentProject);
+  saveRef.current = saveCurrentProject;
+
   useEffect(() => {
     const handler = async (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
-        await saveCurrentProject();
+        await saveRef.current();
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [saveCurrentProject]);
+  }, []);
 
   const handleCreateProject = async (name: string) => {
     setModalLoading(true);

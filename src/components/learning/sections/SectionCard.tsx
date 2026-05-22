@@ -1,3 +1,4 @@
+import React from 'react';
 import type { LessonSection } from '../../../types/learning.types';
 import { ExplanationSection } from './ExplanationSection';
 import { ExampleSection } from './ExampleSection';
@@ -25,7 +26,7 @@ interface Props {
   onSectionComplete: () => void;
 }
 
-export function SectionCard({ section, index, currentIndex, revealedHints, language: _language, lessonTitle, level, onHintReveal, onOpenInEditor, onSectionComplete }: Props) {
+export const SectionCard = React.memo(function SectionCard({ section, index, currentIndex, revealedHints, language: _language, lessonTitle, level, onHintReveal, onOpenInEditor, onSectionComplete }: Props) {
   const isCurrent = index === currentIndex;
   const isLocked = index > currentIndex;
   const isDone = index < currentIndex;
@@ -62,4 +63,4 @@ export function SectionCard({ section, index, currentIndex, revealedHints, langu
       )}
     </div>
   );
-}
+});

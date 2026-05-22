@@ -1,3 +1,4 @@
+import React from 'react';
 import type { Level } from '../../../types/learning.types';
 
 const LEVELS: Level[] = ['beginner', 'intermediate', 'advanced'];
@@ -9,7 +10,7 @@ interface Props {
   onLevelChange: (level: Level) => void;
 }
 
-export function LevelTabs({ selectedLevel, completedLevels, currentLessonNumber, onLevelChange }: Props) {
+export const LevelTabs = React.memo(function LevelTabs({ selectedLevel, completedLevels, currentLessonNumber, onLevelChange }: Props) {
   const firstIncompleteIdx = LEVELS.findIndex(l => !completedLevels.includes(l));
 
   return (
@@ -56,4 +57,4 @@ export function LevelTabs({ selectedLevel, completedLevels, currentLessonNumber,
       })}
     </div>
   );
-}
+});
