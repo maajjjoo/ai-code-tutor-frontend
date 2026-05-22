@@ -16,7 +16,6 @@ interface Props {
   currentSectionIndex: number;
   isLoadingLesson: boolean;
   lessonError: string | null;
-  bookmarked: boolean;
   revealedHints: Record<number, number>;
   scrollRef: RefObject<HTMLDivElement | null>;
   displayTitle: string;
@@ -29,7 +28,6 @@ interface Props {
   onStepClick: (i: number) => void;
   onHintReveal: (i: number) => void;
   onOpenInEditor: (prompt: string, hints: string[]) => void;
-  onBookmarkToggle: () => void;
   onPracticeClick: () => void;
   onRetry: () => void;
   onSectionComplete: () => void;
@@ -38,10 +36,10 @@ interface Props {
 
 export function LessonView({
   course, selectedLevel, currentLessonNumber, currentLesson, sections,
-  currentSectionIndex, isLoadingLesson, lessonError, bookmarked,
+  currentSectionIndex, isLoadingLesson, lessonError,
   revealedHints, scrollRef, displayTitle, levelsDone,
   onLevelTabClick, onPrevious, onNext, onComplete, onStepClick,
-  onHintReveal, onOpenInEditor, onBookmarkToggle, onPracticeClick,
+  onHintReveal, onOpenInEditor, onPracticeClick,
   onRetry, onSectionComplete, onRestartClick,
 }: Props) {
   const isLoading = isLoadingLesson && !currentLesson;
@@ -70,15 +68,6 @@ export function LessonView({
           <span className="text-[#111827] font-medium truncate max-w-[200px]">{course.name} Basics</span>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={onBookmarkToggle}
-            className="flex items-center gap-1.5 px-[14px] py-[6px] rounded-lg text-[12px] font-medium border border-[#E5E7EB] text-[#374151] hover:bg-[#F8F9FA] transition-colors cursor-pointer"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill={bookmarked ? '#534AB7' : 'none'} stroke={bookmarked ? '#534AB7' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 21l-7-5-7 5V5a5 5 0 0 1 2-2h10a5 5 0 0 1 2 2z"/>
-            </svg>
-            {bookmarked ? 'Saved' : 'Save'}
-          </button>
           <button
             onClick={onPracticeClick}
             className="flex items-center gap-1.5 px-4 py-[6px] bg-[#534AB7] text-white rounded-lg text-[12px] font-medium hover:opacity-90 transition-opacity cursor-pointer"
@@ -153,13 +142,15 @@ export function LessonView({
           </>
         ) : sections.length > 0 ? (
           sections.map((s, i) => (
-            <SectionCard
-              key={i} section={s} index={i} totalSections={sections.length}
-              currentIndex={currentSectionIndex} revealedHints={revealedHints}
-              language={course.name} lessonTitle={displayTitle} level={selectedLevel}
-              onHintReveal={onHintReveal} onOpenInEditor={onOpenInEditor}
-              onSectionComplete={onSectionComplete}
-            />
+            <div key={i} id={`section-${i}`}>
+              <SectionCard
+                section={s} index={i} totalSections={sections.length}
+                currentIndex={currentSectionIndex} revealedHints={revealedHints}
+                language={course.name} lessonTitle={displayTitle} level={selectedLevel}
+                onHintReveal={onHintReveal} onOpenInEditor={onOpenInEditor}
+                onSectionComplete={onSectionComplete}
+              />
+            </div>
           ))
         ) : lessonError ? null : (
           <div className="flex items-center justify-center h-48">

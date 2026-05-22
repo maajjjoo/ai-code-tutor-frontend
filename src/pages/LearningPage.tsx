@@ -13,11 +13,11 @@ export function LearningPage() {
   const {
     viewState, selectedCourse, selectedLevel, currentLessonNumber,
     currentLesson, currentSectionIndex, isLoadingLesson, lessonError,
-    isCompletionModalOpen, bookmarked, revealedHints, sections, scrollRef,
+    isCompletionModalOpen, revealedHints, sections, scrollRef,
     doneLessons, completionCounts, levelsDone, isLastLevel, displayTitle,
     handleCourseSelect, handleLevelSelect, handleLevelTabClick,
     handleLessonComplete, handlePrevious, handleNext,
-    handleNextLevel, handleBookmarkToggle, handleHintReveal,
+    handleNextLevel, handleHintReveal,
     handleOpenInEditor, handleStepClick, setIsCompletionModalOpen,
     isRestartModalOpen, restartTarget,
     handleRestartClick, handleRestartLevel, setIsRestartModalOpen,
@@ -67,7 +67,6 @@ export function LearningPage() {
             currentSectionIndex={currentSectionIndex}
             isLoadingLesson={isLoadingLesson}
             lessonError={lessonError}
-            bookmarked={bookmarked}
             revealedHints={revealedHints}
             scrollRef={scrollRef}
             displayTitle={displayTitle}
@@ -80,7 +79,6 @@ export function LearningPage() {
             onStepClick={handleStepClick}
             onHintReveal={handleHintReveal}
             onOpenInEditor={handleOpenInEditor}
-            onBookmarkToggle={handleBookmarkToggle}
             onPracticeClick={() => navigate(`/practice?language=${encodeURIComponent(selectedCourse.name)}`)}
             onRetry={() => loadLesson(selectedCourse.id, selectedLevel, currentLessonNumber)}
             onSectionComplete={handleNext}

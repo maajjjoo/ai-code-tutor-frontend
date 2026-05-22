@@ -107,7 +107,7 @@ export function PracticePage() {
                   <span className="w-[8px] h-[8px] rounded-full shrink-0" style={{ backgroundColor: getFileDotColor(isRenaming ? p.renamingFileName : f.name) }} />
                   {isRenaming ? (
                     <div className="flex-1">
-                      <input ref={p.renameInputRef} value={p.renamingFileName} onChange={e => { if (e.target.value.length <= 30) p.setRenamingFileName(e.target.value); }}
+                      <input ref={p.renameInputRef} value={p.renamingFileName} autoFocus onChange={e => { if (e.target.value.length <= 30) p.setRenamingFileName(e.target.value); }}
                         onKeyDown={e => {
                           if (e.key === 'Enter') { e.preventDefault(); const name = p.renamingFileName.trim(); if (name && name.length >= 3 && name.includes('.')) { p.handleRenameFile(f.id, name); } p.setRenamingFileId(null); p.setRenamingFileName(''); }
                           else if (e.key === 'Escape') { p.setRenamingFileId(null); p.setRenamingFileName(''); }

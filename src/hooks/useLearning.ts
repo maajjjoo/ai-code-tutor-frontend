@@ -5,13 +5,10 @@ import { parseSections } from '../types/learning.types';
 import {
   getCachedLesson, setCachedLesson,
   getDoneLessons, setDoneLesson, resetDoneLessons,
-  isBookmarked, setBookmark,
 } from '../utils/lessonCache';
-import { tokenRef } from '../context/AuthContext';
+import apiClient from '../services/apiClient';
 import { COURSES } from '../data/courses';
 import { LESSON_TITLES } from '../data/lessonTitles';
-
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8080/api';
 const LEVELS: Level[] = ['beginner', 'intermediate', 'advanced'];
 
 export type ViewState = 'idle' | 'levelSelection' | 'lessonView';
@@ -28,7 +25,6 @@ export function useLearning() {
   const [isLoadingLesson, setIsLoadingLesson] = useState(false);
   const [lessonError, setLessonError] = useState<string | null>(null);
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
-  const [bookmarkState, setBookmarkState] = useState(false);
   const [revealedHints, setRevealedHints] = useState<Record<number, number>>({});
   const [topicMap, setTopicMap] = useState<Record<string, string>>({});
   const [refreshKey, setRefreshKey] = useState(0);
@@ -43,11 +39,6 @@ export function useLearning() {
   const doneLessons = useMemo(
     () => selectedCourseId ? getDoneLessons(selectedCourseId, selectedLevel) : [],
     [selectedCourseId, selectedLevel, refreshKey],
-  );
-
-  const bookmarked = useMemo(
-    () => selectedCourseId ? isBookmarked(selectedCourseId, selectedLevel, currentLessonNumber) : false,
-    [selectedCourseId, selectedLevel, currentLessonNumber, bookmarkState],
   );
 
   const completionCounts = useMemo(() => {
@@ -68,21 +59,20 @@ export function useLearning() {
   }, [refreshKey]);
 
   useEffect(() => {
-    const headers: Record<string, string> = {};
-    if (tokenRef.current) headers.Authorization = `Bearer ${tokenRef.current}`;
-    fetch(`${API_BASE}/topics`, { headers })
-      .then(r => r.json())
-      .then((data: Array<{ id: number; name: string }>) => {
+    apiClient.get<Array<{ id: number; name: string }>>('/topics')
+      .then(({ data }) => {
         const map: Record<string, string> = {};
         data.forEach(t => { map[t.name] = String(t.id); });
         setTopicMap(map);
       })
-      .catch(() => {});
+      .catch((error) => {
+        console.error('Failed to load topics:', error);
+      });
   }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      fetch(`${API_BASE}/topics`, { signal: AbortSignal.timeout(5000) }).catch(() => {});
+      apiClient.get('/topics', { signal: AbortSignal.timeout(5000) }).catch(() => {});
     }, 4 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
@@ -102,14 +92,9 @@ export function useLearning() {
     const topicId = topicMap[course.name];
     if (!topicId) return;
     try {
-      const headers: Record<string, string> = {};
-      if (tokenRef.current) headers.Authorization = `Bearer ${tokenRef.current}`;
-      const res = await fetch(
-        `${API_BASE}/lessons/topic/${topicId}/level/${encodeURIComponent(level)}`,
-        { headers },
+      const { data: lessons } = await apiClient.get<Lesson[]>(
+        `/lessons/topic/${topicId}/level/${encodeURIComponent(level)}`
       );
-      if (!res.ok) return;
-      const lessons: Lesson[] = await res.json();
       lessons.forEach(lesson => {
         setCachedLesson(courseId, level, lesson.lessonNumber, lesson);
       });
@@ -126,8 +111,6 @@ export function useLearning() {
       setCurrentLessonNumber(lessonNumber);
       setCurrentSectionIndex(0);
       setRevealedHints({});
-      setBookmarkState(s => !s);
-      setTimeout(() => setBookmarkState(s => !s), 0);
       setViewState('lessonView');
       return;
     }
@@ -138,26 +121,21 @@ export function useLearning() {
       if (!course) throw new Error('Course not found');
       const topicId = topicMap[course.name];
       if (!topicId) throw new Error('Topic not loaded');
-      const headers: Record<string, string> = {};
-      if (tokenRef.current) headers.Authorization = `Bearer ${tokenRef.current}`;
-      const res = await fetch(
-        `${API_BASE}/lessons/topic/${topicId}?level=${encodeURIComponent(level)}&lessonNumber=${lessonNumber}`,
-        { headers },
+      const { data: lesson } = await apiClient.get<Lesson>(
+        `/lessons/topic/${topicId}?level=${encodeURIComponent(level)}&lessonNumber=${lessonNumber}`
       );
-      if (res.status === 503) {
+      setCachedLesson(courseId, level, lessonNumber, lesson);
+      setCurrentLesson(lesson);
+      setCurrentLessonNumber(lessonNumber);
+      setCurrentSectionIndex(0);
+      setRevealedHints({});
+    } catch (err) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 503) {
         setLessonError('Preparing content...');
-      } else if (!res.ok) {
-        setLessonError('Could not load. Try again.');
       } else {
-        const lesson: Lesson = await res.json();
-        setCachedLesson(courseId, level, lessonNumber, lesson);
-        setCurrentLesson(lesson);
-        setCurrentLessonNumber(lessonNumber);
-        setCurrentSectionIndex(0);
-        setRevealedHints({});
+        setLessonError('Could not load. Try again.');
       }
-    } catch {
-      setLessonError('Could not load. Try again.');
       setCurrentLesson(null);
     } finally {
       setIsLoadingLesson(false);
@@ -244,16 +222,13 @@ export function useLearning() {
   const handleNext = useCallback(() => {
     if (!currentLesson) return;
     const max = parseSections(currentLesson).length - 1;
-    setCurrentSectionIndex(p => Math.min(max, p + 1));
-    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [currentLesson]);
-
-  const handleBookmarkToggle = useCallback(() => {
-    if (!selectedCourseId) return;
-    const newVal = !bookmarked;
-    setBookmark(selectedCourseId, selectedLevel, currentLessonNumber, newVal);
-    setBookmarkState(s => !s);
-  }, [selectedCourseId, selectedLevel, currentLessonNumber, bookmarked]);
+    const nextIndex = Math.min(max, currentSectionIndex + 1);
+    setCurrentSectionIndex(nextIndex);
+    setTimeout(() => {
+      const nextEl = document.getElementById(`section-${nextIndex}`);
+      nextEl?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  }, [currentLesson, currentSectionIndex]);
 
   const sections = currentLesson ? parseSections(currentLesson) : [];
   const isLastLevel = selectedLevel === 'advanced';
@@ -263,12 +238,12 @@ export function useLearning() {
     viewState, selectedCourseId, selectedCourse, selectedLevel,
     currentLessonNumber, currentLesson, currentSectionIndex,
     isLoadingLesson, lessonError, isCompletionModalOpen,
-    bookmarked, revealedHints, sections, scrollRef,
+    revealedHints, sections, scrollRef,
     doneLessons, completionCounts, levelsDone, isLastLevel,
     displayTitle,
     handleCourseSelect, handleLevelSelect, handleLevelTabClick,
     handleLessonComplete, handlePrevious, handleNext,
-    handleNextLevel, handleBookmarkToggle,
+    handleNextLevel,
     setIsCompletionModalOpen,
     isRestartModalOpen, restartTarget,
     handleRestartClick, handleRestartLevel,
