@@ -13,6 +13,7 @@ import { AiChatPanel } from '../components/practice/AiChatPanel';
 import { usePracticePage } from '../hooks/usePracticePage';
 import { CharCounter } from '../components/ui/CharCounter';
 import { validateFileName } from '../utils/validation';
+import { useToast } from '../context/ToastContext';
 
 const FILE_EXT_COLORS: Record<string, string> = {
   py: '#3B82F6', java: '#F59E0B', js: '#EAB308',
@@ -36,14 +37,10 @@ function getFileDotColor(filename: string): string {
 export function PracticePage() {
   const navigate = useNavigate();
   const p = usePracticePage();
+  const { showToast } = useToast();
 
   return (
     <div className="h-screen w-screen grid overflow-hidden bg-white" style={{ gridTemplateColumns: `${p.sidebarWidth}px 1fr ${p.aiPanelWidth}px` }}>
-      {p.toast && (
-        <div className="fixed top-4 right-4 z-[200] bg-[#111827] text-white text-[12px] px-4 py-2 rounded-lg shadow-lg animate-fade-in">
-          {p.toast}
-        </div>
-      )}
 
       <NewProjectModal
         open={p.isNewProjectModalOpen}
@@ -126,7 +123,7 @@ export function PracticePage() {
                   ) : (
                     <>
                       <span className={`text-[13px] truncate flex-1 ${isActive ? 'font-medium text-[#111827]' : 'text-[#9CA3AF]'}`}>{f.name}</span>
-                      <button onClick={e => { e.stopPropagation(); p.setFsNodes((prev: VNode[]) => prev.filter((n: VNode) => n.id !== f.id)); if (p.fsActiveId === f.id) { p.setFsActiveId(null); p.setOpenFile(null); p.setCode(''); } delete p.fileContentsRef.current[f.id]; p.setToast('File deleted'); }}
+                      <button onClick={e => { e.stopPropagation(); p.setFsNodes((prev: VNode[]) => prev.filter((n: VNode) => n.id !== f.id)); if (p.fsActiveId === f.id) { p.setFsActiveId(null); p.setOpenFile(null); p.setCode(''); } delete p.fileContentsRef.current[f.id]; showToast('File deleted', 'success'); }}
                         className="ml-auto text-[#9CA3AF] hover:text-[#EF4444] cursor-pointer shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -172,7 +169,15 @@ export function PracticePage() {
 
         <div className="overflow-y-auto max-h-[180px]">
           <p className="text-[11px] font-medium uppercase tracking-wider text-[#9CA3AF] mb-2">Saved projects</p>
-          {p.savedProjects.length === 0 && <p className="text-[11px] text-[#9CA3AF] px-1 py-1">No saved projects yet</p>}
+          {p.savedProjects.length === 0 && (
+            <div className="flex flex-col items-center gap-1 py-4">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              </svg>
+              <p className="text-[11px] text-[#9CA3AF]">No saved projects yet</p>
+              <p className="text-[10px] text-[#D1D5DB]">Create a project to get started</p>
+            </div>
+          )}
           {p.savedProjects.map((proj) => {
             const isActive = p.activeProject?.id === proj.id;
             return (
@@ -202,7 +207,7 @@ export function PracticePage() {
           <ExerciseContextPanel context={p.exerciseContext} onDismiss={() => { p.setExerciseContext(null); p.setIsPanelCollapsed(false); }} isCollapsed={p.isPanelCollapsed} onToggleCollapse={() => p.setIsPanelCollapsed((prev: boolean) => !prev)} />
         )}
 
-        <EditorTopBar filesList={p.filesList} fsActiveId={p.fsActiveId} language={p.openFile?.language ?? 'python'} hasUnsavedChanges={p.hasUnsavedChanges} onSwitchFile={p.switchToFile} onRunCode={p.handleRunCode} />
+        <EditorTopBar filesList={p.filesList} fsActiveId={p.fsActiveId} language={p.openFile?.language ?? 'python'} hasUnsavedChanges={p.hasUnsavedChanges} onSwitchFile={p.switchToFile} onRunCode={p.handleRunCode} isRunning={p.terminalRunning} />
         <SaveIndicatorBar state={p.saveIndicatorState} />
 
         <div className="flex-1 flex overflow-hidden relative">

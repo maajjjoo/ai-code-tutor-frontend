@@ -4,6 +4,8 @@ import { Code2 } from 'lucide-react';
 import { registerUser, getErrorMessage } from '../services/api';
 import { validateUsername, validateEmail } from '../utils/validation';
 import { useAuth } from '../context/AuthContext';
+import { usePageTitle } from '../hooks/usePageTitle';
+import { useToast } from '../context/ToastContext';
 
 const PWD_CHECKS = [
   { key: 'length', label: '8+ characters (not counting spaces)' },
@@ -13,8 +15,10 @@ const PWD_CHECKS = [
 ] as const;
 
 export function RegisterPage() {
+  usePageTitle('Create account');
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { showToast } = useToast();
   const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -46,6 +50,7 @@ export function RegisterPage() {
       };
       const res = await registerUser(payload);
       login({ id: res.id, username: res.username, email: res.email, createdAt: new Date().toISOString() }, res.token);
+      showToast('Account created!', 'success');
       setSuccess(true);
       setTimeout(() => navigate('/practice'), 1500);
     } catch (err) {

@@ -11,6 +11,8 @@ import type { VNode } from '../types/vfs';
 import { uid } from '../types/vfs';
 import { useEditorPersistence } from './useEditorPersistence';
 import { useVirtualFileSystem } from './useVirtualFileSystem';
+import { useToast } from '../context/ToastContext';
+import { usePageTitle } from './usePageTitle';
 
 interface StoredUser { id: number; username: string; email: string; }
 
@@ -43,6 +45,7 @@ export function usePracticePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const user: StoredUser = JSON.parse(localStorage.getItem('user') ?? '{}');
+  const { showToast } = useToast();
 
   const vfs = useVirtualFileSystem();
 
@@ -83,19 +86,20 @@ export function usePracticePage() {
   const [modalError, setModalError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<BackendProject | null>(null);
   const [loadingProject, setLoadingProject] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
   const [backupSaving, setBackupSaving] = useState(false);
 
   const [consoleOpen, setConsoleOpen] = useState(true);
   const [consoleTab, setConsoleTab] = useState<'Terminal' | 'Output' | 'Problems'>('Terminal');
   const [termLines, setTermLines] = useState<{ text: string; type: 'stdout' | 'stderr' | 'error' | 'info' | 'output' | 'input' }[]>([]);
-  const [, setTerminalRunning] = useState(false);
+  const [terminalRunning, setTerminalRunning] = useState(false);
 
   const [aiMessages, setAiMessages] = useState<ChatMsg[]>([]);
   const [aiInput, setAiInput] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const aiBottomRef = useRef<HTMLDivElement>(null);
   const [showHistory, setShowHistory] = useState(false);
+
+  usePageTitle(activeProject?.name ?? 'Practice');
 
   const projectId = activeProject?.id ?? 0;
   const fileName = vfs.openFile?.name ?? 'untitled';
@@ -113,13 +117,6 @@ export function usePracticePage() {
       getProjectsByUser(user.id).then(setSavedProjects).catch(() => {});
     }
   }, [user.id]);
-
-  useEffect(() => {
-    if (toast) {
-      const t = setTimeout(() => setToast(null), 3000);
-      return () => clearTimeout(t);
-    }
-  }, [toast]);
 
   const createExerciseNodes = useCallback((project: BackendProject, folderId: string, fileName: string, content: string, lang: Language): VNode[] => {
     return [
@@ -196,9 +193,9 @@ export function usePracticePage() {
           monacoRef.current.editor.setModelMarkers(model, 'runtime', []);
         }
       }
-      setToast('Project saved');
+      showToast('Project saved', 'success');
     } catch (err) {
-      console.error('Save error:', getErrorMessage(err));
+      showToast(getErrorMessage(err), 'error');
     } finally {
       setBackupSaving(false);
     }
@@ -206,17 +203,6 @@ export function usePracticePage() {
 
   const saveRef = useRef(saveCurrentProject);
   saveRef.current = saveCurrentProject;
-
-  useEffect(() => {
-    const handler = async (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        await saveRef.current();
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, []);
 
   const handleCreateProject = async (name: string) => {
     setModalLoading(true);
@@ -284,7 +270,7 @@ export function usePracticePage() {
     setActiveProject(project);
     localStorage.setItem(ACTIVE_PROJECT_KEY, JSON.stringify(project));
     setLoadingProject(false);
-    setToast('Project loaded');
+    showToast('Project loaded', 'success');
   };
 
   const handleDeleteProject = async () => {
@@ -292,7 +278,7 @@ export function usePracticePage() {
     localStorage.removeItem(`codetutor-project-${deleteTarget.id}-nodes`);
     setSavedProjects(prev => prev.filter(p => p.id !== deleteTarget.id));
     setDeleteTarget(null);
-    setToast('Project deleted');
+    showToast('Project deleted', 'warning');
   };
 
   const parseStructuredResponse = (text: string): { content: string; quality?: { structure: number; readability: number }; suggestions?: string[] } => {
@@ -480,6 +466,31 @@ export function usePracticePage() {
     };
   }, [tooltipPos]);
 
+  const runRef = useRef(handleRunCode);
+  runRef.current = handleRunCode;
+  const analyzeRef = useRef(handleAnalyze);
+  analyzeRef.current = handleAnalyze;
+
+  useEffect(() => {
+    const handler = async (e: KeyboardEvent) => {
+      const ctrl = e.ctrlKey || e.metaKey;
+      if (ctrl && e.key === 's') {
+        e.preventDefault();
+        await saveRef.current();
+      }
+      if (ctrl && e.key === 'Enter') {
+        e.preventDefault();
+        runRef.current();
+      }
+      if (ctrl && e.shiftKey && e.key === 'A') {
+        e.preventDefault();
+        analyzeRef.current();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
   const handleEditorMount: NonNullable<React.ComponentProps<typeof MonacoEditor>['onMount']> = useCallback((editor, monaco) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
@@ -541,14 +552,14 @@ export function usePracticePage() {
     isNewProjectModalOpen, setIsNewProjectModalOpen,
     modalLoading, modalError, setModalError,
     deleteTarget, setDeleteTarget,
-    loadingProject, toast, backupSaving,
-    setToast,
+    loadingProject, backupSaving,
     handleAnalyze, handleAiSend, handleRunCode, handleExplainCode,
     handleCreateProject, handleLoadSavedProject, handleDeleteProject,
     saveCurrentProject,
     consoleOpen, setConsoleOpen,
     consoleTab, setConsoleTab,
     termLines, setTermLines,
+    terminalRunning,
     aiMessages, aiInput, setAiInput,
     aiLoading, showHistory, setShowHistory,
     aiBottomRef,

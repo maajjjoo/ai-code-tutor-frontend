@@ -30,9 +30,10 @@ interface Props {
   hasUnsavedChanges: boolean;
   onSwitchFile: (fileId: string) => void;
   onRunCode: () => void;
+  isRunning?: boolean;
 }
 
-export const EditorTopBar = React.memo(function EditorTopBar({ filesList, fsActiveId, language, hasUnsavedChanges, onSwitchFile, onRunCode }: Props) {
+export const EditorTopBar = React.memo(function EditorTopBar({ filesList, fsActiveId, language, hasUnsavedChanges, onSwitchFile, onRunCode, isRunning }: Props) {
   const disp = LANG_DISPLAY[language] ?? { lang: language ? language.charAt(0).toUpperCase() + language.slice(1) : 'Python', ver: '' };
 
   return (
@@ -61,9 +62,16 @@ export const EditorTopBar = React.memo(function EditorTopBar({ filesList, fsActi
           <svg width="1" height="12" viewBox="0 0 1 12" fill="#3C3489" opacity="0.3"><rect width="1" height="12" rx="0.5"/></svg>
           <span className="text-[11px] text-[#9CA3AF]">{disp.ver}</span>
         </div>
-        <button onClick={onRunCode} className="flex items-center gap-[6px] bg-[#E1F5EE] text-[#0F6E56] border border-[#9FE1CB] rounded-[8px] px-[14px] py-[5px] text-[12px] font-medium cursor-pointer hover:bg-[#D1FAE5] transition-colors">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="#0F6E56"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          Run
+        <button onClick={onRunCode} disabled={isRunning} className="flex items-center gap-[6px] bg-[#E1F5EE] text-[#0F6E56] border border-[#9FE1CB] rounded-[8px] px-[14px] py-[5px] text-[12px] font-medium cursor-pointer hover:bg-[#D1FAE5] transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+          {isRunning ? (
+            <svg className="animate-spin w-3.5 h-3.5 text-[#0F6E56]" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" />
+              <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" />
+            </svg>
+          ) : (
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="#0F6E56"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          )}
+          {isRunning ? 'Running...' : 'Run'}
         </button>
       </div>
     </div>

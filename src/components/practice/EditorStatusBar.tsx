@@ -21,14 +21,22 @@ export const EditorStatusBar = React.memo(function EditorStatusBar({ hasUnsavedC
       )}
       <span className="capitalize">{language}</span>
       <div className="ml-auto flex items-center gap-3">
+        <span className="text-[10px] text-[#D1D5DB] hidden md:inline">Ctrl+S Save · Ctrl+Enter Run · Ctrl+Shift+A Analyze</span>
         <span>UTF-8</span>
         <button
           onClick={onSave}
           disabled={!hasUnsavedChanges || saving}
           className="flex items-center gap-1 bg-[#534AB7] text-white rounded-[6px] px-[10px] py-[2px] text-[10px] font-medium cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed border-none"
         >
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          Save
+          {saving ? (
+            <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" />
+              <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" />
+            </svg>
+          ) : (
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          )}
+          {saving ? 'Saving...' : 'Save'}
         </button>
       </div>
     </div>

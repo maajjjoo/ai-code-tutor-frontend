@@ -23,9 +23,21 @@ export function EditorConsole({ consoleTab, termLines, onTabChange, onClear }: P
         </span>
       </div>
       <div className="flex-1 overflow-y-auto px-[14px] py-[10px] font-mono text-[12px] leading-relaxed">
-        {termLines.length === 0 && consoleTab !== 'Problems' && <span className="text-[#9CA3AF]">Run your code to see output here...</span>}
-        {consoleTab === 'Problems' && <span className="text-[#9CA3AF]">No problems detected</span>}
-        {consoleTab !== 'Problems' && termLines.map((line, i) => (
+        {termLines.length === 0 && consoleTab !== 'Problems' && (
+          <div className="flex flex-col items-center justify-center h-full text-center gap-2">
+            <span className="text-[#D1D5DB] text-2xl font-bold">{'>_'}</span>
+            <span className="text-[#9CA3AF] text-[12px]">Run your code to see output here</span>
+          </div>
+        )}
+        {consoleTab === 'Problems' && termLines.length === 0 && (
+          <div className="flex items-center justify-center h-full gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            <span className="text-[#9CA3AF]">No problems detected</span>
+          </div>
+        )}
+        {consoleTab !== 'Problems' && termLines.length > 0 && termLines.map((line, i) => (
           <div key={i} className={
             line.type === 'error' ? 'text-[#DC2626]'
             : line.type === 'info' ? 'text-[#534AB7]'

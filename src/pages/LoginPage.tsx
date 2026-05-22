@@ -4,10 +4,14 @@ import { Code2 } from 'lucide-react';
 import { loginUser, getErrorMessage } from '../services/api';
 import { validateEmail } from '../utils/validation';
 import { useAuth } from '../context/AuthContext';
+import { usePageTitle } from '../hooks/usePageTitle';
+import { useToast } from '../context/ToastContext';
 
 export function LoginPage() {
+  usePageTitle('Log in');
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { showToast } = useToast();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,6 +27,7 @@ export function LoginPage() {
     try {
       const res = await loginUser({ ...form, password: btoa(unescape(encodeURIComponent(form.password))) });
       login({ id: res.id, username: res.username, email: res.email, createdAt: new Date().toISOString() }, res.token);
+      showToast('Welcome back!', 'success');
       navigate('/');
     } catch (err) {
       setError(getErrorMessage(err));

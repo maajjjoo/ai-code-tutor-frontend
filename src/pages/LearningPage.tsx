@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { useLearning } from '../hooks/useLearning';
 import { LearningSidebar } from '../components/learning/sidebar/LearningSidebar';
 import { LevelSelectionScreen } from '../components/learning/screens/LevelSelectionScreen';
@@ -7,6 +8,7 @@ import { CompletionModal } from '../components/learning/modals/CompletionModal';
 import { RestartModal } from '../components/learning/modals/RestartModal';
 
 export function LearningPage() {
+  usePageTitle('Learning');
   const navigate = useNavigate();
   const {
     viewState, selectedCourse, selectedLevel, currentLessonNumber,
