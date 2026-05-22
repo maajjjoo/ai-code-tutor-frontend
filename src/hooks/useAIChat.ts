@@ -15,9 +15,8 @@ export interface ChatMsg {
   id: string;
   role: 'user' | 'ai';
   content: string;
-  quality?: { structure: number; readability: number };
-  suggestions?: string[];
   timestamp: number;
+  analysisResult?: CodeAnalysisResponse;
 }
 
 interface Params {
@@ -37,61 +36,41 @@ export function useAIChat({ vfs, editorRef, monacoRef, activeProject, exerciseCo
 
   useEffect(() => { aiBottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [aiMessages, aiLoading]);
 
-  const parseStructuredResponse = (text: string): { content: string; quality?: { structure: number; readability: number }; suggestions?: string[] } => {
-    try {
-      const parsed = JSON.parse(text);
-      if (parsed && typeof parsed === 'object') {
-        return { content: parsed.whatItDoes || parsed.summary || '', quality: parsed.quality, suggestions: parsed.suggestions };
-      }
-    } catch {}
-    return { content: text };
-  };
-
-  function parseResult(raw: unknown): Record<string, unknown> {
-    if (typeof raw === 'string') {
-      try { return JSON.parse(raw); } catch { return {}; }
-    }
-    if (raw && typeof raw === 'object') return raw as Record<string, unknown>;
-    return {};
-  }
-
-  const parseAndSetAiResponse = useCallback((result: CodeAnalysisResponse): ChatMsg => {
-    const data = parseResult(result);
-    const summary = String(data.summary ?? data.whatItDoes ?? '');
-    const hasErrors = !!data.hasErrors;
-    const errorHint = data.errorHint ? String(data.errorHint) : null;
-    const quality = data.quality as { structure: number; readability: number } | undefined;
-    const rawSuggestions = data.suggestions;
-    const suggestions = Array.isArray(rawSuggestions)
-      ? rawSuggestions.map((s: unknown) => typeof s === 'string' ? s : `${(s as any).title ?? ''}: ${(s as any).description ?? ''}`)
-      : [];
-
-    let fullContent = summary;
-    if (hasErrors && errorHint) fullContent += `\n\nError detected: ${errorHint}`;
-    const structured = parseStructuredResponse(fullContent);
+  const buildAnalysisMsg = useCallback((result: CodeAnalysisResponse): ChatMsg => {
     return {
       id: uid(), role: 'ai',
-      content: structured.content || summary || '',
+      content: result.whatItDoes || result.summary || '',
       timestamp: Date.now(),
-      quality: structured.quality || quality,
-      suggestions: structured.suggestions || suggestions,
+      analysisResult: result,
     };
   }, []);
 
   const setEditorMarkers = useCallback((result: CodeAnalysisResponse) => {
-    if (!result.hasErrors || !editorRef.current || !monacoRef.current) return;
+    if (!result.hasErrors || !result.errors?.length || !editorRef.current || !monacoRef.current) return;
     const model = editorRef.current.getModel();
     if (!model) return;
     monacoRef.current.editor.setModelMarkers(model, 'syntax', []);
     const markers: MonacoMarker[] = [];
-    if (result.errorHint) {
-      const lineMatch = result.errorHint.match(/line\s*(\d+)/i) || result.errorHint.match(/Line\s*(\d+)/i);
-      if (lineMatch) {
-        markers.push({ startLineNumber: parseInt(lineMatch[1]), startColumn: 1, endLineNumber: parseInt(lineMatch[1]), endColumn: 1000, message: result.errorHint, severity: monacoRef.current.MarkerSeverity.Error });
-      } else {
-        const totalLines = (vfs.code.match(/\n/g) || []).length + 1;
-        markers.push({ startLineNumber: 1, startColumn: 1, endLineNumber: totalLines, endColumn: 1000, message: result.errorHint, severity: monacoRef.current.MarkerSeverity.Error });
+    for (const error of result.errors) {
+      if (error.line) {
+        markers.push({
+          startLineNumber: error.line,
+          startColumn: 1,
+          endLineNumber: error.line,
+          endColumn: 1000,
+          message: error.message,
+          severity: monacoRef.current.MarkerSeverity.Error,
+        });
       }
+    }
+    if (markers.length === 0) {
+      const totalLines = (vfs.code.match(/\n/g) || []).length + 1;
+      markers.push({
+        startLineNumber: 1, startColumn: 1,
+        endLineNumber: totalLines, endColumn: 1000,
+        message: result.errors[0]?.message || 'Syntax error detected',
+        severity: monacoRef.current.MarkerSeverity.Error,
+      });
     }
     monacoRef.current.editor.setModelMarkers(model, 'syntax', markers);
   }, [vfs.code, editorRef, monacoRef]);
@@ -105,14 +84,14 @@ export function useAIChat({ vfs, editorRef, monacoRef, activeProject, exerciseCo
         code: vfs.code, language: vfs.openFile?.language ?? 'python', projectDescription: activeProject?.name ?? 'Project',
         exerciseContext: exerciseContext ? { prompt: exerciseContext.exercisePrompt, lessonTitle: exerciseContext.lessonTitle, level: exerciseContext.level } : undefined,
       });
-      setAiMessages(prev => [...prev, parseAndSetAiResponse(result)]);
+      setAiMessages(prev => [...prev, buildAnalysisMsg(result)]);
       setEditorMarkers(result);
     } catch {
       setAiMessages(prev => [...prev, { id: uid(), role: 'ai', content: 'Could not analyze your code right now. Please try again.', timestamp: Date.now() }]);
     } finally {
       setAiLoading(false);
     }
-  }, [vfs.code, vfs.openFile, activeProject, exerciseContext, parseAndSetAiResponse, setEditorMarkers]);
+  }, [vfs.code, vfs.openFile, activeProject, exerciseContext, buildAnalysisMsg, setEditorMarkers]);
 
   const handleAiSend = useCallback(async () => {
     if (!aiInput.trim() || aiLoading) return;

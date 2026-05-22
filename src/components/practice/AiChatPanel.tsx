@@ -1,36 +1,20 @@
 import { Bot, Send } from 'lucide-react';
 import { UI } from '../../constants/ui.strings';
 import { MessageRenderer } from '../ai/MessageRenderer';
+import { AnalysisResult } from '../ai/AnalysisResult';
 
 interface ChatMsg {
   id: string;
   role: 'user' | 'ai';
   content: string;
-  quality?: { structure: number; readability: number };
-  suggestions?: string[];
   timestamp: number;
+  analysisResult?: import('../../types').CodeAnalysisResponse;
 }
 
 export type { ChatMsg };
 
-function QualityBar({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="flex items-center gap-[10px]">
-      <span className="text-[12px] text-[#6B7280] min-w-[80px]">{label}</span>
-      <div className="flex-1 h-[4px] bg-[#E5E7EB] dark:bg-gray-700 rounded-full overflow-hidden">
-        <div className="h-full rounded-full" style={{ width: `${value}%`, backgroundColor: value < 70 ? '#F59E0B' : '#534AB7' }} />
-      </div>
-      <span className="text-[12px] font-semibold min-w-[32px] text-right" style={{ color: value < 70 ? '#F59E0B' : '#534AB7' }}>{value}%</span>
-    </div>
-  );
-}
-
 function AiMessageBubble({ msg }: { msg: ChatMsg }) {
-  const isAi = msg.role === 'ai';
-  const hasQuality = msg.quality && typeof msg.quality.structure === 'number';
-  const hasSuggestions = Array.isArray(msg.suggestions) && msg.suggestions.length > 0;
-
-  if (isAi) {
+  if (msg.role === 'ai') {
     return (
       <div className="mb-5">
         <div className="flex items-center gap-2 mb-[8px]">
@@ -39,52 +23,11 @@ function AiMessageBubble({ msg }: { msg: ChatMsg }) {
           </div>
           <span className="text-[12px] font-medium text-[#534AB7]">{UI.AI_TUTOR}</span>
         </div>
-        <div className="bg-white dark:bg-gray-900 border border-[#E5E7EB] dark:border-gray-700 rounded-tl-none rounded-tr-[10px] rounded-br-[10px] rounded-bl-[10px] p-[12px_14px] space-y-[10px]">
-          {hasQuality && msg.quality && (
-            <>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] dark:text-gray-500 mb-[8px]">{UI.CODE_QUALITY}</p>
-                <div className="space-y-1.5">
-                  <QualityBar label="Estructura" value={msg.quality.structure} />
-                  <QualityBar label="Legibilidad" value={msg.quality.readability} />
-                </div>
-              </div>
-              <div className="h-[0.5px] bg-[#F3F4F6] dark:bg-gray-700" />
-            </>
-          )}
-          {msg.content ? (
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mb-[8px]">{UI.WHAT_IT_DOES}</p>
-              <MessageRenderer content={msg.content} />
-            </div>
+        <div className="bg-white dark:bg-gray-900 border border-[#E5E7EB] dark:border-gray-700 rounded-tl-none rounded-tr-[10px] rounded-br-[10px] rounded-bl-[10px] p-[12px_14px]">
+          {msg.analysisResult ? (
+            <AnalysisResult result={msg.analysisResult} />
           ) : (
-            <p className="text-[12px] text-[#4B5563] dark:text-gray-400 leading-relaxed">
-              {msg.quality ? 'Análisis completado.' : ''}
-            </p>
-          )}
-          {hasSuggestions && (
-            <>
-              <div className="h-[0.5px] bg-[#F3F4F6] dark:bg-gray-700" />
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mb-[8px]">{UI.SUGGESTIONS}</p>
-                {msg.suggestions!.map((s, i) => {
-                  const text: string = typeof s === 'string' ? s
-                    : String((s as Record<string, unknown>)?.text
-                      ?? (s as Record<string, unknown>)?.title
-                      ?? (s as Record<string, unknown>)?.description
-                      ?? (s as Record<string, unknown>)?.content
-                      ?? JSON.stringify(s) ?? '');
-                  return (
-                    <div key={i} className={`flex items-start gap-[8px] py-[6px] ${i < msg.suggestions!.length - 1 ? 'border-b border-[#F9FAFB] dark:border-gray-700' : ''}`}>
-                      <div className="w-[20px] h-[20px] bg-[#534AB7] text-white text-[11px] font-semibold rounded-full flex items-center justify-center shrink-0 mt-[1px]">
-                        {i + 1}
-                      </div>
-                      <span className="text-[12px] text-[#4B5563] dark:text-gray-400 leading-relaxed">{text}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
+            <MessageRenderer content={msg.content} />
           )}
         </div>
       </div>

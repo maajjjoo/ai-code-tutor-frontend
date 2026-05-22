@@ -47,31 +47,20 @@ export interface AnalysisHistory {
 }
 
 // ─── Code Analysis (Pedagogical) ──────────────────────────────────────────────
-export interface CodeBlock {
-  blockName: string;
-  blockType: 'function' | 'class' | 'loop' | 'conditional' | 'variable' | 'other';
-  explanation: string;
-}
-
-export interface CodeQuality {
-  score: number; // 1-5
-  feedback: string;
-}
-
-export interface CodeSuggestion {
-  order: number; // 1, 2, or 3
-  title: string;
-  description: string;
+export interface AnalysisError {
+  line?: number | null;
+  message: string;
+  wrongCode?: string;
+  fixedCode?: string;
 }
 
 export interface CodeAnalysisResponse {
+  quality: { structure: number; readability: number };
   summary: string;
-  blocks: CodeBlock[];
-  codeQuality: CodeQuality;
-  suggestions: CodeSuggestion[];
   hasErrors: boolean;
-  errorHint: string | null;
-  quality?: { structure: number; readability: number };
+  errors: AnalysisError[];
+  whatItDoes: string;
+  suggestions: string[];
 }
 
 // ─── Learn ────────────────────────────────────────────────────────────────────
