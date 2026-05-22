@@ -209,23 +209,14 @@ export function AiChatPanel({
             </div>
 
             <div className="px-3 pb-2 pt-1 shrink-0">
-              <button
-                onClick={onSendCode}
-                disabled={aiLoading}
-                className="w-full bg-[#EEEDFE] dark:bg-[#2a2550] text-[#534AB7] dark:text-[#a09de8] border border-[#AFA9EC] dark:border-[#534AB7] rounded-lg px-3 py-1.5 text-xs font-medium flex items-center gap-2 hover:opacity-80 transition-opacity disabled:opacity-40 cursor-pointer mb-2"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                {UI.SEND_CODE}
-              </button>
-
               <div className="flex flex-wrap gap-[6px] mb-[10px]">
-                <button onClick={onSendCode} className="bg-[#EEEDFE] dark:bg-indigo-900/30 text-[#3C3489] dark:text-indigo-300 border border-[#AFA9EC] dark:border-[#534AB7] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] dark:hover:bg-indigo-900/50 transition-colors">
-                  Enviar código
+                <button onClick={e => { e.stopPropagation(); onSendCode(); }} className="bg-[#EEEDFE] dark:bg-indigo-900/30 text-[#3C3489] dark:text-indigo-300 border border-[#AFA9EC] dark:border-[#534AB7] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] dark:hover:bg-indigo-900/50 transition-colors">
+                  Analizar mi código
                 </button>
-                <button onClick={() => onInputChange('¿Qué debería hacer a continuación?')} className="bg-[#EEEDFE] dark:bg-indigo-900/30 text-[#3C3489] dark:text-indigo-300 border border-[#AFA9EC] dark:border-[#534AB7] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] dark:hover:bg-indigo-900/50 transition-colors">
+                <button onClick={e => { e.stopPropagation(); onInputChange('¿Qué debería hacer a continuación?'); }} className="bg-[#EEEDFE] dark:bg-indigo-900/30 text-[#3C3489] dark:text-indigo-300 border border-[#AFA9EC] dark:border-[#534AB7] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] dark:hover:bg-indigo-900/50 transition-colors">
                   {UI.NEXT_STEP_QUESTION}
                 </button>
-                <button onClick={() => onInputChange('¿Puedes explicarme qué hace mi código?')} className="bg-[#EEEDFE] dark:bg-indigo-900/30 text-[#3C3489] dark:text-indigo-300 border border-[#AFA9EC] dark:border-[#534AB7] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] dark:hover:bg-indigo-900/50 transition-colors">
+                <button onClick={e => { e.stopPropagation(); onInputChange('Explícame mi código'); }} className="bg-[#EEEDFE] dark:bg-indigo-900/30 text-[#3C3489] dark:text-indigo-300 border border-[#AFA9EC] dark:border-[#534AB7] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] dark:hover:bg-indigo-900/50 transition-colors">
                   {UI.EXPLAIN_THIS}
                 </button>
               </div>
