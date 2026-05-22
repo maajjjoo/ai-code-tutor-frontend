@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect, Fragment } from 'react';
-import { Send, Bot } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Send, Bot, AlertTriangle } from 'lucide-react';
 import { sendChatMessage, getErrorMessage } from '../../services/api';
+import { MessageRenderer } from './MessageRenderer';
 import type { EditorData } from '../../types';
 
 // ─── Chat message structure ───────────────────────────────────────────────────
@@ -11,68 +12,58 @@ interface ChatMessage {
   timestamp: Date;
 }
 
+interface AnalysisError {
+  line?: number | null;
+  message: string;
+  wrongCode?: string;
+  fixedCode?: string;
+}
+
 function uid() { return `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`; }
 
-// ─── Code block renderer ──────────────────────────────────────────────────────
-function CodeBlock({ code, language }: { code: string; language?: string }) {
-  return (
-    <div className="my-2 rounded-lg overflow-hidden border border-[#E5E7EB]">
-      {language && (
-        <div className="bg-[#1E1E2E] text-[#A0A0B0] text-[10px] px-3 py-1 font-mono border-b border-[#333]">
-          {language}
-        </div>
-      )}
-      <pre className="bg-[#1E1E2E] text-[#E0E0E0] p-3 overflow-x-auto text-[11px] leading-relaxed font-mono m-0 whitespace-pre-wrap">
-        <code>{code}</code>
-      </pre>
-    </div>
-  );
-}
+// ─── Error section (for AI analysis with hasErrors: true) ─────────────────────
+function ErrorSection({ content }: { content: string }) {
+  try {
+    const parsed = JSON.parse(content);
+    if (!parsed.hasErrors || !parsed.errors?.length) return null;
 
-// ─── Parse AI response into segments ─────────────────────────────────────────
-// Splits text on ``` blocks so we can render code blocks differently
-type Segment = { type: 'text' | 'code'; content: string; language?: string };
-
-function parseResponse(text: string): Segment[] {
-  const segments: Segment[] = [];
-  const regex = /```(\w*)\n?([\s\S]*?)```/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      segments.push({ type: 'text', content: text.slice(lastIndex, match.index) });
-    }
-    segments.push({ type: 'code', content: match[2].trim(), language: match[1] || undefined });
-    lastIndex = match.index + match[0].length;
+    return (
+      <div className="mb-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-red-500 mb-2 flex items-center gap-1">
+          <AlertTriangle className="w-3 h-3" /> Errores encontrados
+        </p>
+        {parsed.errors.map((error: AnalysisError, i: number) => (
+          <div key={i} className="bg-red-50 border border-red-200 rounded-lg p-3 mb-2">
+            {error.line && (
+              <p className="text-xs font-mono text-red-500 mb-1">Línea {error.line}</p>
+            )}
+            <p className="text-sm text-red-700">{error.message}</p>
+            {(error.wrongCode || error.fixedCode) && (
+              <div className="mt-2 space-y-1">
+                {error.wrongCode && (
+                  <div className="rounded bg-red-100 p-2 font-mono text-xs text-red-600 line-through">
+                    {error.wrongCode}
+                  </div>
+                )}
+                {error.fixedCode && (
+                  <div className="rounded bg-green-100 p-2 font-mono text-xs text-green-700">
+                    {error.fixedCode}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  } catch {
+    return null;
   }
-
-  if (lastIndex < text.length) {
-    segments.push({ type: 'text', content: text.slice(lastIndex) });
-  }
-
-  return segments.length ? segments : [{ type: 'text', content: text }];
-}
-
-// Render inline code (text between single backticks)
-function renderInlineCode(text: string) {
-  const parts = text.split(/(`[^`]+`)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith('`') && part.endsWith('`')) {
-      return (
-        <code key={i} className="bg-[#EEEDFE] text-[#534AB7] px-1 rounded text-[11px] font-mono">
-          {part.slice(1, -1)}
-        </code>
-      );
-    }
-    return <Fragment key={i}>{part}</Fragment>;
-  });
 }
 
 // ─── Message bubble ───────────────────────────────────────────────────────────
 function MessageBubble({ msg }: { msg: ChatMessage }) {
   const isUser = msg.role === 'user';
-  const segments = isUser ? [] : parseResponse(msg.content);
 
   return (
     <div className={`flex gap-2 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -88,13 +79,10 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
         {isUser ? (
           <span className="whitespace-pre-wrap">{msg.content}</span>
         ) : (
-          segments.map((seg, i) =>
-            seg.type === 'code' ? (
-              <CodeBlock key={i} code={seg.content} language={seg.language} />
-            ) : (
-              <span key={i} className="whitespace-pre-wrap">{renderInlineCode(seg.content)}</span>
-            )
-          )
+          <>
+            <ErrorSection content={msg.content} />
+            <MessageRenderer content={msg.content} />
+          </>
         )}
       </div>
     </div>
