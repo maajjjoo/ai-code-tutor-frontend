@@ -1,4 +1,5 @@
 ﻿import React from 'react';
+import { UI } from '../../constants/ui.strings';
 
 export function FeaturesRow() {
   return (
@@ -10,9 +11,9 @@ export function FeaturesRow() {
               <polygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2' />
             </svg>
           </div>
-          <h4 className='text-[13px] font-medium text-[#111827] dark:text-gray-100 mb-1'>Real-time analysis</h4>
+          <h4 className='text-[13px] font-medium text-[#111827] dark:text-gray-100 mb-1'>{UI.FEATURE_REALTIME}</h4>
           <p className='text-[12px] text-[#4B5563] dark:text-gray-400 leading-[1.6]'>
-            Detects functions and blocks as you write, no need to run the code.
+            {UI.FEATURE_REALTIME_DESC}
           </p>
         </div>
 
@@ -23,9 +24,9 @@ export function FeaturesRow() {
               <polyline points='12 5 19 12 12 19' />
             </svg>
           </div>
-          <h4 className='text-[13px] font-medium text-[#111827] dark:text-gray-100 mb-1'>Tutor, not generator</h4>
+          <h4 className='text-[13px] font-medium text-[#111827] dark:text-gray-100 mb-1'>{UI.FEATURE_TUTOR}</h4>
           <p className='text-[12px] text-[#4B5563] dark:text-gray-400 leading-[1.6]'>
-            Guides and explains at every step, but never writes the project for you.
+            {UI.FEATURE_TUTOR_DESC}
           </p>
         </div>
 
@@ -35,9 +36,9 @@ export function FeaturesRow() {
               <polyline points='22 12 18 12 15 21 9 3 6 12 2 12' />
             </svg>
           </div>
-          <h4 className='text-[13px] font-medium text-[#111827] dark:text-gray-100 mb-1'>Saved progress</h4>
+          <h4 className='text-[13px] font-medium text-[#111827] dark:text-gray-100 mb-1'>{UI.FEATURE_SAVED}</h4>
           <p className='text-[12px] text-[#4B5563] dark:text-gray-400 leading-[1.6]'>
-            Your completed lessons and projects are saved so you can continue anytime.
+            {UI.FEATURE_SAVED_DESC}
           </p>
         </div>
       </div>

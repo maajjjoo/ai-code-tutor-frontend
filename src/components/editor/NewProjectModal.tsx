@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { CharCounter } from '../ui/CharCounter';
 import { validateProjectName } from '../../utils/validation';
+import { UI } from '../../constants/ui.strings';
 
 interface Props {
   open: boolean;
@@ -54,8 +55,8 @@ export function NewProjectModal({ open, onClose, onCreate, loading, error }: Pro
           </svg>
         </button>
 
-        <h2 id="new-project-title" className="text-[15px] font-medium text-[#111827] dark:text-gray-100">New Project</h2>
-        <p className="text-[12px] text-[#4B5563] dark:text-gray-400 mt-1 mb-4">Create a new project.</p>
+        <h2 id="new-project-title" className="text-[15px] font-medium text-[#111827] dark:text-gray-100">{UI.NEW_PROJECT}</h2>
+        <p className="text-[12px] text-[#4B5563] dark:text-gray-400 mt-1 mb-4">{UI.CREATE_PROJECT}</p>
 
         {error && (
           <div className="mb-3 px-3 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-[12px] text-red-600 dark:text-red-400">
@@ -65,7 +66,7 @@ export function NewProjectModal({ open, onClose, onCreate, loading, error }: Pro
 
         <div className="mb-5">
           <label htmlFor="project-name" className="block text-[12px] font-medium text-[#111827] dark:text-gray-100 mb-1.5">
-            Project name
+            {UI.PROJECT_NAME}
           </label>
           <input
             ref={inputRef}
@@ -75,7 +76,7 @@ export function NewProjectModal({ open, onClose, onCreate, loading, error }: Pro
             onChange={e => {
               if (e.target.value.length <= 30) setName(e.target.value);
             }}
-            placeholder="e.g. my-calculator"
+            placeholder="ej. mi-calculadora"
             className="w-full border border-[#E5E7EB] dark:border-gray-700 rounded-lg px-3 py-2 text-[13px] text-[#111827] dark:text-gray-100 placeholder-[#9CA3AF] outline-none focus:border-[#534AB7] transition-colors"
           />
           <CharCounter current={name.length} max={30} />
@@ -89,7 +90,7 @@ export function NewProjectModal({ open, onClose, onCreate, loading, error }: Pro
             onClick={onClose}
             className="flex-1 border border-[#E5E7EB] dark:border-gray-700 text-[#4B5563] dark:text-gray-400 py-2 rounded-lg text-[13px] hover:bg-[#F8F9FA] dark:hover:bg-gray-700 transition-colors cursor-pointer"
           >
-            Cancel
+            {UI.CANCEL}
           </button>
           <button
             onClick={() => { if (canSubmit) onCreate(name.trim()); }}
@@ -102,7 +103,7 @@ export function NewProjectModal({ open, onClose, onCreate, loading, error }: Pro
                 <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" />
               </svg>
             )}
-            Create
+            {UI.CREATE_PROJECT}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { UI } from '../../../constants/ui.strings';
 
 interface Props {
   content?: string;
@@ -25,7 +26,7 @@ export function ExampleSection({ content, code }: Props) {
           <button
             onClick={handleCopy}
             className="absolute top-3 right-3 bg-white/10 hover:bg-white/20 rounded px-2 py-1 text-white/80 hover:text-white cursor-pointer transition-colors"
-            title="Copy code"
+            title={UI.COPY_CODE}
           >
             {copied ? (
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

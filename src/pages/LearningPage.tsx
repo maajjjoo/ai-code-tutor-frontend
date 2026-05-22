@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { UI } from '../constants/ui.strings';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { useLearning } from '../hooks/useLearning';
 import { LearningSidebar } from '../components/learning/sidebar/LearningSidebar';
@@ -41,8 +42,8 @@ export function LearningPage() {
               <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#E5E7EB" strokeWidth="1" className="mx-auto mb-4">
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
               </svg>
-              <p className="text-[15px] font-medium text-[#9CA3AF] mb-1">Choose a language to start learning</p>
-              <p className="text-[13px] text-[#9CA3AF]">Select any language from the sidebar</p>
+              <p className="text-[15px] font-medium text-[#9CA3AF] mb-1">{UI.CHOOSE_TOPIC}</p>
+              <p className="text-[13px] text-[#9CA3AF]">{UI.SELECT_TOPIC}</p>
             </div>
           </div>
         )}

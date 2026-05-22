@@ -1,3 +1,4 @@
+import { UI } from '../../constants/ui.strings';
 import type { ExerciseContext } from '../../types';
 
 interface Props {
@@ -37,7 +38,7 @@ export function ExerciseContextPanel({ context, onDismiss, isCollapsed, onToggle
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <span className="inline-flex items-center text-[11px] font-semibold text-white bg-[#534AB7] rounded-full px-2 py-0.5">
-              Lesson exercise
+              {UI.LESSON_EXERCISE}
             </span>
             <span className="text-[13px] font-medium text-[#3C3489] dark:text-indigo-300 truncate ml-2">
               {context.lessonTitle}

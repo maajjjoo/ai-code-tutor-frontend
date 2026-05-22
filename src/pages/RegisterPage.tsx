@@ -7,16 +7,17 @@ import { hashPassword } from '../utils/hashPassword';
 import { useAuth } from '../context/AuthContext';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { useToast } from '../context/ToastContext';
+import { UI } from '../constants/ui.strings';
 
 const PWD_CHECKS = [
-  { key: 'length', label: '8+ characters (not counting spaces)' },
-  { key: 'uppercase', label: 'One uppercase letter' },
-  { key: 'number', label: 'One number' },
-  { key: 'special', label: 'One special character (!@#$%^&*)' },
+  { key: 'length', label: UI.PWD_LENGTH },
+  { key: 'uppercase', label: UI.PWD_UPPERCASE },
+  { key: 'number', label: UI.PWD_NUMBER },
+  { key: 'special', label: UI.PWD_SPECIAL },
 ] as const;
 
 export function RegisterPage() {
-  usePageTitle('Create account');
+  usePageTitle('Crear cuenta');
   const navigate = useNavigate();
   const { login } = useAuth();
   const { showToast } = useToast();
@@ -52,7 +53,7 @@ export function RegisterPage() {
       };
       const res = await registerUser(payload);
       login({ id: res.id, username: res.username, email: res.email, createdAt: new Date().toISOString() });
-      showToast('Account created!', 'success');
+      showToast(UI.ACCOUNT_CREATED, 'success');
       setSuccess(true);
       setTimeout(() => navigate('/practice'), 1500);
     } catch (err) {
@@ -77,7 +78,7 @@ export function RegisterPage() {
           <div className="w-14 h-14 rounded-full bg-green-500 flex items-center justify-center mx-auto mb-4">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
-          <p className="text-white text-sm font-medium">Account created! Redirecting...</p>
+          <p className="text-white text-sm font-medium">{UI.REDIRECTING}</p>
         </div>
       </div>
     );
@@ -97,12 +98,12 @@ export function RegisterPage() {
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-bold text-white tracking-tight">CodeTutor</h1>
-            <p className="text-sm text-[#6b7280] mt-1">Start learning today</p>
+            <p className="text-sm text-[#6b7280] mt-1">Empieza a aprender hoy</p>
           </div>
         </div>
 
         <div className="bg-[#161622] border border-[#ffffff0f] rounded-2xl p-6 shadow-2xl shadow-black/40">
-          <h2 className="text-base font-semibold text-white mb-5">Create account</h2>
+          <h2 className="text-base font-semibold text-white mb-5">{UI.REGISTER_BUTTON}</h2>
 
           {errors.form && (
             <div className="mb-4 px-3 py-2.5 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400">
@@ -112,13 +113,13 @@ export function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="register-username" className="text-xs font-medium text-[#9ca3af]">Username</label>
+              <label htmlFor="register-username" className="text-xs font-medium text-[#9ca3af]">{UI.USERNAME}</label>
               <input
                 id="register-username"
                 name="username"
                 type="text"
                 required
-                placeholder="yourusername"
+                placeholder="tuusuario"
                 autoComplete="username"
                 maxLength={50}
                 value={form.username}
@@ -132,13 +133,13 @@ export function RegisterPage() {
               )}
             </div>
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="register-email" className="text-xs font-medium text-[#9ca3af]">Email</label>
+              <label htmlFor="register-email" className="text-xs font-medium text-[#9ca3af]">{UI.EMAIL}</label>
               <input
                 id="register-email"
                 name="email"
                 type="email"
                 required
-                placeholder="you@email.com"
+                placeholder="tucorreo@email.com"
                 autoComplete="email"
                 maxLength={254}
                 value={form.email}
@@ -152,7 +153,7 @@ export function RegisterPage() {
               )}
             </div>
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="register-password" className="text-xs font-medium text-[#9ca3af]">Password</label>
+              <label htmlFor="register-password" className="text-xs font-medium text-[#9ca3af]">{UI.PASSWORD}</label>
               <input
                 id="register-password"
                 name="password"
@@ -183,7 +184,7 @@ export function RegisterPage() {
               )}
             </div>
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="register-confirm-password" className="text-xs font-medium text-[#9ca3af]">Confirm password</label>
+              <label htmlFor="register-confirm-password" className="text-xs font-medium text-[#9ca3af]">{UI.CONFIRM_PASSWORD}</label>
               <input
                 id="register-confirm-password"
                 name="confirmPassword"
@@ -196,19 +197,19 @@ export function RegisterPage() {
                 onChange={e => setForm({ ...form, confirmPassword: e.target.value })}
                 className="bg-[#0d0d14] border border-[#ffffff12] rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#6f42c1] focus:ring-1 focus:ring-[#6f42c1]/30 transition-all" />
               {form.confirmPassword.length > 0 && !confirmMatch && (
-                <p className="text-[11px] text-[#DC2626] mt-[2px]">Passwords do not match</p>
+                <p className="text-[11px] text-[#DC2626] mt-[2px]">Las contraseñas no coinciden</p>
               )}
             </div>
             <button type="submit" disabled={loading || !canSubmit}
               className="mt-1 w-full py-2.5 rounded-lg bg-gradient-to-r from-[#6f42c1] to-[#0e639c] hover:from-[#0e639c] hover:to-[#6f42c1] text-white text-sm font-semibold disabled:opacity-50 transition-all shadow-lg shadow-[#6f42c1]/20 cursor-pointer disabled:cursor-not-allowed">
-              {loading ? 'Creating account...' : 'Create account'}
+              {loading ? 'Creando cuenta...' : UI.REGISTER_BUTTON}
             </button>
           </form>
         </div>
 
         <p className="text-center text-xs text-[#6b7280] mt-5">
-          Already have an account?{' '}
-           <Link to="/login" className="text-[#60a5fa] hover:text-white transition-colors">Log in</Link>
+          {UI.HAVE_ACCOUNT}{' '}
+            <Link to="/login" className="text-[#60a5fa] hover:text-white transition-colors">{UI.LOGIN}</Link>
         </p>
       </div>
     </div>

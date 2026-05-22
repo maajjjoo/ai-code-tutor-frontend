@@ -1,13 +1,14 @@
 import { RefreshCw } from 'lucide-react';
+import { UI } from '../../../constants/ui.strings';
 import type { Level } from '../../../types/learning.types';
 import type { Course } from '../../../data/courses';
 
 const LEVELS: Level[] = ['beginner', 'intermediate', 'advanced'];
 
-const LEVEL_META: Record<Level, { icon: string; label: string; desc: string }> = {
-  beginner:     { icon: '🌱', label: 'Beginner',     desc: 'Start from zero. No experience needed.' },
-  intermediate: { icon: '🔥', label: 'Intermediate', desc: 'Take your skills to the next level.' },
-  advanced:     { icon: '🚀', label: 'Advanced',     desc: 'Master complex concepts and patterns.' },
+const LEVEL_META: Record<Level, { icon: string }> = {
+  beginner:     { icon: '🌱' },
+  intermediate: { icon: '🔥' },
+  advanced:     { icon: '🚀' },
 };
 
 interface Props {
@@ -31,7 +32,7 @@ export function LevelSelectionScreen({ course, levelsDone, onLevelSelect, onRest
           </div>
           <div>
             <h1 className="text-[22px] font-semibold text-[#111827]">{course.name}</h1>
-            <p className="text-[13px] text-[#9CA3AF] mt-1">Choose your level</p>
+            <p className="text-[13px] text-[#9CA3AF] mt-1">{UI.CHOOSE_LEVEL}</p>
           </div>
         </div>
 
@@ -54,10 +55,10 @@ export function LevelSelectionScreen({ course, levelsDone, onLevelSelect, onRest
                       <path d="M7 11V7a5 5 0 0110 0v4"/>
                     </svg>
                   </div>
-                  <div className="flex-1">
-                    <div className="text-[14px] font-medium text-[#9CA3AF]">{meta.label}</div>
-                    <div className="text-[12px] text-[#9CA3AF]">Complete {LEVELS[idx - 1]} first</div>
-                  </div>
+                   <div className="flex-1">
+                     <div className="text-[14px] font-medium text-[#9CA3AF]">{UI[level.toUpperCase() as keyof typeof UI]}</div>
+                     <div className="text-[12px] text-[#9CA3AF]">{UI.COMPLETE_FIRST} {UI[LEVELS[idx - 1].toUpperCase() as keyof typeof UI]} {UI.FIRST}</div>
+                   </div>
                 </div>
               );
             }
@@ -75,12 +76,12 @@ export function LevelSelectionScreen({ course, levelsDone, onLevelSelect, onRest
                   >
                     {meta.icon}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[14px] font-medium text-[#111827] dark:text-gray-100">{meta.label}</div>
-                    <div className="text-[12px] text-[#4B5563] dark:text-gray-400">{meta.desc}</div>
-                    <div className="text-[11px] text-[#9CA3AF] mt-0.5">10 lessons</div>
-                  </div>
-                  {isComplete && <span className="text-[12px] text-[#0F6E56] dark:text-teal-400 font-medium shrink-0">Completed ✓</span>}
+                   <div className="flex-1 min-w-0">
+                     <div className="text-[14px] font-medium text-[#111827] dark:text-gray-100">{UI[level.toUpperCase() as keyof typeof UI]}</div>
+                     <div className="text-[12px] text-[#4B5563] dark:text-gray-400">{UI[`${level.toUpperCase()}_DESC` as keyof typeof UI]}</div>
+                     <div className="text-[11px] text-[#9CA3AF] mt-0.5">10 {UI.LESSONS_COUNT}</div>
+                   </div>
+                   {isComplete && <span className="text-[12px] text-[#0F6E56] dark:text-teal-400 font-medium shrink-0">{UI.COMPLETED} ✓</span>}
                 </div>
                 <div className={`flex gap-2 ${isComplete ? 'mt-3' : 'mt-0'}`}>
                   {isComplete ? (
@@ -88,25 +89,25 @@ export function LevelSelectionScreen({ course, levelsDone, onLevelSelect, onRest
                       <button
                         onClick={() => onLevelSelect(level)}
                         className="flex-1 py-2 text-sm font-medium rounded-lg border border-[#0F6E56] dark:border-teal-400 text-[#0F6E56] dark:text-teal-400 hover:bg-[#D1FAE5] dark:hover:bg-teal-900/30 cursor-pointer transition-colors"
-                      >
-                        Continue reviewing
-                      </button>
-                      <button
-                        onClick={() => onRestartClick(course.id, level)}
-                        className="flex-1 py-2 text-sm font-medium rounded-lg border border-[#534AB7] dark:border-indigo-400 text-[#534AB7] dark:text-indigo-400 hover:bg-[#EEEDFE] dark:hover:bg-indigo-900/30 cursor-pointer flex items-center justify-center gap-1.5 transition-colors"
-                      >
-                        <RefreshCw size={14} />
-                        Restart from beginning
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={() => onLevelSelect(level)}
-                      className="flex-1 py-2 text-sm font-medium rounded-lg bg-[#534AB7] text-white hover:opacity-90 cursor-pointer text-center"
-                    >
-                      Start <span className="ml-1">→</span>
-                    </button>
-                  )}
+                       >
+                         {UI.CONTINUE_REVIEWING}
+                       </button>
+                       <button
+                         onClick={() => onRestartClick(course.id, level)}
+                         className="flex-1 py-2 text-sm font-medium rounded-lg border border-[#534AB7] dark:border-indigo-400 text-[#534AB7] dark:text-indigo-400 hover:bg-[#EEEDFE] dark:hover:bg-indigo-900/30 cursor-pointer flex items-center justify-center gap-1.5 transition-colors"
+                       >
+                         <RefreshCw size={14} />
+                         {UI.RESTART_FROM_BEGINNING}
+                       </button>
+                     </>
+                   ) : (
+                     <button
+                       onClick={() => onLevelSelect(level)}
+                       className="flex-1 py-2 text-sm font-medium rounded-lg bg-[#534AB7] text-white hover:opacity-90 cursor-pointer text-center"
+                     >
+                       {UI.START} <span className="ml-1">→</span>
+                     </button>
+                   )}
                 </div>
               </div>
             );

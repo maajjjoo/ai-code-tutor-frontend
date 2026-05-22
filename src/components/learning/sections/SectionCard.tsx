@@ -6,10 +6,10 @@ import { TipSection } from './TipSection';
 import { ExerciseSection } from './ExerciseSection';
 
 const TAG: Record<string, { bg: string; text: string; label: string }> = {
-  explanation: { bg: 'bg-[#F3F4F6] dark:bg-gray-700', text: 'text-[#374151] dark:text-gray-300', label: 'Concept' },
-  example:     { bg: 'bg-[#F0FDF4] dark:bg-emerald-900/20', text: 'text-[#166534] dark:text-emerald-400', label: 'Example' },
-  tip:         { bg: 'bg-[#FFFBEB] dark:bg-amber-900/20', text: 'text-[#92400E] dark:text-amber-300', label: 'Tip' },
-  exercise:    { bg: 'bg-[#EFF6FF] dark:bg-blue-900/20', text: 'text-[#1D4ED8] dark:text-blue-400', label: 'Exercise' },
+  explanation: { bg: 'bg-[#F3F4F6] dark:bg-gray-700', text: 'text-[#374151] dark:text-gray-300', label: 'Concepto' },
+  example:     { bg: 'bg-[#F0FDF4] dark:bg-emerald-900/20', text: 'text-[#166534] dark:text-emerald-400', label: 'Ejemplo' },
+  tip:         { bg: 'bg-[#FFFBEB] dark:bg-amber-900/20', text: 'text-[#92400E] dark:text-amber-300', label: 'Consejo' },
+  exercise:    { bg: 'bg-[#EFF6FF] dark:bg-blue-900/20', text: 'text-[#1D4ED8] dark:text-blue-400', label: 'Ejercicio' },
 };
 
 interface Props {

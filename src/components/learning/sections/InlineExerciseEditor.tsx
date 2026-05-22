@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { ExternalLink, Sparkles, Lightbulb, Heart, ArrowRight, Check, Loader2 } from 'lucide-react';
+import { UI } from '../../../constants/ui.strings';
 import { verifyExercise } from '../../../services/api';
 
 interface FeedbackResult {
@@ -107,7 +108,7 @@ export function InlineExerciseEditor({
         encouragement: res.encouragement,
       });
     } catch {
-      setVerifyError('Could not verify your solution. Please try again.');
+      setVerifyError(UI.COULD_NOT_VERIFY);
     } finally {
       setIsVerifying(false);
     }
@@ -138,7 +139,7 @@ export function InlineExerciseEditor({
             onClick={handleReset}
             className="text-[#6B7280] text-xs hover:text-white cursor-pointer"
           >
-            Reset
+            {UI.RESET}
           </button>
         </div>
 
@@ -151,19 +152,19 @@ export function InlineExerciseEditor({
             setVerifyError(null);
           }}
           className="w-full min-h-[180px] max-h-[320px] resize-y bg-[#1E1E2E] text-[#A6E3A1] font-mono text-[13px] leading-[1.7] p-[14px] border-none outline-none placeholder-[#4B5563]"
-          placeholder="Write your solution here..."
+          placeholder={UI.WRITE_SOLUTION}
           spellCheck={false}
         />
 
         <div className="h-11 bg-[#2A2A3E] border-t border-[#333] flex items-center justify-between px-[14px]">
-          <span className="text-[11px] text-[#6B7280]">{code.length} characters</span>
+          <span className="text-[11px] text-[#6B7280]">{code.length} caracteres</span>
           <div className="flex items-center gap-2">
             <button
               onClick={() => onOpenInEditor(exercisePrompt, hints)}
               className="text-[#6B7280] text-xs hover:text-white cursor-pointer flex items-center gap-1"
             >
               <ExternalLink size={12} />
-              Open in full editor
+              {UI.OPEN_IN_EDITOR}
             </button>
             <button
               onClick={handleVerify}
@@ -175,7 +176,7 @@ export function InlineExerciseEditor({
               }`}
             >
               <Sparkles size={14} />
-              Verify with AI
+              {UI.VERIFY_WITH_AI}
             </button>
           </div>
         </div>
@@ -184,7 +185,7 @@ export function InlineExerciseEditor({
       {isVerifying && (
         <div className="bg-[#EEEDFE] dark:bg-indigo-900/30 rounded-lg p-3 flex items-center gap-2 mt-3 transition-colors">
           <Loader2 className="w-4 h-4 text-[#534AB7] animate-spin" />
-          <span className="text-[12px] text-[#3C3489] dark:text-indigo-300">The AI is reviewing your code...</span>
+          <span className="text-[12px] text-[#3C3489] dark:text-indigo-300">{UI.AI_REVIEWING}</span>
         </div>
       )}
 
@@ -202,14 +203,14 @@ export function InlineExerciseEditor({
                 <div className="w-8 h-8 rounded-full bg-[#E1F5EE] flex items-center justify-center shrink-0">
                   <Check size={16} className="text-[#0F6E56]" />
                 </div>
-                <span className="text-[14px] font-medium text-[#0F6E56]">Great work!</span>
+                <span className="text-[14px] font-medium text-[#0F6E56]">{UI.GREAT_WORK}</span>
               </>
             ) : (
               <>
                 <div className="w-8 h-8 rounded-full bg-[#EEEDFE] flex items-center justify-center shrink-0">
                   <Lightbulb size={16} className="text-[#534AB7]" />
                 </div>
-                <span className="text-[14px] font-medium text-[#534AB7]">Keep going!</span>
+                <span className="text-[14px] font-medium text-[#534AB7]">{UI.KEEP_GOING}</span>
               </>
             )}
           </div>
@@ -220,7 +221,7 @@ export function InlineExerciseEditor({
 
           {feedback.suggestions.length > 0 && (
             <div className="mt-3">
-              <p className="text-[11px] text-[#9CA3AF] uppercase">Things to improve:</p>
+              <p className="text-[11px] text-[#9CA3AF] uppercase">{UI.THINGS_TO_IMPROVE}</p>
               {feedback.suggestions.map((s, i) => (
                 <div key={i} className="flex items-start gap-2 mt-1">
                   <ArrowRight size={12} className="text-[#534AB7] mt-0.5 shrink-0" />
@@ -240,14 +241,14 @@ export function InlineExerciseEditor({
               onClick={handleTryAgain}
               className="px-4 py-2 border border-[#E5E7EB] dark:border-gray-700 text-[#374151] dark:text-gray-300 rounded-lg text-[13px] font-medium hover:bg-[#F8F9FA] dark:hover:bg-gray-700 cursor-pointer"
             >
-              Try again
+              {UI.TRY_AGAIN}
             </button>
             {feedback.isCorrect && (
               <button
                 onClick={onSectionComplete}
                 className="px-4 py-2 bg-[#534AB7] text-white rounded-lg text-[13px] font-medium hover:opacity-90 cursor-pointer"
               >
-                Next section
+                {UI.NEXT_SECTION}
               </button>
             )}
           </div>

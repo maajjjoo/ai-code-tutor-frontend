@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { UI } from '../../constants/ui.strings';
 
 interface Props {
   open: boolean;
@@ -32,7 +33,7 @@ export function DeleteProjectModal({ open, projectName, onClose, onConfirm }: Pr
     try {
       await onConfirm();
     } catch {
-      setError('Could not delete project. Try again.');
+      setError(UI.COULD_NOT_DELETE);
       setLoading(false);
     }
   };
@@ -55,9 +56,9 @@ export function DeleteProjectModal({ open, projectName, onClose, onConfirm }: Pr
           </svg>
         </div>
 
-        <h2 className="text-[14px] font-medium text-[#111827] dark:text-gray-100 text-center">Delete project?</h2>
+        <h2 className="text-[14px] font-medium text-[#111827] dark:text-gray-100 text-center">¿Eliminar proyecto?</h2>
         <p className="text-[12px] text-[#4B5563] dark:text-gray-400 text-center mt-1.5">
-          This will permanently delete <span className="font-medium text-[#111827] dark:text-gray-100">{projectName}</span> and all its files. This action cannot be undone.
+          Esto eliminará permanentemente <span className="font-medium text-[#111827] dark:text-gray-100">{projectName}</span> y todos sus archivos. {UI.DELETE_WARNING}
         </p>
 
         {error && (
@@ -68,7 +69,7 @@ export function DeleteProjectModal({ open, projectName, onClose, onConfirm }: Pr
 
         <div className="flex gap-2 mt-5">
           <button onClick={onClose} className="flex-1 border border-[#E5E7EB] dark:border-gray-700 text-[#4B5563] dark:text-gray-400 py-2 rounded-lg text-[13px] hover:bg-[#F8F9FA] dark:hover:bg-gray-700 transition-colors cursor-pointer">
-            Cancel
+            {UI.CANCEL}
           </button>
           <button
             onClick={handleDelete}
@@ -81,7 +82,7 @@ export function DeleteProjectModal({ open, projectName, onClose, onConfirm }: Pr
                 <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75"/>
               </svg>
             )}
-            Delete
+            Eliminar
           </button>
         </div>
       </div>

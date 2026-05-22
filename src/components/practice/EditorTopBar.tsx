@@ -1,5 +1,6 @@
 import React from 'react';
 import type { VFile } from '../../types/vfs';
+import { UI } from '../../constants/ui.strings';
 
 const FILE_EXT_COLORS: Record<string, string> = {
   py: '#3B82F6', java: '#F59E0B', js: '#EAB308',
@@ -71,7 +72,7 @@ export const EditorTopBar = React.memo(function EditorTopBar({ filesList, fsActi
           ) : (
             <svg width="10" height="10" viewBox="0 0 24 24" fill="#0F6E56"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           )}
-          {isRunning ? 'Running...' : 'Run'}
+          {isRunning ? UI.RUNNING : UI.RUN}
         </button>
       </div>
     </div>

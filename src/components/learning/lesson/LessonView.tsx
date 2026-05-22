@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, type RefObject } from 'react';
 import { MoreVertical, RefreshCw } from 'lucide-react';
+import { UI } from '../../../constants/ui.strings';
 import type { Lesson, LessonSection, Level } from '../../../types/learning.types';
 import type { Course } from '../../../data/courses';
 import { LessonHero } from './LessonHero';
@@ -61,7 +62,7 @@ export function LessonView({
     <div className="flex-1 flex flex-col overflow-hidden transition-colors">
       <div className="h-12 bg-white dark:bg-gray-900 flex items-center justify-between px-6 border-b border-[#E5E7EB] dark:border-gray-700 shrink-0 transition-colors">
         <div className="flex items-center gap-1.5 text-[12px]">
-          <span className="text-[#9CA3AF]">Languages</span>
+          <span className="text-[#9CA3AF]">{UI.LANGUAGES}</span>
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2">
             <polyline points="9 18 15 12 9 6"/>
           </svg>
@@ -73,7 +74,7 @@ export function LessonView({
             className="flex items-center gap-1.5 px-4 py-[6px] bg-[#534AB7] text-white rounded-lg text-[12px] font-medium hover:opacity-90 transition-opacity cursor-pointer"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Practice in editor
+            {UI.PRACTICE_EDITOR}
           </button>
           <div className="relative" ref={menuRef}>
             <button
@@ -88,9 +89,9 @@ export function LessonView({
                   onClick={() => { setMenuOpen(false); onRestartClick(course.id, selectedLevel); }}
                   className="flex items-center gap-2 w-full px-3 py-2 text-[13px] text-[#374151] hover:bg-[#F9FAFB] transition-colors cursor-pointer"
                 >
-                  <RefreshCw size={14} />
-                  Restart level
-                </button>
+                 <RefreshCw size={14} />
+                   {UI.RESTART_LEVEL}
+                 </button>
               </div>
             )}
           </div>
@@ -115,7 +116,7 @@ export function LessonView({
             <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25"/>
             <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75"/>
           </svg>
-          <span className="text-[12px] text-[#3C3489] dark:text-indigo-300">Loading lesson...</span>
+           <span className="text-[12px] text-[#3C3489] dark:text-indigo-300">{UI.LOADING_LESSON}</span>
         </div>
       )}
 
@@ -125,9 +126,9 @@ export function LessonView({
           <button
             onClick={onRetry}
             className="text-[12px] font-medium text-[#991B1B] underline hover:no-underline cursor-pointer"
-          >
-            Retry
-          </button>
+           >
+             {UI.RETRY}
+           </button>
         </div>
       )}
 
@@ -154,7 +155,7 @@ export function LessonView({
           ))
         ) : lessonError ? null : (
           <div className="flex items-center justify-center h-48">
-            <p className="text-[#9CA3AF] text-[13px]">No content available for this lesson.</p>
+             <p className="text-[#9CA3AF] text-[13px]">{UI.NO_CONTENT}</p>
           </div>
         )}
       </div>

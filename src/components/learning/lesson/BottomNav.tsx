@@ -1,3 +1,5 @@
+import { UI } from '../../../constants/ui.strings';
+
 interface Props {
   currentIndex: number;
   totalSections: number;
@@ -19,28 +21,28 @@ export function BottomNav({ currentIndex, totalSections, onPrevious, onNext, onC
           isFirst
             ? 'opacity-40 cursor-not-allowed text-[#9CA3AF]'
             : 'text-[#374151] dark:text-gray-300 hover:bg-[#F8F9FA] dark:hover:bg-gray-700'
-        }`}
-      >
-        Previous
-      </button>
+         }`}
+       >
+         {UI.PREVIOUS}
+       </button>
 
-      <span className="text-[13px] text-[#9CA3AF]">Section {currentIndex + 1} of {totalSections}</span>
+       <span className="text-[13px] text-[#9CA3AF]">{UI.SECTION_OF} {currentIndex + 1} {UI.OF} {totalSections}</span>
 
-      {!isLast ? (
-        <button
-          onClick={onNext}
-          className="px-5 py-2 bg-[#534AB7] text-white rounded-lg text-[13px] font-medium hover:opacity-90 transition-opacity cursor-pointer"
-        >
-          Next
-        </button>
-      ) : (
-        <button
-          onClick={onComplete}
-          className="px-5 py-2 bg-[#166534] text-white rounded-lg text-[13px] font-medium hover:opacity-90 transition-opacity cursor-pointer"
-        >
-          Complete lesson
-        </button>
-      )}
+       {!isLast ? (
+         <button
+           onClick={onNext}
+           className="px-5 py-2 bg-[#534AB7] text-white rounded-lg text-[13px] font-medium hover:opacity-90 transition-opacity cursor-pointer"
+         >
+           {UI.NEXT}
+         </button>
+       ) : (
+         <button
+           onClick={onComplete}
+           className="px-5 py-2 bg-[#166534] text-white rounded-lg text-[13px] font-medium hover:opacity-90 transition-opacity cursor-pointer"
+         >
+           {UI.COMPLETE_LESSON}
+         </button>
+       )}
     </div>
   );
 }

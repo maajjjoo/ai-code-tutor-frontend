@@ -1,6 +1,6 @@
 import React from 'react';
 
-const STEP_LABELS = ['Concept', 'Example', 'Deep dive', 'Tip', 'Exercise'];
+const STEP_LABELS = ['Concepto', 'Ejemplo', 'Análisis profundo', 'Consejo', 'Ejercicio'];
 
 interface Props {
   currentIndex: number;

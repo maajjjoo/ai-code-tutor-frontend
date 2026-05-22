@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { RefreshCw, AlertTriangle, X } from 'lucide-react';
+import { UI } from '../../../constants/ui.strings';
 
 interface RestartModalProps {
   isOpen: boolean;
@@ -42,33 +43,33 @@ export function RestartModal({ isOpen, courseName, level, onConfirm, onCancel }:
           <RefreshCw size={24} className="text-[#534AB7]" />
         </div>
 
-        <h2 className="text-[15px] font-medium text-[#111827] dark:text-gray-100">
-          Restart {level} level?
-        </h2>
+         <h2 className="text-[15px] font-medium text-[#111827] dark:text-gray-100">
+           {UI.RESTART_CONFIRM_TITLE} {level}?
+         </h2>
 
-        <p className="text-[13px] text-[#4B5563] dark:text-gray-400 mt-2 leading-relaxed">
-          This will reset your progress for the {level} level of {courseName}. You will start from lesson 1 again. This cannot be undone.
-        </p>
+         <p className="text-[13px] text-[#4B5563] dark:text-gray-400 mt-2 leading-relaxed">
+           {UI.RESTART_CONFIRM_DESC} {level} {UI.OF} {courseName}.
+         </p>
 
-        <div className="mt-3 inline-flex items-center gap-1 bg-[#FAEEDA] dark:bg-amber-900/30 text-[#633806] dark:text-amber-300 rounded-full px-3 py-1 text-xs transition-colors">
-          <AlertTriangle size={12} />
-          Your lesson content stays saved
-        </div>
+         <div className="mt-3 inline-flex items-center gap-1 bg-[#FAEEDA] dark:bg-amber-900/30 text-[#633806] dark:text-amber-300 rounded-full px-3 py-1 text-xs transition-colors">
+           <AlertTriangle size={12} />
+           Tu contenido de las lecciones se mantiene guardado
+         </div>
 
-        <div className="flex flex-col gap-2 mt-5 w-full">
-          <button
-            onClick={onConfirm}
-            className="bg-[#534AB7] text-white rounded-lg py-2.5 text-sm font-medium w-full cursor-pointer hover:opacity-90"
-          >
-            Yes, restart from lesson 1
-          </button>
-          <button
-            onClick={onCancel}
-            className="border border-[#E5E7EB] dark:border-gray-700 text-[#4B5563] dark:text-gray-400 rounded-lg py-2.5 text-sm w-full cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-gray-700"
-          >
-            Cancel
-          </button>
-        </div>
+         <div className="flex flex-col gap-2 mt-5 w-full">
+           <button
+             onClick={onConfirm}
+             className="bg-[#534AB7] text-white rounded-lg py-2.5 text-sm font-medium w-full cursor-pointer hover:opacity-90"
+           >
+             {UI.RESTART_CONFIRM_ACTION}
+           </button>
+           <button
+             onClick={onCancel}
+             className="border border-[#E5E7EB] dark:border-gray-700 text-[#4B5563] dark:text-gray-400 rounded-lg py-2.5 text-sm w-full cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-gray-700"
+           >
+             {UI.CANCEL}
+           </button>
+         </div>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { UI } from '../../../constants/ui.strings';
 import { COURSES } from '../../../data/courses';
 import { CourseItem } from './CourseItem';
 import { SidebarFooter } from './SidebarFooter';
@@ -45,7 +46,7 @@ export function LearningSidebar({ selectedCourseId, completionCounts, levelsDone
           </svg>
           <input
             type='text'
-            placeholder='Search topics...'
+            placeholder={UI.SEARCH_TOPICS}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className='flex-1 text-[12px] text-[#111827] dark:text-gray-100 outline-none bg-transparent placeholder:text-[#9CA3AF]'
@@ -54,7 +55,7 @@ export function LearningSidebar({ selectedCourseId, completionCounts, levelsDone
       </div>
 
       <div className='px-3 pb-1'>
-        <span className='text-[11px] font-medium uppercase tracking-wide text-[#9CA3AF] px-[4px]'>Courses</span>
+        <span className='text-[11px] font-medium uppercase tracking-wide text-[#9CA3AF] px-[4px]'>{UI.COURSES}</span>
       </div>
 
       <div className='flex-1 overflow-y-auto px-3 pb-2'>

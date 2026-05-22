@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useDarkMode } from '../../hooks/useDarkMode';
+import { UI } from '../../constants/ui.strings';
 
 export function Navbar() {
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ export function Navbar() {
         </div>
 
         <div className='flex items-center gap-3'>
-          <button onClick={toggleDarkMode} className='p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer flex items-center justify-center' title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}>
+          <button onClick={toggleDarkMode} className='p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer flex items-center justify-center' title={isDark ? UI.LIGHT_MODE : UI.DARK_MODE}>
             {isDark ? (
               <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><circle cx='12' cy='12' r='5'/><path d='M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42'/></svg>
             ) : (
@@ -50,7 +51,7 @@ export function Navbar() {
 
           {user ? (
             <div className='relative' ref={dropdownRef}>
-              <button onClick={() => setDropdownOpen(!dropdownOpen)} className='w-9 h-9 bg-[#EEEDFE] dark:bg-indigo-900/30 rounded-full flex items-center justify-center hover:bg-[#DDD9FC] dark:hover:bg-indigo-900/50 transition-colors' aria-label='User menu'>
+              <button onClick={() => setDropdownOpen(!dropdownOpen)} className='w-9 h-9 bg-[#EEEDFE] dark:bg-indigo-900/30 rounded-full flex items-center justify-center hover:bg-[#DDD9FC] dark:hover:bg-indigo-900/50 transition-colors' aria-label={UI.USER_MENU}>
                 <svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='#534AB7' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' className='dark:stroke-indigo-400'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2' /><circle cx='12' cy='7' r='4' /></svg>
               </button>
               {dropdownOpen && (
@@ -60,12 +61,12 @@ export function Navbar() {
                     <p className='text-[11px] text-[#9CA3AF] truncate'>{user.email}</p>
                   </div>
                   <button onClick={handleLogout} className='w-full text-left px-4 py-2 text-[13px] text-[#EF4444] hover:bg-[#FEF2F2] dark:hover:bg-red-900/20 transition-colors flex items-center gap-2'>
-                    <svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4' /><polyline points='16 17 21 12 16 7' /><line x1='21' y1='12' x2='9' y2='12' /></svg>Sign out</button></div>)}
+                    <svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4' /><polyline points='16 17 21 12 16 7' /><line x1='21' y1='12' x2='9' y2='12' /></svg>{UI.SIGN_OUT}</button></div>)}
             </div>
           ) : (
             <div className='flex items-center gap-2'>
-              <button onClick={() => navigate('/login')} className='border border-[#E5E7EB] dark:border-gray-700 bg-transparent text-[#111827] dark:text-gray-200 px-4 py-[7px] rounded-lg text-[13px] font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors'>Log in</button>
-              <button onClick={() => navigate('/register')} className='bg-[#534AB7] text-white px-4 py-[7px] rounded-lg text-[13px] font-medium hover:opacity-90 transition-opacity'>Sign up</button>
+              <button onClick={() => navigate('/login')} className='border border-[#E5E7EB] dark:border-gray-700 bg-transparent text-[#111827] dark:text-gray-200 px-4 py-[7px] rounded-lg text-[13px] font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors'>{UI.LOGIN}</button>
+              <button onClick={() => navigate('/register')} className='bg-[#534AB7] text-white px-4 py-[7px] rounded-lg text-[13px] font-medium hover:opacity-90 transition-opacity'>{UI.REGISTER}</button>
             </div>
           )}
         </div>

@@ -1,4 +1,5 @@
 ﻿import { useNavigate } from 'react-router-dom';
+import { UI } from '../../constants/ui.strings';
 
 function PurpleCheck() {
   return (
@@ -44,7 +45,7 @@ export function ModesSection() {
   return (
     <section className='bg-[#F9FAFB] dark:bg-gray-800/50 py-12 px-5 sm:px-[80px] transition-colors'>
       <p className='text-center text-[12px] font-medium uppercase tracking-[0.06em] text-[#9CA3AF] mb-6'>
-        Choose your mode
+        {UI.CHOOSE_MODE}
       </p>
 
       <div className='grid grid-cols-1 md:grid-cols-2 gap-4 max-w-6xl mx-auto'>
@@ -57,22 +58,22 @@ export function ModesSection() {
               </svg>
             </div>
             <span className='bg-[#EEEDFE] dark:bg-indigo-900/40 text-[#3C3489] dark:text-indigo-200 px-2 py-[3px] rounded-full text-[11px] font-medium'>
-              AI Editor
+              {UI.MODE_AI_EDITOR}
             </span>
           </div>
 
-          <h3 className='text-[15px] font-medium text-[#111827] dark:text-gray-100 mt-3'>Practice with AI</h3>
+          <h3 className='text-[15px] font-medium text-[#111827] dark:text-gray-100 mt-3'>Practicar con IA</h3>
 
           <p className='text-[13px] text-[#4B5563] dark:text-gray-400 leading-[1.6] mt-2 mb-[14px]'>
-            Write code freely. The AI analyzes each function in real time, explains what it does, and suggests next steps without solving it for you.
+            {UI.MODE_PRACTICE_DESC}
           </p>
 
           <ul className='space-y-0'>
             {[
-              'Code editor with syntax highlighting',
-              'Automatic code explanations',
-              'Next step suggestions',
-              'Undo/redo and version history',
+              'Editor de código con resaltado de sintaxis',
+              'Explicaciones automáticas de código',
+              'Sugerencias de siguientes pasos',
+              'Deshacer/rehacer e historial de versiones',
             ].map((item) => (
               <li key={item} className='flex items-center gap-[7px] py-[3px]'>
                 <PurpleCheck />
@@ -85,7 +86,7 @@ export function ModesSection() {
             onClick={() => navigate('/practice')}
             className='w-full mt-4 bg-[#534AB7] dark:bg-indigo-600 text-white rounded-lg py-2 text-[13px] font-medium hover:opacity-90 transition-opacity cursor-pointer'
           >
-            Go to editor →
+            {UI.GO_TO_EDITOR}
           </button>
         </div>
 
@@ -99,27 +100,27 @@ export function ModesSection() {
             </svg>
           </div>
 
-          <h3 className='text-[15px] font-medium text-[#111827] dark:text-gray-100 mt-3'>Learning</h3>
+          <h3 className='text-[15px] font-medium text-[#111827] dark:text-gray-100 mt-3'>{UI.MODE_LEARNING}</h3>
 
           <p className='text-[13px] text-[#4B5563] dark:text-gray-400 leading-[1.6] mt-2 mb-[14px]'>
-            Learn from scratch with short clear lessons. From your first language to data structures, design patterns, and best practices.
+            {UI.MODE_LEARNING_DESC}
           </p>
 
           <div className='flex flex-wrap gap-[6px] mb-[14px]'>
             <Chip label='Python' bg='#E1F5EE' text='#085041' border='#9FE1CB' />
             <Chip label='Java' bg='#E1F5EE' text='#085041' border='#9FE1CB' />
             <Chip label='JavaScript' bg='#E1F5EE' text='#085041' border='#9FE1CB' />
-            <Chip label='Data Structures' bg='#EEEDFE' text='#3C3489' border='#CECBF6' />
-            <Chip label='Design Patterns' bg='#EEEDFE' text='#3C3489' border='#CECBF6' />
-            <Chip label='OOP' bg='#FAEEDA' text='#633806' border='#FAC775' />
-            <Chip label='Algorithms' bg='#E6F1FB' text='#0C447C' border='#B5D4F4' />
+            <Chip label='Estructuras de Datos' bg='#EEEDFE' text='#3C3489' border='#CECBF6' />
+            <Chip label='Patrones de Diseño' bg='#EEEDFE' text='#3C3489' border='#CECBF6' />
+            <Chip label='POO' bg='#FAEEDA' text='#633806' border='#FAC775' />
+            <Chip label='Algoritmos' bg='#E6F1FB' text='#0C447C' border='#B5D4F4' />
           </div>
 
           <ul className='space-y-0'>
             {[
-              'Lessons from zero level',
-              'Interactive examples per topic',
-              'Practice each lesson in the editor',
+              'Lecciones desde nivel cero',
+              'Ejemplos interactivos por tema',
+              'Practica cada lección en el editor',
             ].map((item) => (
               <li key={item} className='flex items-center gap-[7px] py-[3px]'>
                 <TealCheck />
@@ -132,7 +133,7 @@ export function ModesSection() {
             onClick={() => navigate('/learning')}
             className='w-full mt-4 border border-[#E5E7EB] dark:border-gray-700 bg-transparent text-[#111827] dark:text-gray-200 rounded-lg py-2 text-[13px] font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer'
           >
-            Explore courses →
+            {UI.EXPLORE_COURSES_ALT}
           </button>
         </div>
       </div>

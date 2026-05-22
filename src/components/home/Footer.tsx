@@ -4,11 +4,11 @@ export function Footer() {
   return (
     <footer className='bg-[#F9FAFB] dark:bg-gray-900 border-t border-[#E5E7EB] dark:border-gray-800 h-[52px] px-5 sm:px-[80px] flex items-center justify-between transition-colors'>
       <p className='text-[12px] text-[#9CA3AF]'>
-        AICodeTutor — University project · Data structures and software patterns
+        AICodeTutor — Proyecto universitario · Estructuras de datos y patrones de software
       </p>
       <div className='flex items-center gap-6'>
         <a href='/about' className='text-[12px] text-[#9CA3AF] no-underline hover:text-[#4B5563] dark:hover:text-gray-300 transition-colors cursor-pointer'>    
-          About
+          Acerca de
         </a>
         <a href='https://github.com/Josecampoe' target='_blank' rel='noopener noreferrer' className='text-[12px] text-[#9CA3AF] no-underline hover:text-[#4B5563] dark:hover:text-gray-300 transition-colors cursor-pointer'>
           GitHub
