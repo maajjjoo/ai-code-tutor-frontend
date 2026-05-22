@@ -167,13 +167,7 @@ export function AiChatPanel({
           </span>
         </div>
         <div className="flex items-center gap-[8px]">
-          <button
-            onClick={onToggleHistory}
-            className={`flex items-center gap-1 border ${showHistory ? 'bg-[#EEEDFE] border-[#534AB7] text-[#534AB7]' : 'border-[#E5E7EB] dark:border-gray-700 bg-transparent text-[#6B7280]'} rounded-[8px] px-[12px] py-[5px] text-[12px] font-medium cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-gray-700`}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            {showHistory ? UI.CHAT : UI.HISTORY}
-          </button>
+
         </div>
       </div>
 
