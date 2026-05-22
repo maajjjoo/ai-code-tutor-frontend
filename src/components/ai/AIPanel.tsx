@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Fragment } from 'react';
 import { Send, Bot } from 'lucide-react';
 import { sendChatMessage, getErrorMessage } from '../../services/api';
 import type { EditorData } from '../../types';
@@ -13,14 +13,67 @@ interface ChatMessage {
 
 function uid() { return `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`; }
 
-// Strip emojis from AI responses
-function stripEmojis(text: string): string {
-  return text.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}\u{FE00}-\u{FEFF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA9F}]/gu, '').replace(/\s{2,}/g, ' ').trim();
+// ─── Code block renderer ──────────────────────────────────────────────────────
+function CodeBlock({ code, language }: { code: string; language?: string }) {
+  return (
+    <div className="my-2 rounded-lg overflow-hidden border border-[#E5E7EB]">
+      {language && (
+        <div className="bg-[#1E1E2E] text-[#A0A0B0] text-[10px] px-3 py-1 font-mono border-b border-[#333]">
+          {language}
+        </div>
+      )}
+      <pre className="bg-[#1E1E2E] text-[#E0E0E0] p-3 overflow-x-auto text-[11px] leading-relaxed font-mono m-0 whitespace-pre-wrap">
+        <code>{code}</code>
+      </pre>
+    </div>
+  );
+}
+
+// ─── Parse AI response into segments ─────────────────────────────────────────
+// Splits text on ``` blocks so we can render code blocks differently
+type Segment = { type: 'text' | 'code'; content: string; language?: string };
+
+function parseResponse(text: string): Segment[] {
+  const segments: Segment[] = [];
+  const regex = /```(\w*)\n?([\s\S]*?)```/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({ type: 'text', content: text.slice(lastIndex, match.index) });
+    }
+    segments.push({ type: 'code', content: match[2].trim(), language: match[1] || undefined });
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    segments.push({ type: 'text', content: text.slice(lastIndex) });
+  }
+
+  return segments.length ? segments : [{ type: 'text', content: text }];
+}
+
+// Render inline code (text between single backticks)
+function renderInlineCode(text: string) {
+  const parts = text.split(/(`[^`]+`)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('`') && part.endsWith('`')) {
+      return (
+        <code key={i} className="bg-[#EEEDFE] text-[#534AB7] px-1 rounded text-[11px] font-mono">
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    return <Fragment key={i}>{part}</Fragment>;
+  });
 }
 
 // ─── Message bubble ───────────────────────────────────────────────────────────
 function MessageBubble({ msg }: { msg: ChatMessage }) {
   const isUser = msg.role === 'user';
+  const segments = isUser ? [] : parseResponse(msg.content);
+
   return (
     <div className={`flex gap-2 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
       {!isUser && (
@@ -28,11 +81,21 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
           <Bot className="w-3.5 h-3.5 text-[#534AB7]" />
         </div>
       )}
-      <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words
+      <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed break-words
         ${isUser
           ? 'bg-[#534AB7] text-white rounded-tr-sm'
           : 'bg-[#F8F9FA] text-[#111827] border border-[#E5E7EB] rounded-tl-sm'}`}>
-        {msg.content}
+        {isUser ? (
+          <span className="whitespace-pre-wrap">{msg.content}</span>
+        ) : (
+          segments.map((seg, i) =>
+            seg.type === 'code' ? (
+              <CodeBlock key={i} code={seg.content} language={seg.language} />
+            ) : (
+              <span key={i} className="whitespace-pre-wrap">{renderInlineCode(seg.content)}</span>
+            )
+          )
+        )}
       </div>
     </div>
   );
@@ -72,7 +135,7 @@ export function AIPanel({ editorData, code, exerciseContext, onAiResponse, width
     if (prevExerciseRef.current === key) return;
     prevExerciseRef.current = key;
 
-    const helpMessage = `I need help with this exercise:\n\n${exerciseContext.statement}\n\nMy current code:\n\`\`\`\n${exerciseContext.code || '(empty)'}\n\`\`\``;
+    const helpMessage = `Necesito ayuda con este ejercicio:\n\n${exerciseContext.statement}\n\nMi código actual:\n\`\`\`\n${exerciseContext.code || '(vacío)'}\n\`\`\``;
     const userMsg: ChatMessage = { id: uid(), role: 'user', content: helpMessage, timestamp: new Date() };
     const updated = [...messages, userMsg];
     setMessages(updated);
@@ -83,7 +146,7 @@ export function AIPanel({ editorData, code, exerciseContext, onAiResponse, width
       currentCode: exerciseContext.code,
       language: editorData?.language,
     }).then(res => {
-      addMessage('ai', stripEmojis(res.message));
+      addMessage('ai', res.message);
     }).catch(err => {
       addMessage('ai', `Error: ${getErrorMessage(err)}`);
     }).finally(() => setLoading(false));
@@ -106,18 +169,18 @@ export function AIPanel({ editorData, code, exerciseContext, onAiResponse, width
   // Analyze the current editor code
   const handleAnalyze = async () => {
     if (!editorData || !code.trim() || loading) return;
-    const userMsg: ChatMessage = { id: uid(), role: 'user', content: 'Analyzing current code...', timestamp: new Date() };
+    const userMsg: ChatMessage = { id: uid(), role: 'user', content: 'Analizando código actual...', timestamp: new Date() };
     const updated = [...messages, userMsg];
     setMessages(updated);
     setLoading(true);
     try {
       const res = await sendChatMessage({
-        message: 'Analyze the code in my editor and explain what it does and how I can improve it',
+        message: 'Analiza el código en mi editor y explícame qué hace y cómo puedo mejorarlo',
         history: buildHistory(updated),
         currentCode: code,
         language: editorData.language,
       });
-      addMessage('ai', stripEmojis(res.message));
+      addMessage('ai', res.message);
     } catch (err) {
       addMessage('ai', `Error: ${getErrorMessage(err)}`);
     } finally {
@@ -141,7 +204,7 @@ export function AIPanel({ editorData, code, exerciseContext, onAiResponse, width
         currentCode: code,
         language: editorData?.language,
       });
-      addMessage('ai', stripEmojis(res.message));
+      addMessage('ai', res.message);
     } catch (err) {
       addMessage('ai', `Error: ${getErrorMessage(err)}`);
     } finally {
@@ -169,8 +232,8 @@ export function AIPanel({ editorData, code, exerciseContext, onAiResponse, width
               <Bot className="w-6 h-6 text-[#534AB7]" />
             </div>
             <div>
-              <p className="text-sm text-[#111827] font-medium">Hi, I'm your AI tutor</p>
-              <p className="text-xs text-[#9CA3AF] mt-1">Type a message or analyze your code.</p>
+              <p className="text-sm text-[#111827] font-medium">Hola, soy tu tutor IA</p>
+              <p className="text-xs text-[#9CA3AF] mt-1">Escribe un mensaje o analiza tu código.</p>
             </div>
           </div>
         )}
@@ -186,14 +249,14 @@ export function AIPanel({ editorData, code, exerciseContext, onAiResponse, width
           disabled={loading || !editorData}
           className="self-start text-[10px] px-2.5 py-1 rounded-full border border-[#534AB7]/30 bg-[#EEEDFE] text-[#534AB7] hover:bg-[#534AB7]/20 disabled:opacity-40 transition-colors cursor-pointer font-medium"
         >
-          Analyze code
+          Analizar código
         </button>
         <div className="flex items-end gap-2">
           <textarea
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Type a message..."
+            placeholder="Escribe un mensaje..."
             rows={2}
             className="flex-1 bg-[#F8F9FA] border border-[#E5E7EB] rounded-xl px-3 py-2 text-xs text-[#111827] placeholder-[#9CA3AF] resize-none focus:outline-none focus:border-[#534AB7] transition-all"
           />
