@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { storage } from '../utils/storage';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -78,9 +79,9 @@ export function useEditorPersistence({
     const autosaveKey   = buildAutosaveKey(projectId, fileName);
     const historyKey    = buildHistoryKey(projectId, fileName);
 
-    const manualSaveRaw = localStorage.getItem(manualSaveKey);
-    const autosaveRaw   = localStorage.getItem(autosaveKey);
-    const historyRaw    = localStorage.getItem(historyKey);
+    const manualSaveRaw = storage.get(manualSaveKey);
+    const autosaveRaw   = storage.get(autosaveKey);
+    const historyRaw    = storage.get(historyKey);
 
     if (manualSaveRaw) {
       try {
@@ -135,7 +136,7 @@ export function useEditorPersistence({
         savedAt: new Date().toISOString(),
         projectId,
       };
-      localStorage.setItem(autosaveKey, JSON.stringify(autosaveData));
+      storage.set(autosaveKey, JSON.stringify(autosaveData));
     }, AUTOSAVE_DEBOUNCE_MS);
 
     return () => {
@@ -170,12 +171,12 @@ export function useEditorPersistence({
     };
 
     // Save to localStorage
-    localStorage.setItem(buildManualSaveKey(projectId, fileName), JSON.stringify(saveData));
+    storage.set(buildManualSaveKey(projectId, fileName), JSON.stringify(saveData));
 
     // Update version history
     const historyKey = buildHistoryKey(projectId, fileName);
     const existingHistory: SavedVersion[] = (() => {
-      try { return JSON.parse(localStorage.getItem(historyKey) ?? '[]'); }
+      try { return storage.getArray<SavedVersion>(historyKey); }
       catch { return []; }
     })();
 
@@ -187,7 +188,7 @@ export function useEditorPersistence({
     };
 
     const updatedHistory = [...existingHistory, newVersion].slice(-MAXIMUM_VERSIONS_PER_FILE);
-    localStorage.setItem(historyKey, JSON.stringify(updatedHistory));
+    storage.set(historyKey, JSON.stringify(updatedHistory));
     setVersionHistory(updatedHistory);
 
     setSavedContent(currentContent);

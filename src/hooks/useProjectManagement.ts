@@ -7,6 +7,7 @@ import type { VNode } from '../types/vfs';
 import { uid } from '../types/vfs';
 import type { useVirtualFileSystem } from './useVirtualFileSystem';
 import { useToast } from '../context/ToastContext';
+import { storage } from '../utils/storage';
 
 const ACTIVE_PROJECT_KEY = 'codetutor-active-project';
 
@@ -57,9 +58,9 @@ export function useProjectManagement({ vfs, userId, editorRef, monacoRef, active
 
   const persistProject = useCallback((project: BackendProject, nodes: VNode[], fileName: string, content: string, lang: Language) => {
     vfs.setFsNodes(nodes);
-    localStorage.setItem('codetutor-fs-nodes', JSON.stringify(nodes));
+    storage.set('codetutor-fs-nodes', JSON.stringify(nodes));
     setActiveProject(project);
-    localStorage.setItem(ACTIVE_PROJECT_KEY, JSON.stringify({ id: project.id, name: project.name, programmingLanguage: project.programmingLanguage }));
+    storage.set(ACTIVE_PROJECT_KEY, JSON.stringify({ id: project.id, name: project.name, programmingLanguage: project.programmingLanguage }));
     vfs.setOpenFile({ name: fileName, content, language: lang });
     vfs.setCode(content);
     vfs.setFsActiveId(nodes[1]?.id ?? null);
@@ -75,9 +76,9 @@ export function useProjectManagement({ vfs, userId, editorRef, monacoRef, active
         n.id === vfs.fsActiveId && n.type === 'file' ? { ...n, content: vfs.code } : n
       );
       vfs.setFsNodes(updatedNodes);
-      localStorage.setItem('codetutor-fs-nodes', JSON.stringify(updatedNodes));
+      storage.set('codetutor-fs-nodes', JSON.stringify(updatedNodes));
       await saveSnapshot({ content: JSON.stringify({ nodes: updatedNodes }), projectId: activeProject.id });
-      localStorage.setItem(`codetutor-project-${activeProject.id}-nodes`, JSON.stringify(updatedNodes));
+      storage.set(`codetutor-project-${activeProject.id}-nodes`, JSON.stringify(updatedNodes));
       if (editorRef.current && monacoRef.current) {
         const model = editorRef.current.getModel();
         if (model) {
@@ -142,9 +143,9 @@ export function useProjectManagement({ vfs, userId, editorRef, monacoRef, active
       const folderId = uid();
       const newNodes: VNode[] = [{ id: folderId, type: 'folder', name, parentId: null, open: true }];
       vfs.setFsNodes(newNodes);
-      localStorage.setItem('codetutor-fs-nodes', JSON.stringify(newNodes));
+      storage.set('codetutor-fs-nodes', JSON.stringify(newNodes));
       setActiveProject(newProject);
-      localStorage.setItem(ACTIVE_PROJECT_KEY, JSON.stringify({ id: newProject.id, name: newProject.name, programmingLanguage: newProject.programmingLanguage }));
+      storage.set(ACTIVE_PROJECT_KEY, JSON.stringify({ id: newProject.id, name: newProject.name, programmingLanguage: newProject.programmingLanguage }));
       setSavedProjects(await getProjectsByUser(userId));
       setIsNewProjectModalOpen(false);
     } catch {
@@ -156,8 +157,8 @@ export function useProjectManagement({ vfs, userId, editorRef, monacoRef, active
 
   const loadProjectNodes = useCallback(async (project: BackendProject): Promise<VNode[]> => {
     let nodes: VNode[] = [];
-    const local = localStorage.getItem(`codetutor-project-${project.id}-nodes`);
-    if (local) { try { const p = JSON.parse(local); if (Array.isArray(p) && p.length > 0) nodes = p; } catch {} }
+    const local = storage.getArray<VNode>(`codetutor-project-${project.id}-nodes`);
+    if (local.length > 0) { nodes = local; }
     if (nodes.length === 0) {
       try { const data = await loadEditor(project.id); try { const p = JSON.parse(data.currentCode ?? ''); if (p.nodes && Array.isArray(p.nodes)) nodes = p.nodes; } catch {} } catch {}
     }
@@ -175,16 +176,16 @@ export function useProjectManagement({ vfs, userId, editorRef, monacoRef, active
     setLoadingProject(true);
     const projectNodes = await loadProjectNodes(project);
     vfs.setFsNodes(projectNodes);
-    localStorage.setItem('codetutor-fs-nodes', JSON.stringify(projectNodes));
+    storage.set('codetutor-fs-nodes', JSON.stringify(projectNodes));
     setActiveProject(project);
-    localStorage.setItem(ACTIVE_PROJECT_KEY, JSON.stringify({ id: project.id, name: project.name, programmingLanguage: project.programmingLanguage }));
+    storage.set(ACTIVE_PROJECT_KEY, JSON.stringify({ id: project.id, name: project.name, programmingLanguage: project.programmingLanguage }));
     setLoadingProject(false);
     showToast('Project loaded', 'success');
   };
 
   const handleDeleteProject = async () => {
     if (!deleteTarget) return;
-    localStorage.removeItem(`codetutor-project-${deleteTarget.id}-nodes`);
+    storage.remove(`codetutor-project-${deleteTarget.id}-nodes`);
     setSavedProjects(prev => prev.filter(p => p.id !== deleteTarget.id));
     setDeleteTarget(null);
     showToast('Project deleted', 'warning');

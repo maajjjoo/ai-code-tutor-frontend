@@ -54,7 +54,7 @@ export function useAIChat({ vfs, editorRef, monacoRef, activeProject, exerciseCo
     return {
       id: uid(), role: 'ai', content: structured.content, timestamp: Date.now(),
       quality: structured.quality || result.quality,
-      suggestions: structured.suggestions || result.suggestions.map(s => `${s.title}: ${s.description}`),
+      suggestions: structured.suggestions || (result.suggestions ?? []).map((s) => typeof s === 'string' ? s : `${s.title}: ${s.description}`),
     };
   }, []);
 
@@ -78,7 +78,7 @@ export function useAIChat({ vfs, editorRef, monacoRef, activeProject, exerciseCo
 
   const handleAnalyze = useCallback(async () => {
     if (!vfs.code.trim()) return;
-    setAiMessages(prev => [...prev, { id: uid(), role: 'user', content: 'Analyzing your code...', timestamp: Date.now() }]);
+    setAiMessages(prev => [...prev, { id: uid(), role: 'user', content: 'Analizando tu código...', timestamp: Date.now() }]);
     setAiLoading(true);
     try {
       const result = await analyzeCodePedagogical({

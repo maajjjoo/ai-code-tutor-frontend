@@ -62,7 +62,7 @@ export function useLearning() {
     apiClient.get<Array<{ id: number; name: string }>>('/topics')
       .then(({ data }) => {
         const map: Record<string, string> = {};
-        data.forEach(t => { map[t.name] = String(t.id); });
+        (data ?? []).forEach(t => { map[t.name] = String(t.id); });
         setTopicMap(map);
       })
       .catch((error) => {
@@ -95,7 +95,7 @@ export function useLearning() {
       const { data: lessons } = await apiClient.get<Lesson[]>(
         `/lessons/topic/${topicId}/level/${encodeURIComponent(level)}`
       );
-      lessons.forEach(lesson => {
+      (lessons ?? []).forEach(lesson => {
         setCachedLesson(courseId, level, lesson.lessonNumber, lesson);
       });
     } catch {

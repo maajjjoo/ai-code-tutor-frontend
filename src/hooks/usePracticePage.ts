@@ -10,6 +10,7 @@ import { usePageTitle } from './usePageTitle';
 import { useProjectManagement } from './useProjectManagement';
 import { useCodeExecution } from './useCodeExecution';
 import { useAIChat } from './useAIChat';
+import { storage } from '../utils/storage';
 
 export type { ChatMsg } from './useAIChat';
 
@@ -25,7 +26,7 @@ export function usePracticePage() {
   const monacoRef = useRef<typeof Monaco | null>(null);
 
   const [activeProject, setActiveProject] = useState<BackendProject | null>(() => {
-    try { return JSON.parse(localStorage.getItem(ACTIVE_PROJECT_KEY) ?? 'null'); } catch { return null; }
+    try { return storage.getObject<BackendProject>(ACTIVE_PROJECT_KEY); } catch { return null; }
   });
 
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);

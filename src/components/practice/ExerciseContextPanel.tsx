@@ -47,9 +47,9 @@ export function ExerciseContextPanel({ context, onDismiss, isCollapsed, onToggle
           <p className="text-[12px] text-[#4B5563] dark:text-gray-400 mt-1 max-w-[70%] line-clamp-2">
             {context.exercisePrompt}
           </p>
-          {context.hints.length > 0 && (
+          {(context.hints ?? []).length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
-              {context.hints.map((hint, i) => {
+              {(context.hints ?? []).map((hint, i) => {
                 const truncated = hint.length > 40 ? hint.substring(0, 40) + '...' : hint;
                 return (
                   <span

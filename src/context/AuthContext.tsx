@@ -1,6 +1,7 @@
 import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { User } from '../types';
+import { storage } from '../utils/storage';
 
 interface AuthContextValue {
   user: User | null;
@@ -36,9 +37,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    storage.clearUser();
     setUser(null);
     localStorage.removeItem(USER_STORAGE_KEY);
-    localStorage.removeItem('codetutor-fs-nodes');
   };
 
   const isAuthenticated = user !== null;

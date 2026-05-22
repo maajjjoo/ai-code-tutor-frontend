@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Recurse \"C:\\\\Users\\\\majos\\\\OneDrive\\\\Escritorio\\\\ai-code-tutor-backend\\\\src\" -Filter \"*.java\")",
+      "Bash(Select-Object FullName)",
+      "Bash(Sort-Object FullName)",
+      "Bash(./mvnw clean *)",
+      "Bash(./mvnw test *)",
+      "Bash(VITE_API_URL=http://localhost:8080/api npm run build)",
+      "Bash(npm run *)",
+      "Bash(mvn clean *)",
+      "Bash(\"C:\\\\Users\\\\majos\\\\.m2\\\\wrapper\\\\dists\\\\apache-maven-3.9.12\\\\59fe215c0ad6947fea90184bf7add084544567b927287592651fda3782e0e798\\\\bin\\\\mvn\" clean *)",
+      "PowerShell(npm run *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git check-ignore *)",
+      "Bash(git push *)",
+      "Bash(git config *)",
+      "Bash(xargs grep -l \"SecurityConfig\\\\|CorsConfig\\\\|WebSecurity\\\\|filterChain\")"
+    ]
+  }
+}

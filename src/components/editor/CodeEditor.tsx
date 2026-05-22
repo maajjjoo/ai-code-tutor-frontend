@@ -9,6 +9,7 @@ import { SaveIndicatorBar } from './SaveIndicatorBar';
 import { AutosaveRecoveryBanner } from './AutosaveRecoveryBanner';
 import { VersionHistoryPanel } from './VersionHistoryPanel';
 import { Clock } from 'lucide-react';
+import { storage } from '../../utils/storage';
 
 interface Props {
   editorData: EditorData | null;
@@ -110,7 +111,7 @@ export function CodeEditor({ editorData, code, onChange, onErrorCountChange }: P
     dismissAutosaveBanner();
     // Revert to last manually saved content if available
     const manualSaveKey = `saved-project-${projectId}-file-${fileName}`;
-    const manualSaveRaw = localStorage.getItem(manualSaveKey);
+    const manualSaveRaw = storage.get(manualSaveKey);
     if (manualSaveRaw) {
       try {
         const parsed = JSON.parse(manualSaveRaw);

@@ -63,14 +63,22 @@ function AiMessageBubble({ msg }: { msg: ChatMsg }) {
           {hasSuggestions && msg.suggestions && (
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mb-[8px]">{UI.SUGGESTIONS}</p>
-              {msg.suggestions.map((s, i) => (
-                <div key={i} className={`flex items-start gap-[8px] py-[6px] ${i < msg.suggestions!.length - 1 ? 'border-b border-[#F9FAFB] dark:border-gray-700' : ''}`}>
-                  <div className="w-[20px] h-[20px] bg-[#534AB7] text-white text-[11px] font-semibold rounded-full flex items-center justify-center shrink-0 mt-[1px]">
-                    {i + 1}
+              {(msg.suggestions ?? []).map((s, i) => {
+                const text: string = typeof s === 'string' ? s
+                  : String((s as Record<string, unknown>)?.text
+                    ?? (s as Record<string, unknown>)?.title
+                    ?? (s as Record<string, unknown>)?.description
+                    ?? (s as Record<string, unknown>)?.content
+                    ?? JSON.stringify(s) ?? '');
+                return (
+                  <div key={i} className={`flex items-start gap-[8px] py-[6px] ${i < (msg.suggestions?.length ?? 0) - 1 ? 'border-b border-[#F9FAFB] dark:border-gray-700' : ''}`}>
+                    <div className="w-[20px] h-[20px] bg-[#534AB7] text-white text-[11px] font-semibold rounded-full flex items-center justify-center shrink-0 mt-[1px]">
+                      {i + 1}
+                    </div>
+                    <span className="text-[12px] text-[#4B5563] dark:text-gray-400 leading-relaxed">{text}</span>
                   </div>
-                  <span className="text-[12px] text-[#4B5563] dark:text-gray-400 leading-relaxed">{s}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

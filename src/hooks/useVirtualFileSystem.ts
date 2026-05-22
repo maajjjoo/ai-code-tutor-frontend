@@ -2,12 +2,13 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import type { Language } from '../types';
 import type { VNode, VFile } from '../types/vfs';
 import { uid, detectLang } from '../types/vfs';
+import { storage } from '../utils/storage';
 
 export const FS_STORAGE_KEY = 'codetutor-fs-nodes';
 
 export function useVirtualFileSystem() {
   const [fsNodes, setFsNodes] = useState<VNode[]>(() => {
-    try { return JSON.parse(localStorage.getItem(FS_STORAGE_KEY) ?? '[]'); } catch { return []; }
+    try { return storage.getArray<VNode>(FS_STORAGE_KEY); } catch { return []; }
   });
   const [fsActiveId, setFsActiveId] = useState<string | null>(null);
   const [openFile, setOpenFile] = useState<{ name: string; content: string; language: Language } | null>(null);
@@ -18,7 +19,7 @@ export function useVirtualFileSystem() {
   const filesList = fsNodes.filter(n => n.type === 'file' && n.parentId === firstFolder?.id) as VFile[];
 
   useEffect(() => {
-    localStorage.setItem(FS_STORAGE_KEY, JSON.stringify(fsNodes));
+    storage.set(FS_STORAGE_KEY, JSON.stringify(fsNodes));
   }, [fsNodes]);
 
   useEffect(() => {

@@ -157,7 +157,7 @@ export function AIPanel({ editorData, code, exerciseContext, onAiResponse, width
   // Analyze the current editor code
   const handleAnalyze = async () => {
     if (!editorData || !code.trim() || loading) return;
-    const userMsg: ChatMessage = { id: uid(), role: 'user', content: 'Analizando código actual...', timestamp: new Date() };
+    const userMsg: ChatMessage = { id: uid(), role: 'user', content: 'Analizando tu código...', timestamp: new Date() };
     const updated = [...messages, userMsg];
     setMessages(updated);
     setLoading(true);
