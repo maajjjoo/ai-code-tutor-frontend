@@ -1,5 +1,6 @@
 import { Bot, Send } from 'lucide-react';
 import { UI } from '../../constants/ui.strings';
+import { MessageRenderer } from '../ai/MessageRenderer';
 
 interface ChatMsg {
   id: string;
@@ -50,13 +51,7 @@ function AiMessageBubble({ msg }: { msg: ChatMsg }) {
           {msg.content && (
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mb-[8px]">{UI.WHAT_IT_DOES}</p>
-              <p className="text-[12px] text-[#4B5563] dark:text-gray-400 leading-relaxed whitespace-pre-wrap">
-                {msg.content.split(/(`[^`]+`)/).map((part, i) =>
-                  part.startsWith('`') && part.endsWith('`')
-                    ? <code key={i} className="bg-[#EEEDFE] text-[#3C3489] rounded-[4px] px-[6px] py-[1px] text-[11px] font-mono">{part.slice(1, -1)}</code>
-                    : <span key={i}>{part}</span>
-                )}
-              </p>
+              <MessageRenderer content={msg.content} />
             </div>
           )}
           {hasSuggestions && msg.suggestions && <div className="h-[0.5px] bg-[#F3F4F6] dark:bg-gray-700" />}
@@ -96,7 +91,7 @@ function AiMessageBubble({ msg }: { msg: ChatMsg }) {
           <span className="text-[12px] font-medium text-[#534AB7]">{UI.AI_TUTOR}</span>
         </div>
         <div className="bg-white dark:bg-gray-900 border border-[#E5E7EB] dark:border-gray-700 rounded-tl-none rounded-tr-[10px] rounded-br-[10px] rounded-bl-[10px] p-[12px_14px]">
-          <p className="text-[12px] text-[#4B5563] dark:text-gray-400 leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+          <MessageRenderer content={msg.content} />
         </div>
       </div>
     );
