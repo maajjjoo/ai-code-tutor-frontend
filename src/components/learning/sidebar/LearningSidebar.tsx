@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { UI } from '../../../constants/ui.strings';
 import { COURSES } from '../../../data/courses';
 import { CourseItem } from './CourseItem';
-import { SidebarFooter } from './SidebarFooter';
 
 interface Props {
   selectedCourseId: string | null;
@@ -77,7 +76,6 @@ export function LearningSidebar({ selectedCourseId, completionCounts, levelsDone
         })}
       </div>
 
-      <SidebarFooter completionCounts={completionCounts} />
     </div>
   );
 }
