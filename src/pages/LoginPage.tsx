@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Code2 } from 'lucide-react';
 import { loginUser, getErrorMessage } from '../services/api';
 import { validateEmail } from '../utils/validation';
+import { hashPassword } from '../utils/hashPassword';
 import { useAuth } from '../context/AuthContext';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { useToast } from '../context/ToastContext';
@@ -25,7 +26,8 @@ export function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const res = await loginUser({ ...form, password: form.password });
+      const hashedPassword = await hashPassword(form.password);
+      const res = await loginUser({ email: form.email, password: hashedPassword });
       login({ id: res.id, username: res.username, email: res.email, createdAt: new Date().toISOString() });
       showToast('Welcome back!', 'success');
       navigate('/');

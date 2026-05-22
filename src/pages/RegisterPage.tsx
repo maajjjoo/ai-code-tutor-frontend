@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Code2 } from 'lucide-react';
 import { registerUser, getErrorMessage } from '../services/api';
 import { validateUsername, validateEmail } from '../utils/validation';
+import { hashPassword } from '../utils/hashPassword';
 import { useAuth } from '../context/AuthContext';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { useToast } from '../context/ToastContext';
@@ -43,10 +44,11 @@ export function RegisterPage() {
     setErrors({});
     setLoading(true);
     try {
+      const hashedPassword = await hashPassword(trimmedPwd);
       const payload = {
         username: form.username.trim(),
         email: form.email.trim(),
-        password: trimmedPwd,
+        password: hashedPassword,
       };
       const res = await registerUser(payload);
       login({ id: res.id, username: res.username, email: res.email, createdAt: new Date().toISOString() });
