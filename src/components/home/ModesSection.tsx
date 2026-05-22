@@ -43,8 +43,8 @@ export function ModesSection() {
   const navigate = useNavigate();
 
   return (
-    <section className='bg-[#F9FAFB] dark:bg-gray-800/50 py-12 px-5 sm:px-[80px] transition-colors'>
-      <p className='text-center text-[12px] font-medium uppercase tracking-[0.06em] text-[#9CA3AF] mb-6'>
+    <section className='bg-[#F9FAFB] dark:bg-gray-900 py-12 px-5 sm:px-[80px] transition-colors'>
+      <p className='text-center text-[12px] font-medium uppercase tracking-[0.06em] text-[#9CA3AF] dark:text-gray-400 mb-6'>
         {UI.CHOOSE_MODE}
       </p>
 
@@ -108,12 +108,9 @@ export function ModesSection() {
 
           <div className='flex flex-wrap gap-[6px] mb-[14px]'>
             <Chip label='Python' bg='#E1F5EE' text='#085041' border='#9FE1CB' />
-            <Chip label='Java' bg='#E1F5EE' text='#085041' border='#9FE1CB' />
-            <Chip label='JavaScript' bg='#E1F5EE' text='#085041' border='#9FE1CB' />
-            <Chip label='Estructuras de Datos' bg='#EEEDFE' text='#3C3489' border='#CECBF6' />
-            <Chip label='Patrones de Diseño' bg='#EEEDFE' text='#3C3489' border='#CECBF6' />
-            <Chip label='POO' bg='#FAEEDA' text='#633806' border='#FAC775' />
-            <Chip label='Algoritmos' bg='#E6F1FB' text='#0C447C' border='#B5D4F4' />
+            <Chip label='Java' bg='#FEF3C7' text='#92400E' border='#FDE68A' />
+            <Chip label='JavaScript' bg='#FEF9C3' text='#854D0E' border='#FDE047' />
+            <Chip label='TypeScript' bg='#E0E7FF' text='#3730A3' border='#A5B4FC' />
           </div>
 
           <ul className='space-y-0'>

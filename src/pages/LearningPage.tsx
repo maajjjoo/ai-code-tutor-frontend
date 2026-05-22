@@ -26,7 +26,7 @@ export function LearningPage() {
   } = useLearning();
 
   return (
-    <div className="h-screen flex overflow-hidden bg-white">
+    <div className="h-screen flex overflow-hidden bg-white dark:bg-gray-900 transition-colors">
       <LearningSidebar
         selectedCourseId={selectedCourse?.id ?? null}
         completionCounts={completionCounts}

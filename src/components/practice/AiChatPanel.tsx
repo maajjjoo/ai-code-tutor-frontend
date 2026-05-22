@@ -197,10 +197,10 @@ export function AiChatPanel({ aiMessages, aiInput, aiLoading, showHistory, code,
         <>
           <div className="px-3 pb-2 pt-1">
             <div className="flex flex-wrap gap-[6px] mb-[10px]">
-              <button onClick={() => onInputChange(UI.NEXT_STEP_QUESTION)} className="bg-[#EEEDFE] text-[#3C3489] border border-[#AFA9EC] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] transition-colors">
+              <button onClick={() => onInputChange(UI.NEXT_STEP_QUESTION)} className="bg-[#EEEDFE] dark:bg-indigo-900/30 text-[#3C3489] dark:text-indigo-300 border border-[#AFA9EC] dark:border-[#534AB7] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] dark:hover:bg-indigo-900/50 transition-colors">
                 {UI.NEXT_STEP_QUESTION}
               </button>
-              <button onClick={() => onInputChange(UI.EXPLAIN_THIS)} className="bg-[#EEEDFE] text-[#3C3489] border border-[#AFA9EC] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] transition-colors">
+              <button onClick={() => onInputChange(UI.EXPLAIN_THIS)} className="bg-[#EEEDFE] dark:bg-indigo-900/30 text-[#3C3489] dark:text-indigo-300 border border-[#AFA9EC] dark:border-[#534AB7] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] dark:hover:bg-indigo-900/50 transition-colors">
                 {UI.EXPLAIN_THIS}
               </button>
             </div>
