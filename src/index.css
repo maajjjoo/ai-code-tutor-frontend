@@ -24,3 +24,22 @@ body {
 .animate-fade-in {
   animation: fade-in 0.2s ease-out;
 }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.animate-float { animation: float 4s ease-in-out infinite; }
+.animate-pulse-dot { animation: pulse-dot 2s infinite; }
+.animate-blink { animation: blink 1s step-end infinite; }
