@@ -42,9 +42,9 @@ export function DeleteProjectModal({ open, projectName, onClose, onConfirm }: Pr
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative w-[360px] bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-xl" role="dialog" aria-modal="true">
+      <div className="relative w-[360px] bg-white dark:bg-gray-900 border border-[#E5E7EB] dark:border-gray-700 rounded-xl p-6 shadow-xl" role="dialog" aria-modal="true">
         {/* Close */}
-        <button onClick={onClose} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111827] cursor-pointer">
+        <button onClick={onClose} className="absolute top-4 right-4 text-[#9CA3AF] dark:text-gray-500 hover:text-[#111827] dark:hover:text-gray-100 cursor-pointer">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
 
@@ -55,19 +55,19 @@ export function DeleteProjectModal({ open, projectName, onClose, onConfirm }: Pr
           </svg>
         </div>
 
-        <h2 className="text-[14px] font-medium text-[#111827] text-center">Delete project?</h2>
-        <p className="text-[12px] text-[#4B5563] text-center mt-1.5">
-          This will permanently delete <span className="font-medium text-[#111827]">{projectName}</span> and all its files. This action cannot be undone.
+        <h2 className="text-[14px] font-medium text-[#111827] dark:text-gray-100 text-center">Delete project?</h2>
+        <p className="text-[12px] text-[#4B5563] dark:text-gray-400 text-center mt-1.5">
+          This will permanently delete <span className="font-medium text-[#111827] dark:text-gray-100">{projectName}</span> and all its files. This action cannot be undone.
         </p>
 
         {error && (
-          <div className="mt-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-[12px] text-red-600 text-center">
+          <div className="mt-3 px-3 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-[12px] text-red-600 dark:text-red-400 text-center">
             {error}
           </div>
         )}
 
         <div className="flex gap-2 mt-5">
-          <button onClick={onClose} className="flex-1 border border-[#E5E7EB] text-[#4B5563] py-2 rounded-lg text-[13px] hover:bg-[#F8F9FA] transition-colors cursor-pointer">
+          <button onClick={onClose} className="flex-1 border border-[#E5E7EB] dark:border-gray-700 text-[#4B5563] dark:text-gray-400 py-2 rounded-lg text-[13px] hover:bg-[#F8F9FA] dark:hover:bg-gray-700 transition-colors cursor-pointer">
             Cancel
           </button>
           <button

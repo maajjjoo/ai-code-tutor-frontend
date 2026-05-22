@@ -20,7 +20,7 @@ interface Props {
 
 export function LevelSelectionScreen({ course, levelsDone, onLevelSelect, onRestartClick }: Props) {
   return (
-    <div className="flex-1 flex items-start justify-center overflow-y-auto">
+    <div className="flex-1 flex items-start justify-center overflow-y-auto transition-colors">
       <div className="max-w-[480px] w-full px-10 py-10">
         <div className="flex items-center gap-4 mb-6">
           <div
@@ -46,9 +46,9 @@ export function LevelSelectionScreen({ course, levelsDone, onLevelSelect, onRest
               return (
                 <div
                   key={level}
-                  className="flex items-center gap-3 p-4 rounded-xl border border-[#E5E7EB] opacity-50"
+                  className="flex items-center gap-3 p-4 rounded-xl border border-[#E5E7EB] dark:border-gray-700 opacity-50 transition-colors"
                 >
-                  <div className="w-10 h-10 rounded-full bg-[#F3F4F6] flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-[#F3F4F6] dark:bg-gray-700 flex items-center justify-center shrink-0">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2">
                       <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                       <path d="M7 11V7a5 5 0 0110 0v4"/>
@@ -62,39 +62,38 @@ export function LevelSelectionScreen({ course, levelsDone, onLevelSelect, onRest
               );
             }
 
-            const cardBorder = isComplete ? 'border-[#9FE1CB] bg-[#E1F5EE]' : 'border-[#E5E7EB]';
+            const cardBorder = isComplete ? 'border-[#9FE1CB] dark:border-teal-700 bg-[#E1F5EE] dark:bg-teal-900/30' : 'border-[#E5E7EB] dark:border-gray-700';
 
             return (
               <div
                 key={level}
-                className={`p-4 rounded-xl border ${cardBorder}`}
+                className={`p-4 rounded-xl border transition-colors ${cardBorder}`}
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0"
-                    style={{ backgroundColor: isComplete ? '#D1FAE5' : '#F3F4F6' }}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0 transition-colors ${isComplete ? 'bg-[#D1FAE5]' : 'bg-[#F3F4F6] dark:bg-gray-700'}`}
                   >
                     {meta.icon}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[14px] font-medium text-[#111827]">{meta.label}</div>
-                    <div className="text-[12px] text-[#4B5563]">{meta.desc}</div>
+                    <div className="text-[14px] font-medium text-[#111827] dark:text-gray-100">{meta.label}</div>
+                    <div className="text-[12px] text-[#4B5563] dark:text-gray-400">{meta.desc}</div>
                     <div className="text-[11px] text-[#9CA3AF] mt-0.5">10 lessons</div>
                   </div>
-                  {isComplete && <span className="text-[12px] text-[#0F6E56] font-medium shrink-0">Completed ✓</span>}
+                  {isComplete && <span className="text-[12px] text-[#0F6E56] dark:text-teal-400 font-medium shrink-0">Completed ✓</span>}
                 </div>
                 <div className={`flex gap-2 ${isComplete ? 'mt-3' : 'mt-0'}`}>
                   {isComplete ? (
                     <>
                       <button
                         onClick={() => onLevelSelect(level)}
-                        className="flex-1 py-2 text-sm font-medium rounded-lg border border-[#0F6E56] text-[#0F6E56] hover:bg-[#D1FAE5] cursor-pointer"
+                        className="flex-1 py-2 text-sm font-medium rounded-lg border border-[#0F6E56] dark:border-teal-400 text-[#0F6E56] dark:text-teal-400 hover:bg-[#D1FAE5] dark:hover:bg-teal-900/30 cursor-pointer transition-colors"
                       >
                         Continue reviewing
                       </button>
                       <button
                         onClick={() => onRestartClick(course.id, level)}
-                        className="flex-1 py-2 text-sm font-medium rounded-lg border border-[#534AB7] text-[#534AB7] hover:bg-[#EEEDFE] cursor-pointer flex items-center justify-center gap-1.5"
+                        className="flex-1 py-2 text-sm font-medium rounded-lg border border-[#534AB7] dark:border-indigo-400 text-[#534AB7] dark:text-indigo-400 hover:bg-[#EEEDFE] dark:hover:bg-indigo-900/30 cursor-pointer flex items-center justify-center gap-1.5 transition-colors"
                       >
                         <RefreshCw size={14} />
                         Restart from beginning

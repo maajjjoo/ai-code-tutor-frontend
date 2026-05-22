@@ -127,7 +127,7 @@ export function InlineExerciseEditor({
 
   return (
     <div className="mt-[14px]">
-      <div className="flex flex-col gap-0 border border-[#E5E7EB] rounded-xl overflow-hidden">
+      <div className="flex flex-col gap-0 border border-[#E5E7EB] dark:border-gray-700 rounded-xl overflow-hidden transition-colors">
         <div className="h-8 bg-[#1E1E2E] flex items-center justify-between px-[14px]">
           <div className="flex items-center">
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: config.color }} />
@@ -182,20 +182,20 @@ export function InlineExerciseEditor({
       </div>
 
       {isVerifying && (
-        <div className="bg-[#EEEDFE] rounded-lg p-3 flex items-center gap-2 mt-3">
+        <div className="bg-[#EEEDFE] dark:bg-indigo-900/30 rounded-lg p-3 flex items-center gap-2 mt-3 transition-colors">
           <Loader2 className="w-4 h-4 text-[#534AB7] animate-spin" />
-          <span className="text-[12px] text-[#3C3489]">The AI is reviewing your code...</span>
+          <span className="text-[12px] text-[#3C3489] dark:text-indigo-300">The AI is reviewing your code...</span>
         </div>
       )}
 
       {verifyError && !isVerifying && (
-        <div className="bg-[#FEF2F2] rounded-lg p-3 mt-3">
-          <span className="text-[12px] text-[#991B1B]">{verifyError}</span>
+        <div className="bg-[#FEF2F2] dark:bg-red-900/20 rounded-lg p-3 mt-3 transition-colors">
+          <span className="text-[12px] text-[#991B1B] dark:text-red-400">{verifyError}</span>
         </div>
       )}
 
       {feedback && !isVerifying && (
-        <div className="bg-white border border-[#E5E7EB] rounded-xl p-4 mt-3">
+        <div className="bg-white dark:bg-gray-900 border border-[#E5E7EB] dark:border-gray-700 rounded-xl p-4 mt-3 transition-colors">
           <div className="flex items-center gap-3">
             {feedback.isCorrect ? (
               <>
@@ -214,9 +214,9 @@ export function InlineExerciseEditor({
             )}
           </div>
 
-          <p className="text-[13px] text-[#111827] mt-2 leading-relaxed">{feedback.summary}</p>
+          <p className="text-[13px] text-[#111827] dark:text-gray-100 mt-2 leading-relaxed">{feedback.summary}</p>
 
-          <p className="text-[12px] text-[#4B5563] mt-2 leading-relaxed">{feedback.explanation}</p>
+          <p className="text-[12px] text-[#4B5563] dark:text-gray-400 mt-2 leading-relaxed">{feedback.explanation}</p>
 
           {feedback.suggestions.length > 0 && (
             <div className="mt-3">
@@ -224,21 +224,21 @@ export function InlineExerciseEditor({
               {feedback.suggestions.map((s, i) => (
                 <div key={i} className="flex items-start gap-2 mt-1">
                   <ArrowRight size={12} className="text-[#534AB7] mt-0.5 shrink-0" />
-                  <span className="text-[12px] text-[#4B5563]">{s}</span>
+                  <span className="text-[12px] text-[#4B5563] dark:text-gray-400">{s}</span>
                 </div>
               ))}
             </div>
           )}
 
-          <div className="bg-[#EEEDFE] rounded-lg p-3 mt-3 flex items-start gap-2">
+          <div className="bg-[#EEEDFE] dark:bg-indigo-900/30 rounded-lg p-3 mt-3 flex items-start gap-2 transition-colors">
             <Heart size={12} className="text-[#534AB7] mt-0.5 shrink-0" />
-            <span className="text-[12px] text-[#3C3489] italic">{feedback.encouragement}</span>
+            <span className="text-[12px] text-[#3C3489] dark:text-indigo-300 italic">{feedback.encouragement}</span>
           </div>
 
           <div className="flex items-center gap-2 mt-3">
             <button
               onClick={handleTryAgain}
-              className="px-4 py-2 border border-[#E5E7EB] text-[#374151] rounded-lg text-[13px] font-medium hover:bg-[#F8F9FA] cursor-pointer"
+              className="px-4 py-2 border border-[#E5E7EB] dark:border-gray-700 text-[#374151] dark:text-gray-300 rounded-lg text-[13px] font-medium hover:bg-[#F8F9FA] dark:hover:bg-gray-700 cursor-pointer"
             >
               Try again
             </button>

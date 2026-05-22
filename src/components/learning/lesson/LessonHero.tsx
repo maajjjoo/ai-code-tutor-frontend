@@ -25,15 +25,15 @@ export function LessonHero({
   const levelPill = LEVEL_PILL[level] ?? LEVEL_PILL.beginner;
 
   return (
-    <div className="px-6 pt-6 pb-0 border-b border-[#E5E7EB]">
+    <div className="px-6 pt-6 pb-0 border-b border-[#E5E7EB] dark:border-gray-700 transition-colors">
       <div className="flex items-center gap-2">
-        <span className="bg-[#EEEDFE] text-[#3C3489] text-[12px] font-medium px-3 py-[3px] rounded-full">
+        <span className="bg-[#EEEDFE] dark:bg-indigo-900/30 text-[#3C3489] dark:text-indigo-300 text-[12px] font-medium px-3 py-[3px] rounded-full transition-colors">
           {language}
         </span>
         <span className={`text-[12px] font-medium px-3 py-[3px] rounded-full capitalize ${levelPill.bg} ${levelPill.text}`}>
           {level}
         </span>
-        <span className="bg-[#F3F4F6] text-[#6B7280] text-[12px] px-3 py-[3px] rounded-full flex items-center gap-1">
+        <span className="bg-[#F3F4F6] dark:bg-gray-700 text-[#6B7280] dark:text-gray-400 text-[12px] px-3 py-[3px] rounded-full flex items-center gap-1 transition-colors">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
           </svg>
@@ -41,7 +41,7 @@ export function LessonHero({
         </span>
       </div>
 
-      <div className="flex items-center border-b border-[#E5E7EB] mt-[14px]">
+      <div className="flex items-center border-b border-[#E5E7EB] dark:border-gray-700 mt-[14px] transition-colors">
         {(['beginner', 'intermediate', 'advanced'] as Level[]).map((lvl, i) => {
           const levelsArr = ['beginner', 'intermediate', 'advanced'] as Level[];
           const firstIncompleteIdx = levelsArr.findIndex(l => !completedLevels.includes(l));
@@ -86,11 +86,11 @@ export function LessonHero({
         })}
       </div>
 
-      <h1 className="text-[22px] font-semibold text-[#111827] mt-4">{lessonTitle}</h1>
+      <h1 className="text-[22px] font-semibold text-[#111827] dark:text-gray-100 mt-4">{lessonTitle}</h1>
       {summaryLoading ? (
-        <div className="h-4 w-3/4 bg-[#F3F4F6] rounded animate-pulse mt-2 mb-4" />
+        <div className="h-4 w-3/4 bg-[#F3F4F6] dark:bg-gray-700 rounded animate-pulse mt-2 mb-4" />
       ) : (
-        <p className="text-[14px] text-[#4B5563] leading-relaxed mt-2 mb-4">{summary}</p>
+        <p className="text-[14px] text-[#4B5563] dark:text-gray-400 leading-relaxed mt-2 mb-4">{summary}</p>
       )}
     </div>
   );

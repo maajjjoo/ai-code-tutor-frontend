@@ -40,7 +40,7 @@ export function PracticePage() {
   const { showToast } = useToast();
 
   return (
-    <div className="h-screen w-screen grid overflow-hidden bg-white" style={{ gridTemplateColumns: `${p.sidebarWidth}px 1fr ${p.aiPanelWidth}px` }}>
+    <div className="h-screen w-screen grid overflow-hidden bg-white dark:bg-gray-900 transition-colors" style={{ gridTemplateColumns: `${p.sidebarWidth}px 1fr ${p.aiPanelWidth}px` }}>
 
       <NewProjectModal
         open={p.isNewProjectModalOpen}
@@ -57,39 +57,39 @@ export function PracticePage() {
         onConfirm={p.handleDeleteProject}
       />
 
-      <div className="bg-white border-r border-[#E5E7EB] flex flex-col overflow-hidden p-3 relative">
-        <div onClick={() => navigate('/')} className="flex items-center gap-[8px] px-[12px] pt-[12px] pb-[8px] cursor-pointer border-b border-[#E5E7EB] mb-[8px] hover:opacity-85 transition-opacity">
+      <div className="bg-white dark:bg-gray-900 border-r border-[#E5E7EB] dark:border-gray-700 flex flex-col overflow-hidden p-3 relative">
+        <div onClick={() => navigate('/')} className="flex items-center gap-[8px] px-[12px] pt-[12px] pb-[8px] cursor-pointer border-b border-[#E5E7EB] dark:border-gray-700 mb-[8px] hover:opacity-85 transition-opacity">
           <div className="w-[24px] h-[24px] bg-[#534AB7] rounded-[6px] flex items-center justify-center shrink-0">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
           </div>
           <span className="text-[13px] font-medium">
-            <span className="text-[#111827]">AI</span>
-            <span className="text-[#534AB7]">Code</span>
-            <span className="text-[#111827]">Tutor</span>
+            <span className="text-[#111827] dark:text-gray-100">AI</span>
+            <span className="text-[#534AB7] dark:text-indigo-400">Code</span>
+            <span className="text-[#111827] dark:text-gray-100">Tutor</span>
           </span>
         </div>
         <button
           onClick={() => p.setIsNewProjectModalOpen(true)}
-          className="w-full flex items-center gap-[10px] bg-white border border-[#E5E7EB] rounded-[10px] px-[14px] py-[10px] text-[13px] font-medium text-[#111827] cursor-pointer hover:bg-[#F9FAFB] transition-colors"
+          className="w-full flex items-center gap-[10px] bg-white dark:bg-gray-900 border border-[#E5E7EB] dark:border-gray-700 rounded-[10px] px-[14px] py-[10px] text-[13px] font-medium text-[#111827] dark:text-gray-100 cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-gray-700 transition-colors"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           New project
         </button>
 
         <div className="flex-1 overflow-y-auto mt-4">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-[#9CA3AF] mb-[8px]">Current</p>
+          <p className="text-[11px] font-medium uppercase tracking-wider text-[#9CA3AF] dark:text-gray-500 mb-[8px]">Current</p>
           {p.activeProject && (
-            <div className="flex items-center gap-[8px] bg-[#EEEDFE] rounded-[8px] px-[10px] py-[8px]">
+            <div className="flex items-center gap-[8px] bg-[#EEEDFE] dark:bg-indigo-900/30 rounded-[8px] px-[10px] py-[8px]">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#534AB7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
               </svg>
-              <span className="text-[13px] font-medium text-[#3C3489] truncate">{p.activeProject.name}</span>
+              <span className="text-[13px] font-medium text-[#3C3489] dark:text-indigo-300 truncate">{p.activeProject.name}</span>
             </div>
           )}
           {!p.activeProject && (
             <div className="text-center py-6">
               <FolderPlus className="w-8 h-8 text-[#E5E7EB] mx-auto mb-2" />
-              <p className="text-xs text-[#9CA3AF]">Create a project to start</p>
+              <p className="text-xs text-[#9CA3AF] dark:text-gray-500">Create a project to start</p>
               <button onClick={() => p.setIsNewProjectModalOpen(true)} className="mt-3 px-3 py-1.5 bg-[#534AB7] text-white text-xs rounded-lg hover:opacity-90 cursor-pointer">+ New Project</button>
             </div>
           )}
@@ -101,7 +101,7 @@ export function PracticePage() {
               return (
                 <div key={f.id} onClick={() => { if (!isRenaming) p.switchToFile(f.id); }}
                   onDoubleClick={() => { p.setRenamingFileId(f.id); p.setRenamingFileName(f.name); }}
-                  className={`flex items-center gap-[8px] px-[8px] py-[6px] rounded-[6px] group ${isRenaming ? '' : 'cursor-pointer'} transition-colors ${isActive ? 'bg-[#EEEDFE]' : 'hover:bg-[#F9FAFB]'}`}
+                  className={`flex items-center gap-[8px] px-[8px] py-[6px] rounded-[6px] group ${isRenaming ? '' : 'cursor-pointer'} transition-colors ${isActive ? 'bg-[#EEEDFE] dark:bg-indigo-900/30' : 'hover:bg-[#F9FAFB] dark:hover:bg-gray-700'}`}
                   style={{ paddingLeft: '22px' }}
                 >
                   <span className="w-[8px] h-[8px] rounded-full shrink-0" style={{ backgroundColor: getFileDotColor(isRenaming ? p.renamingFileName : f.name) }} />
@@ -113,7 +113,7 @@ export function PracticePage() {
                           else if (e.key === 'Escape') { p.setRenamingFileId(null); p.setRenamingFileName(''); }
                         }}
                         onBlur={() => { const name = p.renamingFileName.trim(); if (name && name.length >= 3 && name.includes('.')) { p.handleRenameFile(f.id, name); } p.setRenamingFileId(null); p.setRenamingFileName(''); }}
-                        className="w-full bg-transparent text-[13px] text-[#111827] outline-none border-b border-[#534AB7]"
+                        className="w-full bg-transparent text-[13px] text-[#111827] dark:text-gray-100 outline-none border-b border-[#534AB7]"
                       />
                       <CharCounter current={p.renamingFileName.length} max={30} showAt={1} />
                       {p.renamingFileName.length > 0 && validateFileName(p.renamingFileName) && (
@@ -122,9 +122,9 @@ export function PracticePage() {
                     </div>
                   ) : (
                     <>
-                      <span className={`text-[13px] truncate flex-1 ${isActive ? 'font-medium text-[#111827]' : 'text-[#9CA3AF]'}`}>{f.name}</span>
+                      <span className={`text-[13px] truncate flex-1 ${isActive ? 'font-medium text-[#111827] dark:text-gray-100' : 'text-[#9CA3AF] dark:text-gray-500'}`}>{f.name}</span>
                       <button onClick={e => { e.stopPropagation(); p.setFsNodes((prev: VNode[]) => prev.filter((n: VNode) => n.id !== f.id)); if (p.fsActiveId === f.id) { p.setFsActiveId(null); p.setOpenFile(null); p.setCode(''); } delete p.fileContentsRef.current[f.id]; showToast('File deleted', 'success'); }}
-                        className="ml-auto text-[#9CA3AF] hover:text-[#EF4444] cursor-pointer shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="ml-auto text-[#9CA3AF] dark:text-gray-500 hover:text-[#EF4444] cursor-pointer shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                       </button>
@@ -144,7 +144,7 @@ export function PracticePage() {
                       else if (e.key === 'Escape') { p.setIsCreatingFile(false); p.setCreatingFileName(''); }
                     }}
                     onBlur={() => { const name = p.creatingFileName.trim(); if (name && name.length >= 3 && name.includes('.')) { p.handleNewFile(name); } p.setIsCreatingFile(false); p.setCreatingFileName(''); }}
-                    className="flex-1 bg-transparent text-[13px] text-[#111827] outline-none border-b border-[#534AB7]"
+                    className="flex-1 bg-transparent text-[13px] text-[#111827] dark:text-gray-100 outline-none border-b border-[#534AB7]"
                   />
                 </div>
                 <CharCounter current={p.creatingFileName.length} max={30} showAt={1} />
@@ -157,39 +157,39 @@ export function PracticePage() {
 
           {p.activeProject && (
             <div onClick={() => { p.setIsCreatingFile(true); p.setCreatingFileName(''); setTimeout(() => p.creatingInputRef.current?.focus(), 20); }}
-              className="flex items-center gap-[8px] px-[8px] py-[6px] rounded-[6px] cursor-pointer hover:bg-[#F9FAFB] transition-colors mt-1" style={{ paddingLeft: '22px' }}
+              className="flex items-center gap-[8px] px-[8px] py-[6px] rounded-[6px] cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-gray-700 transition-colors mt-1" style={{ paddingLeft: '22px' }}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              <span className="text-[12px] text-[#9CA3AF]">New file</span>
+              <span className="text-[12px] text-[#9CA3AF] dark:text-gray-500">New file</span>
             </div>
           )}
         </div>
 
-        <div className="h-[0.5px] bg-[#E5E7EB] my-3" />
+        <div className="h-[0.5px] bg-[#E5E7EB] dark:bg-gray-700 my-3" />
 
         <div className="overflow-y-auto max-h-[180px]">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-[#9CA3AF] mb-2">Saved projects</p>
+          <p className="text-[11px] font-medium uppercase tracking-wider text-[#9CA3AF] dark:text-gray-500 mb-2">Saved projects</p>
           {p.savedProjects.length === 0 && (
             <div className="flex flex-col items-center gap-1 py-4">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
               </svg>
-              <p className="text-[11px] text-[#9CA3AF]">No saved projects yet</p>
-              <p className="text-[10px] text-[#D1D5DB]">Create a project to get started</p>
+              <p className="text-[11px] text-[#9CA3AF] dark:text-gray-500">No saved projects yet</p>
+              <p className="text-[10px] text-[#D1D5DB] dark:text-gray-600">Create a project to get started</p>
             </div>
           )}
           {p.savedProjects.map((proj) => {
             const isActive = p.activeProject?.id === proj.id;
             return (
               <div key={proj.id} onClick={() => !isActive && p.handleLoadSavedProject(proj)}
-                className={`flex items-center gap-[8px] px-[8px] py-[6px] rounded-[4px] cursor-pointer transition-colors ${isActive ? 'bg-[#EEEDFE]' : 'hover:bg-[#F9FAFB]'}`}
+                className={`flex items-center gap-[8px] px-[8px] py-[6px] rounded-[4px] cursor-pointer transition-colors ${isActive ? 'bg-[#EEEDFE] dark:bg-indigo-900/30' : 'hover:bg-[#F9FAFB] dark:hover:bg-gray-700'}`}
               >
-                <div className={`w-[14px] h-[14px] rounded-[3px] flex items-center justify-center shrink-0 ${isActive ? 'bg-[#534AB7] border border-[#534AB7]' : 'bg-white border border-[#D1D5DB]'}`}>
+                <div className={`w-[14px] h-[14px] rounded-[3px] flex items-center justify-center shrink-0 ${isActive ? 'bg-[#534AB7] border border-[#534AB7]' : 'bg-white dark:bg-gray-900 border border-[#D1D5DB] dark:border-gray-600'}`}>
                   {isActive && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
                 </div>
-                <span className={`text-[13px] truncate ${isActive ? 'text-[#111827]' : 'text-[#6B7280] hover:text-[#111827]'}`}>{proj.name}</span>
+                <span className={`text-[13px] truncate ${isActive ? 'text-[#111827] dark:text-gray-100' : 'text-[#6B7280] dark:text-gray-400 hover:text-[#111827] dark:hover:text-gray-100'}`}>{proj.name}</span>
                 {!isActive && (
-                  <button onClick={e => { e.stopPropagation(); p.setDeleteTarget(proj); }} className="ml-auto text-[#9CA3AF] hover:text-[#EF4444] cursor-pointer shrink-0">
+                  <button onClick={e => { e.stopPropagation(); p.setDeleteTarget(proj); }} className="ml-auto text-[#9CA3AF] dark:text-gray-500 hover:text-[#EF4444] cursor-pointer shrink-0">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                   </button>
                 )}
@@ -202,7 +202,7 @@ export function PracticePage() {
         />
       </div>
 
-      <div className="flex flex-col overflow-hidden bg-white">
+      <div className="flex flex-col overflow-hidden bg-white dark:bg-gray-900">
         {p.exerciseContext && !p.isCreatingProject && (
           <ExerciseContextPanel context={p.exerciseContext} onDismiss={() => { p.setExerciseContext(null); p.setIsPanelCollapsed(false); }} isCollapsed={p.isPanelCollapsed} onToggleCollapse={() => p.setIsPanelCollapsed((prev: boolean) => !prev)} />
         )}
@@ -212,16 +212,16 @@ export function PracticePage() {
 
         <div className="flex-1 flex overflow-hidden relative">
           {p.loadingProject && (
-            <div className="absolute inset-0 z-10 bg-white/80 flex flex-col items-center justify-center">
+            <div className="absolute inset-0 z-10 bg-white/80 dark:bg-gray-900/80 flex flex-col items-center justify-center">
               <svg className="w-8 h-8 animate-spin text-[#534AB7] mb-3" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" /><path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" /></svg>
-              <p className="text-[13px] text-[#4B5563]">Loading project...</p>
+              <p className="text-[13px] text-[#4B5563] dark:text-gray-400">Loading project...</p>
             </div>
           )}
           {!p.openFile ? (
-            <div className="flex-1 flex items-center justify-center bg-white select-none">
+            <div className="flex-1 flex items-center justify-center bg-white dark:bg-gray-900 select-none">
               <div className="text-center">
-                <p className="text-5xl mb-4 opacity-20 text-[#9CA3AF]">{'</>'}</p>
-                <p className="text-sm text-[#9CA3AF]">Open a file from the explorer to start</p>
+                <p className="text-5xl mb-4 opacity-20 text-[#9CA3AF] dark:text-gray-500">{'</>'}</p>
+                <p className="text-sm text-[#9CA3AF] dark:text-gray-500">Open a file from the explorer to start</p>
                 <p className="text-xs mt-2 text-[#C4C4C4]">Ctrl+S to save</p>
               </div>
             </div>
@@ -236,16 +236,16 @@ export function PracticePage() {
             >
               {p.tooltipLoading ? (
                 <div className="flex items-center gap-2">
-                  <svg className="animate-spin w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
-                  <span className="text-[11px] text-[#9CA3AF]">Explaining...</span>
+                  <svg className="animate-spin w-4 h-4 text-[#9CA3AF] dark:text-gray-500" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                  <span className="text-[11px] text-[#9CA3AF] dark:text-gray-500">Explaining...</span>
                 </div>
               ) : p.tooltipContent !== null ? (
                 <p className="text-[11px] leading-relaxed whitespace-pre-wrap">{p.tooltipContent}</p>
               ) : (
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-[#9CA3AF]">Press </span>
+                  <span className="text-[11px] text-[#9CA3AF] dark:text-gray-500">Press </span>
                   <kbd className="bg-white/10 rounded-[3px] px-[5px] py-[1px] text-[10px] font-mono">Ctrl+K</kbd>
-                  <span className="text-[11px] text-[#9CA3AF]"> to explain</span>
+                  <span className="text-[11px] text-[#9CA3AF] dark:text-gray-500"> to explain</span>
                 </div>
               )}
             </div>
@@ -257,7 +257,7 @@ export function PracticePage() {
         {p.consoleOpen && <EditorConsole consoleTab={p.consoleTab} termLines={p.termLines} onTabChange={p.setConsoleTab} onClear={() => p.setTermLines([])} />}
       </div>
 
-      <div className="bg-white border-l border-[#E5E7EB] flex flex-col overflow-hidden relative">
+      <div className="bg-white dark:bg-gray-900 border-l border-[#E5E7EB] dark:border-gray-700 flex flex-col overflow-hidden relative">
         <AiChatPanel aiMessages={p.aiMessages} aiInput={p.aiInput} aiLoading={p.aiLoading} showHistory={p.showHistory} code={p.code} aiBottomRef={p.aiBottomRef}
           onInputChange={p.setAiInput} onSend={p.handleAiSend} onAnalyze={p.handleAnalyze} onToggleHistory={() => p.setShowHistory((prev: boolean) => !prev)}
         />
@@ -267,17 +267,17 @@ export function PracticePage() {
       </div>
 
       {p.isCreatingProject && (
-        <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center z-50 gap-3">
+        <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 flex flex-col items-center justify-center z-50 gap-3">
           <svg className="animate-spin h-6 w-6 text-[#534AB7]" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
           <p className="text-[#534AB7] text-sm font-medium">Preparing your exercise...</p>
         </div>
       )}
 
-      <div className="md:hidden fixed inset-0 bg-white z-[100] flex items-center justify-center p-8">
+      <div className="md:hidden fixed inset-0 bg-white dark:bg-gray-900 z-[100] flex items-center justify-center p-8">
         <div className="text-center">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5" className="mx-auto mb-4"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          <p className="text-[15px] font-medium text-[#111827]">Desktop required</p>
-          <p className="text-[13px] text-[#4B5563] mt-2">Please use a desktop browser for the code editor.</p>
+          <p className="text-[15px] font-medium text-[#111827] dark:text-gray-100">Desktop required</p>
+          <p className="text-[13px] text-[#4B5563] dark:text-gray-400 mt-2">Please use a desktop browser for the code editor.</p>
         </div>
       </div>
     </div>

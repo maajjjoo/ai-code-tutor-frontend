@@ -39,14 +39,14 @@ export function NewProjectModal({ open, onClose, onCreate, loading, error }: Pro
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div
-        className="relative w-[360px] bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-xl"
+        className="relative w-[360px] bg-white dark:bg-gray-900 border border-[#E5E7EB] dark:border-gray-700 rounded-xl p-6 shadow-xl"
         role="dialog"
         aria-modal="true"
         aria-labelledby="new-project-title"
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111827] transition-colors cursor-pointer"
+          className="absolute top-4 right-4 text-[#9CA3AF] dark:text-gray-500 hover:text-[#111827] dark:hover:text-gray-100 transition-colors cursor-pointer"
           aria-label="Close"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -54,17 +54,17 @@ export function NewProjectModal({ open, onClose, onCreate, loading, error }: Pro
           </svg>
         </button>
 
-        <h2 id="new-project-title" className="text-[15px] font-medium text-[#111827]">New Project</h2>
-        <p className="text-[12px] text-[#4B5563] mt-1 mb-4">Create a new project.</p>
+        <h2 id="new-project-title" className="text-[15px] font-medium text-[#111827] dark:text-gray-100">New Project</h2>
+        <p className="text-[12px] text-[#4B5563] dark:text-gray-400 mt-1 mb-4">Create a new project.</p>
 
         {error && (
-          <div className="mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-[12px] text-red-600">
+          <div className="mb-3 px-3 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-[12px] text-red-600 dark:text-red-400">
             {error}
           </div>
         )}
 
         <div className="mb-5">
-          <label htmlFor="project-name" className="block text-[12px] font-medium text-[#111827] mb-1.5">
+          <label htmlFor="project-name" className="block text-[12px] font-medium text-[#111827] dark:text-gray-100 mb-1.5">
             Project name
           </label>
           <input
@@ -76,7 +76,7 @@ export function NewProjectModal({ open, onClose, onCreate, loading, error }: Pro
               if (e.target.value.length <= 30) setName(e.target.value);
             }}
             placeholder="e.g. my-calculator"
-            className="w-full border border-[#E5E7EB] rounded-lg px-3 py-2 text-[13px] text-[#111827] placeholder-[#9CA3AF] outline-none focus:border-[#534AB7] transition-colors"
+            className="w-full border border-[#E5E7EB] dark:border-gray-700 rounded-lg px-3 py-2 text-[13px] text-[#111827] dark:text-gray-100 placeholder-[#9CA3AF] outline-none focus:border-[#534AB7] transition-colors"
           />
           <CharCounter current={name.length} max={30} />
           {validationError && (
@@ -87,7 +87,7 @@ export function NewProjectModal({ open, onClose, onCreate, loading, error }: Pro
         <div className="flex gap-2">
           <button
             onClick={onClose}
-            className="flex-1 border border-[#E5E7EB] text-[#4B5563] py-2 rounded-lg text-[13px] hover:bg-[#F8F9FA] transition-colors cursor-pointer"
+            className="flex-1 border border-[#E5E7EB] dark:border-gray-700 text-[#4B5563] dark:text-gray-400 py-2 rounded-lg text-[13px] hover:bg-[#F8F9FA] dark:hover:bg-gray-700 transition-colors cursor-pointer"
           >
             Cancel
           </button>

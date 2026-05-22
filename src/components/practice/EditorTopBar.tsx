@@ -37,7 +37,7 @@ export const EditorTopBar = React.memo(function EditorTopBar({ filesList, fsActi
   const disp = LANG_DISPLAY[language] ?? { lang: language ? language.charAt(0).toUpperCase() + language.slice(1) : 'Python', ver: '' };
 
   return (
-    <div className="h-[40px] bg-white border-b border-[#E5E7EB] flex items-center shrink-0 px-3">
+    <div className="h-[40px] bg-white dark:bg-gray-900 border-b border-[#E5E7EB] dark:border-gray-700 flex items-center shrink-0 px-3 transition-colors">
       <div className="flex items-center h-full flex-1 overflow-x-auto">
         {filesList.map((f) => {
           const isActive = fsActiveId === f.id;
@@ -46,7 +46,7 @@ export const EditorTopBar = React.memo(function EditorTopBar({ filesList, fsActi
               key={f.id}
               onClick={() => { onSwitchFile(f.id); }}
               className={`flex items-center gap-[6px] px-[14px] h-full text-[12px] cursor-pointer transition-colors shrink-0 ${
-                isActive ? 'bg-white border-b-2 border-[#534AB7] text-[#111827] font-medium' : 'text-[#9CA3AF] hover:bg-[#F3F4F6]'
+                isActive ? 'bg-white dark:bg-gray-900 border-b-2 border-[#534AB7] text-[#111827] dark:text-gray-100 font-medium' : 'text-[#9CA3AF] dark:text-gray-500 hover:bg-[#F3F4F6] dark:hover:bg-gray-700'
               }`}
             >
               <span className="w-[8px] h-[8px] rounded-full shrink-0" style={{ backgroundColor: getFileDotColor(f.name) }} />
@@ -57,10 +57,10 @@ export const EditorTopBar = React.memo(function EditorTopBar({ filesList, fsActi
         })}
       </div>
       <div className="flex items-center gap-[8px] ml-auto shrink-0">
-        <div className="flex items-center gap-[6px] bg-[#EEEDFE] text-[#3C3489] rounded-[6px] px-[10px] py-[3px]">
+        <div className="flex items-center gap-[6px] bg-[#EEEDFE] dark:bg-indigo-900/30 text-[#3C3489] dark:text-indigo-300 rounded-[6px] px-[10px] py-[3px]">
           <span className="text-[11px] font-medium">{disp.lang}</span>
           <svg width="1" height="12" viewBox="0 0 1 12" fill="#3C3489" opacity="0.3"><rect width="1" height="12" rx="0.5"/></svg>
-          <span className="text-[11px] text-[#9CA3AF]">{disp.ver}</span>
+          <span className="text-[11px] text-[#9CA3AF] dark:text-gray-500">{disp.ver}</span>
         </div>
         <button onClick={onRunCode} disabled={isRunning} className="flex items-center gap-[6px] bg-[#E1F5EE] text-[#0F6E56] border border-[#9FE1CB] rounded-[8px] px-[14px] py-[5px] text-[12px] font-medium cursor-pointer hover:bg-[#D1FAE5] transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
           {isRunning ? (

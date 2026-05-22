@@ -11,14 +11,14 @@ export function BottomNav({ currentIndex, totalSections, onPrevious, onNext, onC
   const isLast = currentIndex === totalSections - 1;
 
   return (
-    <div className="h-14 bg-white border-t border-[#E5E7EB] px-6 flex items-center justify-between shrink-0">
+    <div className="h-14 bg-white dark:bg-gray-900 border-t border-[#E5E7EB] dark:border-gray-700 px-6 flex items-center justify-between shrink-0 transition-colors">
       <button
         onClick={onPrevious}
         disabled={isFirst}
-        className={`px-5 py-2 border border-[#E5E7EB] rounded-lg text-[13px] font-medium transition-colors cursor-pointer ${
+        className={`px-5 py-2 border border-[#E5E7EB] dark:border-gray-700 rounded-lg text-[13px] font-medium transition-colors cursor-pointer ${
           isFirst
             ? 'opacity-40 cursor-not-allowed text-[#9CA3AF]'
-            : 'text-[#374151] hover:bg-[#F8F9FA]'
+            : 'text-[#374151] dark:text-gray-300 hover:bg-[#F8F9FA] dark:hover:bg-gray-700'
         }`}
       >
         Previous

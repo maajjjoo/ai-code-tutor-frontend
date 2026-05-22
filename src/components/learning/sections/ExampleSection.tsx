@@ -18,7 +18,7 @@ export function ExampleSection({ content, code }: Props) {
 
   return (
     <>
-      {content && <p className="text-[13px] text-[#4B5563] leading-relaxed mb-3">{content}</p>}
+      {content && <p className="text-[13px] text-[#4B5563] dark:text-gray-400 leading-relaxed mb-3">{content}</p>}
       {code && (
         <div className="relative">
           <pre className="bg-[#1F2937] rounded-lg p-4 text-[13px] text-[#D1FAE5] font-mono leading-relaxed overflow-x-auto whitespace-pre">{code}</pre>

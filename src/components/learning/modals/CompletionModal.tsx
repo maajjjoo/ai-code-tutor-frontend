@@ -32,30 +32,30 @@ export function CompletionModal({ courseName, level, isOpen, isLastLevel, onClos
       <div
         ref={modalRef}
         tabIndex={-1}
-        className="relative w-[360px] bg-white rounded-xl p-7 shadow-xl text-center outline-none"
+        className="relative w-[360px] bg-white dark:bg-gray-900 rounded-xl p-7 shadow-xl text-center outline-none transition-colors"
         role="dialog"
         aria-modal="true"
       >
-        <button onClick={onClose} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111827] cursor-pointer transition-colors">
+        <button onClick={onClose} className="absolute top-4 right-4 text-[#9CA3AF] dark:text-gray-500 hover:text-[#111827] dark:hover:text-gray-100 cursor-pointer transition-colors">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
 
-        <div className="w-12 h-12 bg-[#E1F5EE] rounded-full flex items-center justify-center mx-auto mb-3.5">
+        <div className="w-12 h-12 bg-[#E1F5EE] dark:bg-teal-900/30 rounded-full flex items-center justify-center mx-auto mb-3.5 transition-colors">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
         </div>
 
-        <h2 className="text-[15px] font-medium text-[#111827]">{levelLabel} complete!</h2>
-        <p className="text-[13px] text-[#4B5563] mt-1.5">You completed all {levelLabel} lessons for {courseName}</p>
+        <h2 className="text-[15px] font-medium text-[#111827] dark:text-gray-100">{levelLabel} complete!</h2>
+        <p className="text-[13px] text-[#4B5563] dark:text-gray-400 mt-1.5">You completed all {levelLabel} lessons for {courseName}</p>
 
-        <div className="mt-3.5 mb-4 inline-block bg-[#EEEDFE] text-[#3C3489] text-[12px] font-medium px-3.5 py-1 rounded-full">
+        <div className="mt-3.5 mb-4 inline-block bg-[#EEEDFE] dark:bg-indigo-900/30 text-[#3C3489] dark:text-indigo-300 text-[12px] font-medium px-3.5 py-1 rounded-full transition-colors">
           +100 XP
         </div>
 
-        <div className="w-full h-px bg-[#E5E7EB] my-4" />
+        <div className="w-full h-px bg-[#E5E7EB] dark:bg-gray-700 my-4" />
 
         <div className="flex flex-col gap-2">
           <button
@@ -71,7 +71,7 @@ export function CompletionModal({ courseName, level, isOpen, isLastLevel, onClos
           ) : (
             <button
               onClick={() => { onNextLevel(); onClose(); }}
-              className="w-full flex items-center justify-center gap-2 py-2.5 border border-[#E5E7EB] text-[#4B5563] rounded-lg text-[13px] hover:bg-[#F8F9FA] transition-colors cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 py-2.5 border border-[#E5E7EB] dark:border-gray-700 text-[#4B5563] dark:text-gray-400 rounded-lg text-[13px] hover:bg-[#F8F9FA] dark:hover:bg-gray-700 transition-colors cursor-pointer"
             >
               Continue to {level === 'beginner' ? 'Intermediate' : 'Advanced'}
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

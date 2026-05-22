@@ -25,31 +25,31 @@ function AiMessageBubble({ msg }: { msg: ChatMsg }) {
           </div>
           <span className="text-[12px] font-medium text-[#534AB7]">AI Tutor</span>
         </div>
-        <div className="bg-white border border-[#E5E7EB] rounded-tl-none rounded-tr-[10px] rounded-br-[10px] rounded-bl-[10px] p-[12px_14px] space-y-[10px]">
+        <div className="bg-white dark:bg-gray-900 border border-[#E5E7EB] dark:border-gray-700 rounded-tl-none rounded-tr-[10px] rounded-br-[10px] rounded-bl-[10px] p-[12px_14px] space-y-[10px]">
           {hasQuality && msg.quality && (
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mb-[8px]">Code quality</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] dark:text-gray-500 mb-[8px]">Code quality</p>
               <div className="flex items-center gap-[10px]">
                 <span className="text-[12px] text-[#6B7280] min-w-[80px]">Structure</span>
-                <div className="flex-1 h-[4px] bg-[#E5E7EB] rounded-full overflow-hidden">
+                <div className="flex-1 h-[4px] bg-[#E5E7EB] dark:bg-gray-700 rounded-full overflow-hidden">
                   <div className="h-full rounded-full bg-[#534AB7]" style={{ width: `${msg.quality.structure}%` }} />
                 </div>
                 <span className="text-[12px] font-semibold min-w-[32px] text-right text-[#534AB7]">{msg.quality.structure}%</span>
               </div>
               <div className="flex items-center gap-[10px] mt-[6px]">
                 <span className="text-[12px] text-[#6B7280] min-w-[80px]">Readability</span>
-                <div className="flex-1 h-[4px] bg-[#E5E7EB] rounded-full overflow-hidden">
+                <div className="flex-1 h-[4px] bg-[#E5E7EB] dark:bg-gray-700 rounded-full overflow-hidden">
                   <div className="h-full rounded-full" style={{ width: `${msg.quality.readability}%`, backgroundColor: msg.quality.readability < 70 ? '#F59E0B' : '#534AB7' }} />
                 </div>
                 <span className="text-[12px] font-semibold min-w-[32px] text-right" style={{ color: msg.quality.readability < 70 ? '#F59E0B' : '#534AB7' }}>{msg.quality.readability}%</span>
               </div>
             </div>
           )}
-          {hasQuality && <div className="h-[0.5px] bg-[#F3F4F6]" />}
+          {hasQuality && <div className="h-[0.5px] bg-[#F3F4F6] dark:bg-gray-700" />}
           {msg.content && (
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mb-[8px]">What your code does</p>
-              <p className="text-[12px] text-[#4B5563] leading-relaxed whitespace-pre-wrap">
+              <p className="text-[12px] text-[#4B5563] dark:text-gray-400 leading-relaxed whitespace-pre-wrap">
                 {msg.content.split(/(`[^`]+`)/).map((part, i) =>
                   part.startsWith('`') && part.endsWith('`')
                     ? <code key={i} className="bg-[#EEEDFE] text-[#3C3489] rounded-[4px] px-[6px] py-[1px] text-[11px] font-mono">{part.slice(1, -1)}</code>
@@ -58,16 +58,16 @@ function AiMessageBubble({ msg }: { msg: ChatMsg }) {
               </p>
             </div>
           )}
-          {hasSuggestions && msg.suggestions && <div className="h-[0.5px] bg-[#F3F4F6]" />}
+          {hasSuggestions && msg.suggestions && <div className="h-[0.5px] bg-[#F3F4F6] dark:bg-gray-700" />}
           {hasSuggestions && msg.suggestions && (
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mb-[8px]">Suggestions</p>
               {msg.suggestions.map((s, i) => (
-                <div key={i} className={`flex items-start gap-[8px] py-[6px] ${i < msg.suggestions!.length - 1 ? 'border-b border-[#F9FAFB]' : ''}`}>
+                <div key={i} className={`flex items-start gap-[8px] py-[6px] ${i < msg.suggestions!.length - 1 ? 'border-b border-[#F9FAFB] dark:border-gray-700' : ''}`}>
                   <div className="w-[20px] h-[20px] bg-[#534AB7] text-white text-[11px] font-semibold rounded-full flex items-center justify-center shrink-0 mt-[1px]">
                     {i + 1}
                   </div>
-                  <span className="text-[12px] text-[#4B5563] leading-relaxed">{s}</span>
+                  <span className="text-[12px] text-[#4B5563] dark:text-gray-400 leading-relaxed">{s}</span>
                 </div>
               ))}
             </div>
@@ -86,8 +86,8 @@ function AiMessageBubble({ msg }: { msg: ChatMsg }) {
           </div>
           <span className="text-[12px] font-medium text-[#534AB7]">AI Tutor</span>
         </div>
-        <div className="bg-white border border-[#E5E7EB] rounded-tl-none rounded-tr-[10px] rounded-br-[10px] rounded-bl-[10px] p-[12px_14px]">
-          <p className="text-[12px] text-[#4B5563] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+        <div className="bg-white dark:bg-gray-900 border border-[#E5E7EB] dark:border-gray-700 rounded-tl-none rounded-tr-[10px] rounded-br-[10px] rounded-bl-[10px] p-[12px_14px]">
+          <p className="text-[12px] text-[#4B5563] dark:text-gray-400 leading-relaxed whitespace-pre-wrap">{msg.content}</p>
         </div>
       </div>
     );
@@ -95,7 +95,7 @@ function AiMessageBubble({ msg }: { msg: ChatMsg }) {
 
   return (
     <div className="flex justify-end mb-5">
-      <div className={`${msg.content === 'Analyzing your code...' ? 'bg-[#F9FAFB] border border-[#E5E7EB] text-[#9CA3AF] text-[11px] rounded-[10px] px-[12px] py-[6px]' : 'bg-[#534AB7] text-white rounded-tl-[10px] rounded-tr-[10px] rounded-br-[10px] rounded-bl-none px-[14px] py-[10px] max-w-[85%] text-[12px]'}`}>
+      <div className={`${msg.content === 'Analyzing your code...' ? 'bg-[#F9FAFB] dark:bg-gray-800 border border-[#E5E7EB] dark:border-gray-700 text-[#9CA3AF] dark:text-gray-500 text-[11px] rounded-[10px] px-[12px] py-[6px]' : 'bg-[#534AB7] text-white rounded-tl-[10px] rounded-tr-[10px] rounded-br-[10px] rounded-bl-none px-[14px] py-[10px] max-w-[85%] text-[12px]'}`}>
         {msg.content}
       </div>
     </div>
@@ -118,15 +118,15 @@ interface Props {
 export function AiChatPanel({ aiMessages, aiInput, aiLoading, showHistory, code, aiBottomRef, onInputChange, onSend, onAnalyze, onToggleHistory }: Props) {
   return (
     <>
-      <div className="h-[44px] border-b border-[#E5E7EB] flex items-center px-[14px] shrink-0">
+      <div className="h-[44px] border-b border-[#E5E7EB] dark:border-gray-700 flex items-center px-[14px] shrink-0 transition-colors">
         <div className="flex items-center gap-2 flex-1">
           <span className="w-[8px] h-[8px] rounded-full bg-[#5DCAA5]" />
-          <span className="text-[13px] font-medium text-[#111827]">AI Tutor</span>
+          <span className="text-[13px] font-medium text-[#111827] dark:text-gray-100">AI Tutor</span>
         </div>
         <div className="flex items-center gap-[8px]">
           <button
             onClick={onToggleHistory}
-            className={`flex items-center gap-1 border ${showHistory ? 'bg-[#EEEDFE] border-[#534AB7] text-[#534AB7]' : 'border-[#E5E7EB] bg-transparent text-[#6B7280]'} rounded-[8px] px-[12px] py-[5px] text-[12px] font-medium cursor-pointer hover:bg-[#F9FAFB]`}
+            className={`flex items-center gap-1 border ${showHistory ? 'bg-[#EEEDFE] border-[#534AB7] text-[#534AB7]' : 'border-[#E5E7EB] dark:border-gray-700 bg-transparent text-[#6B7280]'} rounded-[8px] px-[12px] py-[5px] text-[12px] font-medium cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-gray-700`}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             {showHistory ? 'Chat' : 'History'}
@@ -145,15 +145,15 @@ export function AiChatPanel({ aiMessages, aiInput, aiLoading, showHistory, code,
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-[14px] py-[14px]">
+      <div className="flex-1 overflow-y-auto px-[14px] py-[14px] transition-colors">
         {showHistory && (
           <div className="space-y-3">
-            <p className="text-[12px] font-medium text-[#111827]">Conversation history</p>
+            <p className="text-[12px] font-medium text-[#111827] dark:text-gray-100">Conversation history</p>
             {aiMessages.length === 0 && <p className="text-[11px] text-[#9CA3AF]">No previous conversations.</p>}
             {aiMessages.map(msg => (
-              <div key={msg.id} className={`p-2 rounded-lg text-[11px] ${msg.role === 'ai' ? 'bg-[#F9FAFB] border border-[#E5E7EB]' : 'bg-[#EEEDFE]'}`}>
+              <div key={msg.id} className={`p-2 rounded-lg text-[11px] ${msg.role === 'ai' ? 'bg-[#F9FAFB] dark:bg-gray-800 border border-[#E5E7EB] dark:border-gray-700' : 'bg-[#EEEDFE] dark:bg-indigo-900/30'}`}>
                 <span className="font-medium text-[#534AB7]">{msg.role === 'ai' ? 'AI' : 'You'}: </span>
-                <span className="text-[#4B5563]">{msg.content.length > 80 ? msg.content.substring(0, 80) + '...' : msg.content}</span>
+                <span className="text-[#4B5563] dark:text-gray-400">{msg.content.length > 80 ? msg.content.substring(0, 80) + '...' : msg.content}</span>
               </div>
             ))}
           </div>
@@ -166,7 +166,7 @@ export function AiChatPanel({ aiMessages, aiInput, aiLoading, showHistory, code,
                   <Bot className="w-6 h-6 text-[#534AB7]" />
                 </div>
                 <div>
-                  <p className="text-sm text-[#111827] font-medium">Hi, I'm your AI tutor</p>
+                  <p className="text-sm text-[#111827] dark:text-gray-100 font-medium">Hi, I'm your AI tutor</p>
                   <p className="text-xs text-[#9CA3AF] mt-1">Ask a question or analyze your code.</p>
                 </div>
               </div>
@@ -180,7 +180,7 @@ export function AiChatPanel({ aiMessages, aiInput, aiLoading, showHistory, code,
                   </div>
                   <span className="text-[12px] font-medium text-[#534AB7]">AI Tutor</span>
                 </div>
-                <div className="bg-white border border-[#E5E7EB] rounded-tl-none rounded-tr-[10px] rounded-br-[10px] rounded-bl-[10px] px-[14px] py-[10px] flex gap-[4px]">
+                <div className="bg-white dark:bg-gray-900 border border-[#E5E7EB] dark:border-gray-700 rounded-tl-none rounded-tr-[10px] rounded-br-[10px] rounded-bl-[10px] px-[14px] py-[10px] flex gap-[4px]">
                   <span className="w-[6px] h-[6px] bg-[#9CA3AF] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                   <span className="w-[6px] h-[6px] bg-[#9CA3AF] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                   <span className="w-[6px] h-[6px] bg-[#9CA3AF] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
@@ -205,7 +205,7 @@ export function AiChatPanel({ aiMessages, aiInput, aiLoading, showHistory, code,
             </div>
           </div>
 
-          <div className="border-t border-[#E5E7EB] px-3 py-3">
+          <div className="border-t border-[#E5E7EB] dark:border-gray-700 px-3 py-3 transition-colors">
             <div className="flex items-center gap-[8px]">
               <textarea
                 value={aiInput}
@@ -213,13 +213,13 @@ export function AiChatPanel({ aiMessages, aiInput, aiLoading, showHistory, code,
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
                 placeholder="Ask about your code..."
                 rows={1}
-                className="flex-1 bg-[#F9FAFB] border border-[#E5E7EB] rounded-[10px] px-[12px] py-[8px] text-[12px] text-[#111827] placeholder-[#9CA3AF] outline-none resize-none min-h-[36px] max-h-[100px] focus:border-[#534AB7] focus:bg-white"
+                className="flex-1 bg-[#F9FAFB] dark:bg-gray-800 border border-[#E5E7EB] dark:border-gray-700 rounded-[10px] px-[12px] py-[8px] text-[12px] text-[#111827] dark:text-gray-100 placeholder-[#9CA3AF] outline-none resize-none min-h-[36px] max-h-[100px] focus:border-[#534AB7] focus:bg-white dark:focus:bg-gray-900"
               />
               <button
                 onClick={onSend}
                 disabled={!aiInput.trim() || aiLoading}
                 className={`w-[36px] h-[36px] rounded-[10px] flex items-center justify-center shrink-0 cursor-pointer border-none ${
-                  aiInput.trim() ? 'bg-[#534AB7] text-white' : 'bg-[#E5E7EB] text-[#9CA3AF]'
+                  aiInput.trim() ? 'bg-[#534AB7] text-white' : 'bg-[#E5E7EB] dark:bg-gray-700 text-[#9CA3AF]'
                 }`}
               >
                 <Send className="w-4 h-4" />

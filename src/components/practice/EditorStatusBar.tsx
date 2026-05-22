@@ -9,7 +9,7 @@ interface Props {
 
 export const EditorStatusBar = React.memo(function EditorStatusBar({ hasUnsavedChanges, language, onSave, saving }: Props) {
   return (
-    <div className="h-[22px] bg-[#F9FAFB] border-t border-[#E5E7EB] flex items-center px-3 text-[11px] text-[#9CA3AF] gap-4 shrink-0">
+    <div className="h-[22px] bg-[#F9FAFB] dark:bg-gray-800 border-t border-[#E5E7EB] dark:border-gray-700 flex items-center px-3 text-[11px] text-[#9CA3AF] dark:text-gray-500 gap-4 shrink-0 transition-colors">
       <span className="flex items-center gap-[4px] text-[#0F6E56]">
         <span className="w-[6px] h-[6px] rounded-full bg-[#5DCAA5]" />
         Connected
@@ -21,7 +21,7 @@ export const EditorStatusBar = React.memo(function EditorStatusBar({ hasUnsavedC
       )}
       <span className="capitalize">{language}</span>
       <div className="ml-auto flex items-center gap-3">
-        <span className="text-[10px] text-[#D1D5DB] hidden md:inline">Ctrl+S Save · Ctrl+Enter Run · Ctrl+Shift+A Analyze</span>
+        <span className="text-[10px] text-[#D1D5DB] dark:text-gray-600 hidden md:inline">Ctrl+S Save · Ctrl+Enter Run · Ctrl+Shift+A Analyze</span>
         <span>UTF-8</span>
         <button
           onClick={onSave}

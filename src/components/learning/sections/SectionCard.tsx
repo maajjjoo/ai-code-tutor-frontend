@@ -6,10 +6,10 @@ import { TipSection } from './TipSection';
 import { ExerciseSection } from './ExerciseSection';
 
 const TAG: Record<string, { bg: string; text: string; label: string }> = {
-  explanation: { bg: 'bg-[#F3F4F6]', text: 'text-[#374151]', label: 'Concept' },
-  example:     { bg: 'bg-[#F0FDF4]', text: 'text-[#166534]', label: 'Example' },
-  tip:         { bg: 'bg-[#FFFBEB]', text: 'text-[#92400E]', label: 'Tip' },
-  exercise:    { bg: 'bg-[#EFF6FF]', text: 'text-[#1D4ED8]', label: 'Exercise' },
+  explanation: { bg: 'bg-[#F3F4F6] dark:bg-gray-700', text: 'text-[#374151] dark:text-gray-300', label: 'Concept' },
+  example:     { bg: 'bg-[#F0FDF4] dark:bg-emerald-900/20', text: 'text-[#166534] dark:text-emerald-400', label: 'Example' },
+  tip:         { bg: 'bg-[#FFFBEB] dark:bg-amber-900/20', text: 'text-[#92400E] dark:text-amber-300', label: 'Tip' },
+  exercise:    { bg: 'bg-[#EFF6FF] dark:bg-blue-900/20', text: 'text-[#1D4ED8] dark:text-blue-400', label: 'Exercise' },
 };
 
 interface Props {
@@ -34,16 +34,16 @@ export const SectionCard = React.memo(function SectionCard({ section, index, cur
 
   return (
     <div
-      className={`bg-white border rounded-xl p-5 mb-3 transition-all ${
-        isCurrent ? 'border-l-4 border-l-[#534AB7] border-[#E5E7EB]' : 'border-[#E5E7EB]'
+      className={`bg-white dark:bg-gray-900 border rounded-xl p-5 mb-3 transition-all ${
+        isCurrent ? 'border-l-4 border-l-[#534AB7] border-[#E5E7EB] dark:border-gray-700' : 'border-[#E5E7EB] dark:border-gray-700'
       } ${isLocked ? 'opacity-45 pointer-events-none' : ''} ${isDone ? 'opacity-100' : ''}`}
     >
       <div className="mb-2">
-        <span className={`inline-flex items-center text-[11px] font-medium px-2 py-[3px] rounded-md ${tag.bg} ${tag.text}`}>
+        <span className={`inline-flex items-center text-[11px] font-medium px-2 py-[3px] rounded-md transition-colors ${tag.bg} ${tag.text}`}>
           {tag.label}
         </span>
       </div>
-      <h3 className="text-[16px] font-semibold text-[#111827] mb-2">{section.title}</h3>
+      <h3 className="text-[16px] font-semibold text-[#111827] dark:text-gray-100 mb-2">{section.title}</h3>
 
       {section.type === 'explanation' && <ExplanationSection content={section.content} />}
       {section.type === 'example' && <ExampleSection content={section.content} code={section.code} />}

@@ -58,14 +58,14 @@ export function LessonView({
   }, [menuOpen]);
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="h-12 bg-white flex items-center justify-between px-6 border-b border-[#E5E7EB] shrink-0">
+    <div className="flex-1 flex flex-col overflow-hidden transition-colors">
+      <div className="h-12 bg-white dark:bg-gray-900 flex items-center justify-between px-6 border-b border-[#E5E7EB] dark:border-gray-700 shrink-0 transition-colors">
         <div className="flex items-center gap-1.5 text-[12px]">
           <span className="text-[#9CA3AF]">Languages</span>
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2">
             <polyline points="9 18 15 12 9 6"/>
           </svg>
-          <span className="text-[#111827] font-medium truncate max-w-[200px]">{course.name} Basics</span>
+          <span className="text-[#111827] dark:text-gray-100 font-medium truncate max-w-[200px]">{course.name} Basics</span>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -110,18 +110,18 @@ export function LessonView({
       />
 
       {isLoading && (
-        <div className="flex items-center gap-2 bg-[#EEEDFE] mx-6 mt-3 rounded-lg px-[14px] py-[10px]">
+        <div className="flex items-center gap-2 bg-[#EEEDFE] dark:bg-indigo-900/30 mx-6 mt-3 rounded-lg px-[14px] py-[10px] transition-colors">
           <svg className="w-4 h-4 text-[#534AB7] animate-spin" viewBox="0 0 24 24" fill="none">
             <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25"/>
             <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75"/>
           </svg>
-          <span className="text-[12px] text-[#3C3489]">Loading lesson...</span>
+          <span className="text-[12px] text-[#3C3489] dark:text-indigo-300">Loading lesson...</span>
         </div>
       )}
 
       {lessonError && (
-        <div className="mx-6 mt-3 rounded-lg px-[14px] py-[10px] bg-[#FEF2F2] border border-[#FCA5A5] flex items-center justify-between">
-          <span className="text-[12px] text-[#991B1B]">{lessonError}</span>
+        <div className="mx-6 mt-3 rounded-lg px-[14px] py-[10px] bg-[#FEF2F2] dark:bg-red-900/20 border border-[#FCA5A5] dark:border-red-700 flex items-center justify-between transition-colors">
+          <span className="text-[12px] text-[#991B1B] dark:text-red-400">{lessonError}</span>
           <button
             onClick={onRetry}
             className="text-[12px] font-medium text-[#991B1B] underline hover:no-underline cursor-pointer"
@@ -137,7 +137,7 @@ export function LessonView({
         {isLoading ? (
           <>
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-28 bg-[#F9FAFB] rounded-xl animate-pulse mb-3" />
+              <div key={i} className="h-28 bg-[#F9FAFB] dark:bg-gray-800 rounded-xl animate-pulse mb-3" />
             ))}
           </>
         ) : sections.length > 0 ? (

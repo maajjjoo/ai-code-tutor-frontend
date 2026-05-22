@@ -3,6 +3,11 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App';
 
+const savedDark = localStorage.getItem('darkMode') === 'true';
+if (savedDark) {
+  document.documentElement.classList.add('dark');
+}
+
 const root = document.getElementById('root');
 if (!root) throw new Error('Root element not found');
 

@@ -29,28 +29,28 @@ export function RestartModal({ isOpen, courseName, level, onConfirm, onCancel }:
       <div
         ref={modalRef}
         tabIndex={-1}
-        className="relative w-[340px] bg-white rounded-xl p-6 text-center"
+        className="relative w-[340px] bg-white dark:bg-gray-900 rounded-xl p-6 text-center transition-colors"
       >
         <button
           onClick={onCancel}
-          className="absolute top-4 right-4 text-[#9CA3AF] cursor-pointer"
+          className="absolute top-4 right-4 text-[#9CA3AF] dark:text-gray-500 cursor-pointer"
         >
           <X size={18} />
         </button>
 
-        <div className="w-12 h-12 bg-[#EEEDFE] rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="w-12 h-12 bg-[#EEEDFE] dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors">
           <RefreshCw size={24} className="text-[#534AB7]" />
         </div>
 
-        <h2 className="text-[15px] font-medium text-[#111827]">
+        <h2 className="text-[15px] font-medium text-[#111827] dark:text-gray-100">
           Restart {level} level?
         </h2>
 
-        <p className="text-[13px] text-[#4B5563] mt-2 leading-relaxed">
+        <p className="text-[13px] text-[#4B5563] dark:text-gray-400 mt-2 leading-relaxed">
           This will reset your progress for the {level} level of {courseName}. You will start from lesson 1 again. This cannot be undone.
         </p>
 
-        <div className="mt-3 inline-flex items-center gap-1 bg-[#FAEEDA] text-[#633806] rounded-full px-3 py-1 text-xs">
+        <div className="mt-3 inline-flex items-center gap-1 bg-[#FAEEDA] dark:bg-amber-900/30 text-[#633806] dark:text-amber-300 rounded-full px-3 py-1 text-xs transition-colors">
           <AlertTriangle size={12} />
           Your lesson content stays saved
         </div>
@@ -64,7 +64,7 @@ export function RestartModal({ isOpen, courseName, level, onConfirm, onCancel }:
           </button>
           <button
             onClick={onCancel}
-            className="border border-[#E5E7EB] text-[#4B5563] rounded-lg py-2.5 text-sm w-full cursor-pointer hover:bg-[#F9FAFB]"
+            className="border border-[#E5E7EB] dark:border-gray-700 text-[#4B5563] dark:text-gray-400 rounded-lg py-2.5 text-sm w-full cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-gray-700"
           >
             Cancel
           </button>

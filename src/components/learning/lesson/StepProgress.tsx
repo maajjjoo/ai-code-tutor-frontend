@@ -9,7 +9,7 @@ interface Props {
 
 export const StepProgress = React.memo(function StepProgress({ currentIndex, onStepClick }: Props) {
   return (
-    <div className="flex items-start w-full mb-6">
+    <div className="flex items-start w-full mb-6 transition-colors">
       {STEP_LABELS.map((label, i) => {
         const isDone = i < currentIndex;
         const isCurrent = i === currentIndex;
@@ -22,7 +22,7 @@ export const StepProgress = React.memo(function StepProgress({ currentIndex, onS
                     ? 'bg-[#166534] border-[#166534] text-white'
                     : isCurrent
                       ? 'bg-[#534AB7] border-[#534AB7] text-white'
-                      : 'bg-[#F3F4F6] border-[#E5E7EB] text-[#9CA3AF]'
+                      : 'bg-[#F3F4F6] dark:bg-gray-700 border-[#E5E7EB] dark:border-gray-700 text-[#9CA3AF] dark:text-gray-500'
                 }`}
               >
                 {isDone ? (
@@ -33,12 +33,12 @@ export const StepProgress = React.memo(function StepProgress({ currentIndex, onS
                   i + 1
                 )}
               </div>
-              <span className={`text-[10px] mt-1.5 text-center leading-tight ${isCurrent ? 'text-[#534AB7] font-medium' : 'text-[#9CA3AF]'}`}>
+              <span className={`text-[10px] mt-1.5 text-center leading-tight ${isCurrent ? 'text-[#534AB7] font-medium' : 'text-[#9CA3AF] dark:text-gray-500'}`}>
                 {label}
               </span>
             </div>
             {i < STEP_LABELS.length - 1 && (
-              <div className={`flex-1 h-[2px] mt-[14px] mx-2 ${i < currentIndex ? 'bg-[#166534]' : 'bg-[#E5E7EB]'}`} />
+              <div className={`flex-1 h-[2px] mt-[14px] mx-2 transition-colors ${i < currentIndex ? 'bg-[#166534]' : 'bg-[#E5E7EB] dark:bg-gray-700'}`} />
             )}
           </div>
         );
