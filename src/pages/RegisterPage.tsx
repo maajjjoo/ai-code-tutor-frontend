@@ -49,7 +49,7 @@ export function RegisterPage() {
         password: trimmedPwd,
       };
       const res = await registerUser(payload);
-      login({ id: res.id, username: res.username, email: res.email, createdAt: new Date().toISOString() }, res.token);
+      login({ id: res.id, username: res.username, email: res.email, createdAt: new Date().toISOString() });
       showToast('Account created!', 'success');
       setSuccess(true);
       setTimeout(() => navigate('/practice'), 1500);

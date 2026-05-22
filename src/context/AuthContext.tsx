@@ -1,12 +1,11 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { User } from '../types';
 
 interface AuthContextValue {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
-  login: (user: User, token: string) => void;
+  login: (user: User) => void;
   logout: () => void;
 }
 
@@ -23,40 +22,29 @@ function loadUser(): User | null {
   }
 }
 
-// Exported so api.ts can read the token without causing re-renders
-export const tokenRef: { current: string | null } = { current: null };
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(loadUser);
-  const [token, setToken] = useState<string | null>(null);
 
-  useEffect(() => {
-    const raw = localStorage.getItem(USER_STORAGE_KEY);
-    if (raw) {
-      setUser(JSON.parse(raw) as User);
-    }
-  }, []);
-
-  const login = (authenticatedUser: User, jwt: string) => {
+  const login = (authenticatedUser: User) => {
     setUser(authenticatedUser);
-    setToken(jwt);
-    tokenRef.current = jwt;
-    const safeUser = { id: authenticatedUser.id, username: authenticatedUser.username };
+    const safeUser = {
+      id: authenticatedUser.id,
+      username: authenticatedUser.username,
+      email: authenticatedUser.email,
+    };
     localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(safeUser));
   };
 
   const logout = () => {
     setUser(null);
-    setToken(null);
-    tokenRef.current = null;
     localStorage.removeItem(USER_STORAGE_KEY);
     localStorage.removeItem('codetutor-fs-nodes');
   };
 
-  const isAuthenticated = user !== null && tokenRef.current !== null;
+  const isAuthenticated = user !== null;
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

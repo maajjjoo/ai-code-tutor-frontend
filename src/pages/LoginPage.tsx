@@ -26,7 +26,7 @@ export function LoginPage() {
     setLoading(true);
     try {
       const res = await loginUser({ ...form, password: form.password });
-      login({ id: res.id, username: res.username, email: res.email, createdAt: new Date().toISOString() }, res.token);
+      login({ id: res.id, username: res.username, email: res.email, createdAt: new Date().toISOString() });
       showToast('Welcome back!', 'success');
       navigate('/');
     } catch (err) {
