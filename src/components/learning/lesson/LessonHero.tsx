@@ -1,4 +1,5 @@
 import type { Level } from '../../../types/learning.types';
+import { UI } from '../../../constants/ui.strings';
 
 const LEVEL_PILL: Record<string, { bg: string; text: string }> = {
   beginner:     { bg: 'bg-[#DCFCE7]', text: 'text-[#166534]' },
@@ -31,7 +32,7 @@ export function LessonHero({
           {language}
         </span>
         <span className={`text-[12px] font-medium px-3 py-[3px] rounded-full capitalize ${levelPill.bg} ${levelPill.text}`}>
-          {level}
+          {UI[level.toUpperCase() as keyof typeof UI] || level}
         </span>
         <span className="bg-[#F3F4F6] dark:bg-gray-700 text-[#6B7280] dark:text-gray-400 text-[12px] px-3 py-[3px] rounded-full flex items-center gap-1 transition-colors">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -64,7 +65,7 @@ export function LessonHero({
                       : 'text-[#9CA3AF] border-transparent hover:border-[#9CA3AF]'
               }`}
             >
-              {lvl}
+              {UI[lvl.toUpperCase() as keyof typeof UI] || lvl}
               {isDone && (
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="20 6 9 17 4 12"/>
@@ -78,7 +79,7 @@ export function LessonHero({
               )}
               {isSelected && !isDone && (
                 <span className="text-[11px] text-[#9CA3AF] font-normal ml-1">
-                  Lesson {currentLessonNumber} of 10
+                  Lección {currentLessonNumber} de 10
                 </span>
               )}
             </button>

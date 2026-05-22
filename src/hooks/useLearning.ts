@@ -132,9 +132,9 @@ export function useLearning() {
     } catch (err) {
       const status = (err as { response?: { status?: number } })?.response?.status;
       if (status === 503) {
-        setLessonError('Preparing content...');
+        setLessonError('Preparando contenido...');
       } else {
-        setLessonError('Could not load. Try again.');
+        setLessonError('No se pudo cargar. Intenta de nuevo.');
       }
       setCurrentLesson(null);
     } finally {

@@ -9,7 +9,7 @@ import { CompletionModal } from '../components/learning/modals/CompletionModal';
 import { RestartModal } from '../components/learning/modals/RestartModal';
 
 export function LearningPage() {
-  usePageTitle('Learning');
+  usePageTitle(UI.LEARNING);
   const navigate = useNavigate();
   const {
     viewState, selectedCourse, selectedLevel, currentLessonNumber,

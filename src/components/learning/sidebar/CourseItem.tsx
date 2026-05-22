@@ -1,5 +1,6 @@
 ﻿import React from 'react';
 import type { Course } from '../../../data/courses';
+import { UI } from '../../../constants/ui.strings';
 
 interface Props {
   course: Course;
@@ -30,7 +31,7 @@ export const CourseItem = React.memo(function CourseItem({ course, isSelected, t
         <div className='flex-1 min-w-0'>
           <div className='text-[13px] font-medium text-[#111827] dark:text-gray-100'>{course.name}</div>
           <div className='flex items-center gap-1 mt-0.5'>
-            <span className='text-[11px] text-[#9CA3AF]'>{totalDone} / 30 lessons</span>
+            <span className='text-[11px] text-[#9CA3AF]'>{totalDone} / 30 {UI.LESSONS_COUNT}</span>
           </div>
           <div className='flex gap-[3px] mt-[6px] h-[3px]'>
             <div

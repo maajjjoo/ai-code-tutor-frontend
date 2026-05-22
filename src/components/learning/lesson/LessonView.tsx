@@ -66,7 +66,7 @@ export function LessonView({
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2">
             <polyline points="9 18 15 12 9 6"/>
           </svg>
-          <span className="text-[#111827] dark:text-gray-100 font-medium truncate max-w-[200px]">{course.name} Basics</span>
+          <span className="text-[#111827] dark:text-gray-100 font-medium truncate max-w-[200px]">{course.name} Fundamentos</span>
         </div>
         <div className="flex items-center gap-2">
           <button

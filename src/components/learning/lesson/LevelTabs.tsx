@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Level } from '../../../types/learning.types';
+import { UI } from '../../../constants/ui.strings';
 
 const LEVELS: Level[] = ['beginner', 'intermediate', 'advanced'];
 
@@ -35,7 +36,7 @@ export const LevelTabs = React.memo(function LevelTabs({ selectedLevel, complete
                     : 'text-[#9CA3AF] border-transparent hover:border-[#9CA3AF]'
             }`}
           >
-            {level}
+            {UI[level.toUpperCase() as keyof typeof UI] || level}
             {isDone && (
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12"/>
@@ -49,7 +50,7 @@ export const LevelTabs = React.memo(function LevelTabs({ selectedLevel, complete
             )}
             {isSelected && !isDone && (
               <span className="text-[11px] text-[#9CA3AF] font-normal ml-1">
-                Lesson {currentLessonNumber} of 10
+                Lección {currentLessonNumber} de 10
               </span>
             )}
           </button>
