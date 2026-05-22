@@ -47,14 +47,34 @@ export function useAIChat({ vfs, editorRef, monacoRef, activeProject, exerciseCo
     return { content: text };
   };
 
+  function parseResult(raw: unknown): Record<string, unknown> {
+    if (typeof raw === 'string') {
+      try { return JSON.parse(raw); } catch { return {}; }
+    }
+    if (raw && typeof raw === 'object') return raw as Record<string, unknown>;
+    return {};
+  }
+
   const parseAndSetAiResponse = useCallback((result: CodeAnalysisResponse): ChatMsg => {
-    let fullContent = result.summary;
-    if (result.hasErrors && result.errorHint) fullContent += `\n\nError detected: ${result.errorHint}`;
+    const data = parseResult(result);
+    const summary = String(data.summary ?? data.whatItDoes ?? '');
+    const hasErrors = !!data.hasErrors;
+    const errorHint = data.errorHint ? String(data.errorHint) : null;
+    const quality = data.quality as { structure: number; readability: number } | undefined;
+    const rawSuggestions = data.suggestions;
+    const suggestions = Array.isArray(rawSuggestions)
+      ? rawSuggestions.map((s: unknown) => typeof s === 'string' ? s : `${(s as any).title ?? ''}: ${(s as any).description ?? ''}`)
+      : [];
+
+    let fullContent = summary;
+    if (hasErrors && errorHint) fullContent += `\n\nError detected: ${errorHint}`;
     const structured = parseStructuredResponse(fullContent);
     return {
-      id: uid(), role: 'ai', content: structured.content, timestamp: Date.now(),
-      quality: structured.quality || result.quality,
-      suggestions: structured.suggestions || (result.suggestions ?? []).map((s) => typeof s === 'string' ? s : `${s.title}: ${s.description}`),
+      id: uid(), role: 'ai',
+      content: structured.content || summary || '',
+      timestamp: Date.now(),
+      quality: structured.quality || quality,
+      suggestions: structured.suggestions || suggestions,
     };
   }, []);
 
