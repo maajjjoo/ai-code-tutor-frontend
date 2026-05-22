@@ -75,9 +75,8 @@ export function useAIChat({ vfs, activeProject }: Params) {
       addMessage(activeConversationId ?? '', { role: 'assistant', content: 'No hay código en el editor.', timestamp: new Date() });
       return;
     }
-    const text = `Analiza este código y explícame qué hace, si tiene errores y cómo puedo mejorarlo:\n\n\`\`\`${vfs.openFile?.language ?? 'python'}\n${vfs.code}\n\`\`\``;
-    sendMessage(text);
-  }, [vfs.code, vfs.openFile?.language, sendMessage, activeConversationId, addMessage]);
+    sendMessage('¿Puedes analizar mi código?');
+  }, [vfs.code, sendMessage, activeConversationId, addMessage]);
 
   const handleAiSend = useCallback(async () => {
     if (!aiInput.trim() || aiLoading) return;

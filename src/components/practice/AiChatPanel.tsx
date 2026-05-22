@@ -222,10 +222,10 @@ export function AiChatPanel({
                 <button onClick={onSendCode} className="bg-[#EEEDFE] dark:bg-indigo-900/30 text-[#3C3489] dark:text-indigo-300 border border-[#AFA9EC] dark:border-[#534AB7] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] dark:hover:bg-indigo-900/50 transition-colors">
                   Enviar código
                 </button>
-                <button onClick={() => onInputChange('¿Qué debería hacer a continuación en mi código?')} className="bg-[#EEEDFE] dark:bg-indigo-900/30 text-[#3C3489] dark:text-indigo-300 border border-[#AFA9EC] dark:border-[#534AB7] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] dark:hover:bg-indigo-900/50 transition-colors">
+                <button onClick={() => onInputChange('¿Qué debería hacer a continuación?')} className="bg-[#EEEDFE] dark:bg-indigo-900/30 text-[#3C3489] dark:text-indigo-300 border border-[#AFA9EC] dark:border-[#534AB7] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] dark:hover:bg-indigo-900/50 transition-colors">
                   {UI.NEXT_STEP_QUESTION}
                 </button>
-                <button onClick={() => onInputChange('Explícame el código que tengo en el editor')} className="bg-[#EEEDFE] dark:bg-indigo-900/30 text-[#3C3489] dark:text-indigo-300 border border-[#AFA9EC] dark:border-[#534AB7] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] dark:hover:bg-indigo-900/50 transition-colors">
+                <button onClick={() => onInputChange('¿Puedes explicarme qué hace mi código?')} className="bg-[#EEEDFE] dark:bg-indigo-900/30 text-[#3C3489] dark:text-indigo-300 border border-[#AFA9EC] dark:border-[#534AB7] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] dark:hover:bg-indigo-900/50 transition-colors">
                   {UI.EXPLAIN_THIS}
                 </button>
               </div>
