@@ -7,7 +7,8 @@ const BOOKMARK_PREFIX = 'aict_bookmark_';
 
 export function getCachedLesson(courseId: string, level: string, lessonNumber: number): Lesson | null {
   try {
-    return storage.getObject<Lesson>(`${LESSON_PREFIX}${courseId}_${level}_${lessonNumber}`);
+    const raw = storage.get(`${LESSON_PREFIX}${courseId}_${level}_${lessonNumber}`);
+    return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
@@ -21,7 +22,8 @@ export function setCachedLesson(courseId: string, level: string, lessonNumber: n
 
 export function getDoneLessons(courseId: string, level: string): number[] {
   try {
-    return storage.getArray<number>(`${DONE_PREFIX}${courseId}_${level}`);
+    const raw = storage.get(`${DONE_PREFIX}${courseId}_${level}`);
+    return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
   }

@@ -157,8 +157,8 @@ export function useProjectManagement({ vfs, userId, editorRef, monacoRef, active
 
   const loadProjectNodes = useCallback(async (project: BackendProject): Promise<VNode[]> => {
     let nodes: VNode[] = [];
-    const local = storage.getArray<VNode>(`codetutor-project-${project.id}-nodes`);
-    if (local.length > 0) { nodes = local; }
+    const local = storage.get(`codetutor-project-${project.id}-nodes`);
+    if (local) { try { const p = JSON.parse(local); if (Array.isArray(p) && p.length > 0) nodes = p; } catch {} }
     if (nodes.length === 0) {
       try { const data = await loadEditor(project.id); try { const p = JSON.parse(data.currentCode ?? ''); if (p.nodes && Array.isArray(p.nodes)) nodes = p.nodes; } catch {} } catch {}
     }

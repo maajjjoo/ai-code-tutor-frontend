@@ -8,7 +8,7 @@ export const FS_STORAGE_KEY = 'codetutor-fs-nodes';
 
 export function useVirtualFileSystem() {
   const [fsNodes, setFsNodes] = useState<VNode[]>(() => {
-    try { return storage.getArray<VNode>(FS_STORAGE_KEY); } catch { return []; }
+    try { return JSON.parse(storage.get(FS_STORAGE_KEY) ?? '[]'); } catch { return []; }
   });
   const [fsActiveId, setFsActiveId] = useState<string | null>(null);
   const [openFile, setOpenFile] = useState<{ name: string; content: string; language: Language } | null>(null);

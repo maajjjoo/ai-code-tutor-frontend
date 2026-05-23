@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import type { InputHTMLAttributes } from 'react';
+import { storage } from '../../utils/storage';
 import {
   FilePlus, FolderPlus, FileInput, FolderInput,
   ChevronRight, ChevronDown, File, Folder, FolderOpen,
@@ -9,7 +10,6 @@ import { getProjectsByUser, loadEditor, getErrorMessage } from '../../services/a
 import type { Project, Language } from '../../types';
 import type { VNode, VFile, VFolder } from '../../types/vfs';
 import { uid, detectLang } from '../../types/vfs';
-import { storage } from '../../utils/storage';
 
 // ─── Tree node with drag & drop ──────────────────────────────────────────────
 function TreeNode({ node, depth, nodes, activeId, onOpen, onToggle, onDelete, onRename, onCreateFileIn, onDrop }:
@@ -302,14 +302,17 @@ export function FilesSidebar({ userId, nodes, setNodes, activeId, setActiveId, o
     setProjectLoadError(null);
     try {
       // First try to load from localStorage (has full node structure)
-      const localNodes = storage.getArray<VNode>(`codetutor-project-${p.id}-nodes`);
-      if (localNodes.length > 0) {
-        if (onLoadProject) {
-          onLoadProject(localNodes, p.id);
-        } else {
-          setNodes(localNodes);
+      const localNodes = storage.get(`codetutor-project-${p.id}-nodes`);
+      if (localNodes) {
+        const parsed = JSON.parse(localNodes);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          if (onLoadProject) {
+            onLoadProject(parsed, p.id);
+          } else {
+            setNodes(parsed);
+          }
+          return;
         }
-        return;
       }
 
       // Fallback: load from backend

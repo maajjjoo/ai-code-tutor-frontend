@@ -176,7 +176,7 @@ export function useEditorPersistence({
     // Update version history
     const historyKey = buildHistoryKey(projectId, fileName);
     const existingHistory: SavedVersion[] = (() => {
-      try { return storage.getArray<SavedVersion>(historyKey); }
+      try { return JSON.parse(storage.get(historyKey) ?? '[]'); }
       catch { return []; }
     })();
 

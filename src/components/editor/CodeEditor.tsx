@@ -5,6 +5,7 @@ const MonacoEditor = lazy(() => import('@monaco-editor/react'));
 import { saveSnapshot, getErrorMessage } from '../../services/api';
 import type { EditorData } from '../../types';
 import { useEditorPersistence } from '../../hooks/useEditorPersistence';
+import { storage } from '../../utils/storage';
 import { SaveIndicatorBar } from './SaveIndicatorBar';
 import { AutosaveRecoveryBanner } from './AutosaveRecoveryBanner';
 import { VersionHistoryPanel } from './VersionHistoryPanel';
