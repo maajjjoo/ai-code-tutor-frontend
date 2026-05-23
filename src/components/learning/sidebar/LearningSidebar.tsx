@@ -21,7 +21,7 @@ export function LearningSidebar({ selectedCourseId, completionCounts, levelsDone
   );
 
   return (
-    <div className='w-[280px] h-full flex flex-col bg-[#F9FAFB] dark:bg-gray-900 border-r border-[#E5E7EB] dark:border-gray-800 shrink-0 overflow-hidden transition-colors'>
+    <div className='w-[280px] h-full flex flex-col bg-[#F8F9FA] dark:bg-gray-900 border-r border-[#E5E7EB] dark:border-gray-800 shrink-0 overflow-hidden transition-colors'>
       <div className='h-12 px-3 flex items-center border-b border-[#E5E7EB] dark:border-gray-800 shrink-0'>
         <button
           onClick={() => navigate('/')}
@@ -39,8 +39,8 @@ export function LearningSidebar({ selectedCourseId, completionCounts, levelsDone
       </div>
 
       <div className='px-3 py-3'>
-        <div className='flex items-center gap-2 bg-white dark:bg-gray-800 border border-[#E5E7EB] dark:border-gray-700 rounded-lg px-[10px] py-[7px]'>
-          <svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='#9CA3AF' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' className='shrink-0'>
+        <div className='relative mb-3'>
+          <svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='#9CA3AF' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' className='absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none'>
             <circle cx='11' cy='11' r='8'/><line x1='21' y1='21' x2='16.65' y2='16.65'/>
           </svg>
           <input
@@ -48,13 +48,13 @@ export function LearningSidebar({ selectedCourseId, completionCounts, levelsDone
             placeholder={UI.SEARCH_TOPICS}
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className='flex-1 text-[12px] text-[#111827] dark:text-gray-100 outline-none bg-transparent placeholder:text-[#9CA3AF]'
+            className='w-full pl-8 pr-3 py-1.5 border border-[#E5E7EB] dark:border-gray-700 rounded-lg text-xs text-[#111827] dark:text-gray-100 bg-white dark:bg-gray-800 outline-none placeholder:text-[#9CA3AF]'
           />
         </div>
       </div>
 
       <div className='px-3 pb-1'>
-        <span className='text-[11px] font-medium uppercase tracking-wide text-[#9CA3AF] px-[4px]'>{UI.COURSES}</span>
+        <span className='text-[10px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF] px-1 mb-2 block'>{UI.COURSES}</span>
       </div>
 
       <div className='flex-1 overflow-y-auto px-3 pb-2'>

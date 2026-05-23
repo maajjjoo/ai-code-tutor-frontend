@@ -5,11 +5,11 @@ import { ExampleSection } from './ExampleSection';
 import { TipSection } from './TipSection';
 import { ExerciseSection } from './ExerciseSection';
 
-const TAG: Record<string, { bg: string; text: string; label: string }> = {
-  explanation: { bg: 'bg-[#F3F4F6] dark:bg-gray-700', text: 'text-[#374151] dark:text-gray-300', label: 'Concepto' },
-  example:     { bg: 'bg-[#F0FDF4] dark:bg-emerald-900/20', text: 'text-[#166534] dark:text-emerald-400', label: 'Ejemplo' },
-  tip:         { bg: 'bg-[#FFFBEB] dark:bg-amber-900/20', text: 'text-[#92400E] dark:text-amber-300', label: 'Consejo' },
-  exercise:    { bg: 'bg-[#EFF6FF] dark:bg-blue-900/20', text: 'text-[#1D4ED8] dark:text-blue-400', label: 'Ejercicio' },
+const TAG: Record<string, { bg: string; text: string; label: string; border: string }> = {
+  explanation: { bg: 'bg-[#EEEDFE] dark:bg-[#2a2550]', text: 'text-[#3C3489] dark:text-[#a09de8]', label: 'Concepto', border: 'border-l-[#534AB7]' },
+  example:     { bg: 'bg-[#E1F5EE] dark:bg-teal-900/30', text: 'text-[#085041] dark:text-teal-300', label: 'Ejemplo', border: 'border-l-[#0F6E56]' },
+  tip:         { bg: 'bg-[#FEF3C7] dark:bg-amber-900/30', text: 'text-[#92400E] dark:text-amber-300', label: 'Consejo', border: 'border-l-[#F59E0B]' },
+  exercise:    { bg: 'bg-[#EEEDFE] dark:bg-[#2a2550]', text: 'text-[#3C3489] dark:text-[#a09de8]', label: 'Ejercicio', border: 'border-l-[#534AB7]' },
 };
 
 interface Props {
@@ -27,23 +27,21 @@ interface Props {
 }
 
 export const SectionCard = React.memo(function SectionCard({ section, index, currentIndex, revealedHints, language: _language, lessonTitle, level, onHintReveal, onOpenInEditor, onSectionComplete }: Props) {
-  const isCurrent = index === currentIndex;
   const isLocked = index > currentIndex;
-  const isDone = index < currentIndex;
   const tag = TAG[section.type] ?? TAG.explanation;
 
   return (
     <div
-      className={`bg-white dark:bg-gray-900 border rounded-xl p-5 mb-3 transition-all ${
-        isCurrent ? 'border-l-4 border-l-[#534AB7] border-[#E5E7EB] dark:border-gray-700' : 'border-[#E5E7EB] dark:border-gray-700'
-      } ${isLocked ? 'opacity-45 pointer-events-none' : ''} ${isDone ? 'opacity-100' : ''}`}
+      className={`bg-white dark:bg-gray-800 rounded-xl p-5 mb-4 transition-all border border-[#E5E7EB] dark:border-gray-700 border-l-[3px] ${tag.border} ${
+        isLocked ? 'opacity-45 pointer-events-none' : ''
+      }`}
     >
-      <div className="mb-2">
-        <span className={`inline-flex items-center text-[11px] font-medium px-2 py-[3px] rounded-md transition-colors ${tag.bg} ${tag.text}`}>
+      <div className="mb-2.5">
+        <span className={`inline-flex items-center text-[11px] font-medium px-2.5 py-0.5 rounded-full transition-colors ${tag.bg} ${tag.text}`}>
           {tag.label}
         </span>
       </div>
-      <h3 className="text-[16px] font-semibold text-[#111827] dark:text-gray-100 mb-2">{section.title}</h3>
+      <h3 className="text-base font-medium text-[#111827] dark:text-white mb-2">{section.title}</h3>
 
       {section.type === 'explanation' && <ExplanationSection content={section.content} />}
       {section.type === 'example' && <ExampleSection content={section.content} code={section.code} />}
