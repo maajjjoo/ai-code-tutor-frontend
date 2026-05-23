@@ -38,7 +38,7 @@ export const EditorTopBar = React.memo(function EditorTopBar({ filesList, fsActi
   const disp = LANG_DISPLAY[language] ?? { lang: language ? language.charAt(0).toUpperCase() + language.slice(1) : 'Python', ver: '' };
 
   return (
-    <div className="h-[40px] bg-white dark:bg-gray-900 border-b border-[#E5E7EB] dark:border-gray-700 flex items-center shrink-0 px-3 transition-colors">
+    <div className="h-10 bg-[#F9FAFB] dark:bg-gray-900 border-b border-[#E5E7EB] dark:border-gray-700 flex items-center shrink-0 px-3 gap-1 transition-colors">
       <div className="flex items-center h-full flex-1 overflow-x-auto">
         {filesList.map((f) => {
           const isActive = fsActiveId === f.id;

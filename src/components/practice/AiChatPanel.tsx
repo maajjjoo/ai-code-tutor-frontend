@@ -26,7 +26,7 @@ function AiMessageBubble({ msg }: { msg: ConversationMessage }) {
           </div>
           <span className="text-[12px] font-medium text-[#534AB7]">{UI.AI_TUTOR}</span>
         </div>
-        <div className="bg-white dark:bg-gray-900 border border-[#E5E7EB] dark:border-gray-700 rounded-tl-none rounded-tr-[10px] rounded-br-[10px] rounded-bl-[10px] p-[12px_14px]">
+        <div className="bg-[#F9FAFB] dark:bg-gray-800 border border-[#E5E7EB] dark:border-gray-700 rounded-[0_10px_10px_10px] p-2.5">
           <MessageRenderer content={msg.content} />
         </div>
       </div>
@@ -35,7 +35,7 @@ function AiMessageBubble({ msg }: { msg: ConversationMessage }) {
 
   return (
     <div className="flex justify-end mb-5">
-      <div className="bg-[#534AB7] text-white rounded-tl-[10px] rounded-tr-[10px] rounded-br-[10px] rounded-bl-none px-[14px] py-[10px] max-w-[85%] text-[12px]">
+      <div className="bg-[#534AB7] text-white rounded-[10px_10px_0_10px] p-2.5 text-xs max-w-[85%]">
         {msg.content}
       </div>
     </div>
@@ -202,15 +202,15 @@ export function AiChatPanel({
               <div ref={aiBottomRef} />
             </div>
 
-            <div className="px-3 pb-2 pt-1 shrink-0">
-              <div className="flex flex-wrap gap-[6px] mb-[10px]">
-                <button onClick={e => { e.stopPropagation(); onSendCode(); }} className="bg-[#EEEDFE] dark:bg-indigo-900/30 text-[#3C3489] dark:text-indigo-300 border border-[#AFA9EC] dark:border-[#534AB7] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] dark:hover:bg-indigo-900/50 transition-colors">
+            <div className="p-2.5 border-t border-[#E5E7EB] dark:border-gray-700 bg-[#FAFAFA] dark:bg-gray-900 shrink-0">
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                <button onClick={e => { e.stopPropagation(); onSendCode(); }} className="px-2.5 py-[3px] rounded-full text-[10px] font-medium bg-[#EEEDFE] dark:bg-[#2a2550] text-[#3C3489] dark:text-[#a09de8] border border-[#AFA9EC] dark:border-[#534AB7] cursor-pointer hover:bg-[#CECBF6] dark:hover:bg-indigo-900/50 whitespace-nowrap transition-colors">
                   Analizar mi código
                 </button>
-                <button onClick={e => { e.stopPropagation(); onInputChange('¿Qué debería hacer a continuación?'); }} className="bg-[#EEEDFE] dark:bg-indigo-900/30 text-[#3C3489] dark:text-indigo-300 border border-[#AFA9EC] dark:border-[#534AB7] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] dark:hover:bg-indigo-900/50 transition-colors">
+                <button onClick={e => { e.stopPropagation(); onInputChange('¿Qué debería hacer a continuación?'); }} className="px-2.5 py-[3px] rounded-full text-[10px] font-medium bg-[#EEEDFE] dark:bg-[#2a2550] text-[#3C3489] dark:text-[#a09de8] border border-[#AFA9EC] dark:border-[#534AB7] cursor-pointer hover:bg-[#CECBF6] dark:hover:bg-indigo-900/50 whitespace-nowrap transition-colors">
                   {UI.NEXT_STEP_QUESTION}
                 </button>
-                <button onClick={e => { e.stopPropagation(); onInputChange('Explícame mi código'); }} className="bg-[#EEEDFE] dark:bg-indigo-900/30 text-[#3C3489] dark:text-indigo-300 border border-[#AFA9EC] dark:border-[#534AB7] rounded-full px-[12px] py-[4px] text-[11px] font-medium cursor-pointer hover:bg-[#CECBF6] dark:hover:bg-indigo-900/50 transition-colors">
+                <button onClick={e => { e.stopPropagation(); onInputChange('Explícame mi código'); }} className="px-2.5 py-[3px] rounded-full text-[10px] font-medium bg-[#EEEDFE] dark:bg-[#2a2550] text-[#3C3489] dark:text-[#a09de8] border border-[#AFA9EC] dark:border-[#534AB7] cursor-pointer hover:bg-[#CECBF6] dark:hover:bg-indigo-900/50 whitespace-nowrap transition-colors">
                   {UI.EXPLAIN_THIS}
                 </button>
               </div>
@@ -222,16 +222,16 @@ export function AiChatPanel({
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
                   placeholder={UI.ASK_PLACEHOLDER}
                   rows={1}
-                  className="flex-1 bg-[#F9FAFB] dark:bg-gray-800 border border-[#E5E7EB] dark:border-gray-700 rounded-[10px] px-[12px] py-[8px] text-[12px] text-[#111827] dark:text-gray-100 placeholder-[#9CA3AF] outline-none resize-none min-h-[36px] max-h-[100px] focus:border-[#534AB7] focus:bg-white dark:focus:bg-gray-900"
+                  className="flex-1 border border-[#E5E7EB] dark:border-gray-700 rounded-[8px] px-2.5 py-1.5 text-xs text-[#111827] dark:text-gray-100 bg-white dark:bg-gray-800 outline-none h-8 focus:border-[#534AB7] placeholder:text-[#9CA3AF]"
                 />
                 <button
                   onClick={onSend}
                   disabled={!aiInput.trim() || aiLoading}
-                  className={`w-[36px] h-[36px] rounded-[10px] flex items-center justify-center shrink-0 cursor-pointer border-none ${
+                  className={`w-[30px] h-[30px] rounded-[7px] flex items-center justify-center shrink-0 cursor-pointer border-none ${
                     aiInput.trim() ? 'bg-[#534AB7] text-white' : 'bg-[#E5E7EB] dark:bg-gray-700 text-[#9CA3AF]'
                   }`}
                 >
-                  <Send className="w-4 h-4" />
+                  <Send className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
