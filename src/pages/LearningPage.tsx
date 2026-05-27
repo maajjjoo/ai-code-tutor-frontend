@@ -60,6 +60,23 @@ export function LearningPage() {
   const [aiGeneratedLesson, setAiGeneratedLesson] = useState<GeneratedLesson | null>(null);
   const [aiSectionIndex, setAiSectionIndex] = useState(0);
 
+  useEffect(() => {
+    if (aiGeneratedLesson) {
+      console.log('=== GENERATED LESSON ===');
+      console.log('Full object:', aiGeneratedLesson);
+      console.log('contentJson type:', typeof aiGeneratedLesson.contentJson);
+      console.log('contentJson value:', aiGeneratedLesson.contentJson);
+      console.log('First 200 chars:', String(aiGeneratedLesson.contentJson).substring(0, 200));
+      try {
+        const parsed = JSON.parse(aiGeneratedLesson.contentJson);
+        console.log('Parsed successfully:', parsed);
+        console.log('sections:', parsed.sections);
+      } catch (e) {
+        console.error('Parse error:', e);
+      }
+    }
+  }, [aiGeneratedLesson]);
+
   const aiSections = aiGeneratedLesson ? parseAiSections(aiGeneratedLesson.contentJson) : [];
   const parsedAiLesson = aiGeneratedLesson ? parseAiLesson(aiGeneratedLesson.contentJson) : null;
 

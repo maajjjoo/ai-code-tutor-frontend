@@ -27,6 +27,9 @@ export function useLessonGenerator() {
         setGeneratedLesson(null);
         try {
             const { data } = await apiClient.post<GeneratedLesson>('/lessons/generated', dto);
+            console.log('=== BACKEND RESPONSE ===');
+            console.log('data:', JSON.stringify(data, null, 2));
+            console.log('contentJson:', data.contentJson);
             setGeneratedLesson(data);
             await loadStatus();
             return data;
