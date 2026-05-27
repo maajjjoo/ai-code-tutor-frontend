@@ -24,24 +24,50 @@ function parseContentJson(contentJson: string | object): { title?: string; summa
   try {
     return JSON.parse(contentJson);
   } catch (e1) {
-    console.warn('Direct parse failed, trying fixes...');
   }
   try {
-    const fixed = contentJson.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
+    let fixed = '';
+    let inString = false;
+    let escaped = false;
+    for (let i = 0; i < contentJson.length; i++) {
+      const char = contentJson[i];
+      const code = contentJson.charCodeAt(i);
+      if (escaped) {
+        fixed += char;
+        escaped = false;
+        continue;
+      }
+      if (char === '\\') {
+        escaped = true;
+        fixed += char;
+        continue;
+      }
+      if (char === '"') {
+        inString = !inString;
+        fixed += char;
+        continue;
+      }
+      if (inString) {
+        if (code === 10) {
+          fixed += '\\n';
+        } else if (code === 13) {
+          fixed += '\\r';
+        } else if (code === 9) {
+          fixed += '\\t';
+        } else if (code < 32) {
+          fixed += '\\u' + code.toString(16).padStart(4, '0');
+        } else {
+          fixed += char;
+        }
+      } else {
+        fixed += char;
+      }
+    }
     return JSON.parse(fixed);
   } catch (e2) {
-    console.warn('Fix attempt 1 failed...');
+    console.error('All parse attempts failed:', e2);
+    return null;
   }
-  try {
-    const start = contentJson.indexOf('{');
-    const end = contentJson.lastIndexOf('}') + 1;
-    if (start >= 0 && end > start) {
-      return JSON.parse(contentJson.substring(start, end));
-    }
-  } catch (e3) {
-    console.error('All parse attempts failed:', e3);
-  }
-  return null;
 }
 
 export function LearningPage() {
