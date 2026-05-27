@@ -1,12 +1,16 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import type * as Monaco from 'monaco-editor';
 import { sendChatMessage } from '../services/api';
-import type { Project as BackendProject } from '../types';
+import type { Project as BackendProject, ExerciseContext } from '../types';
 import type { useVirtualFileSystem } from './useVirtualFileSystem';
 import { useConversations } from './useConversations';
 
 interface Params {
   vfs: ReturnType<typeof useVirtualFileSystem>;
   activeProject: BackendProject | null;
+  editorRef: React.MutableRefObject<Monaco.editor.IStandaloneCodeEditor | null>;
+  monacoRef: React.MutableRefObject<typeof Monaco | null>;
+  exerciseContext: ExerciseContext | null;
 }
 
 export function useAIChat({ vfs, activeProject }: Params) {
@@ -81,6 +85,10 @@ export function useAIChat({ vfs, activeProject }: Params) {
     await sendMessage(text);
   }, [aiInput, aiLoading, sendMessage]);
 
+  const handleAnalyze = useCallback(() => {
+    sendMessage('Analiza mi código');
+  }, [sendMessage]);
+
   return {
     aiMessages: messages,
     messages,
@@ -90,6 +98,7 @@ export function useAIChat({ vfs, activeProject }: Params) {
     aiBottomRef,
     handleAiSend,
     sendCodeAsMessage,
+    handleAnalyze,
     conversations,
     activeConversation,
     activeConversationId,

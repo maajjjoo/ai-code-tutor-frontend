@@ -12,7 +12,7 @@ import { useCodeExecution } from './useCodeExecution';
 import { useAIChat } from './useAIChat';
 import { storage } from '../utils/storage';
 
-export type { ChatMsg } from './useAIChat';
+
 
 const ACTIVE_PROJECT_KEY = 'codetutor-active-project';
 

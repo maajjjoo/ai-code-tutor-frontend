@@ -36,4 +36,16 @@ export const storage = {
   clearAll: (): void => {
     localStorage.clear();
   },
+
+  getArray: <T>(key: string): T[] => {
+    const userId = getUserId();
+    try {
+      const raw = localStorage.getItem(`user_${userId}_${key}`);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  },
 };
