@@ -95,15 +95,25 @@ export function LearningPage() {
 
   const [showGenerator, setShowGenerator] = useState(false);
   const [aiGeneratedLesson, setAiGeneratedLesson] = useState<GeneratedLesson | null>(null);
-  const [aiSectionIndex, setAiSectionIndex] = useState(0);
+  const [generatedSectionIndex, setGeneratedSectionIndex] = useState(0);
+
+  useEffect(() => {
+    setGeneratedSectionIndex(0);
+  }, [aiGeneratedLesson?.id]);
+
+  useEffect(() => {
+    const el = document.getElementById('generated-lesson-content');
+    el?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [generatedSectionIndex]);
 
   const parsedAiLesson = aiGeneratedLesson ? parseContentJson(aiGeneratedLesson.contentJson) : null;
   const aiSections = parsedAiLesson?.sections ?? [];
+  const totalSections = aiSections.length;
 
   const handleLessonReady = (lesson: GeneratedLesson) => {
     setAiGeneratedLesson(lesson);
     setShowGenerator(false);
-    setAiSectionIndex(0);
+    setGeneratedSectionIndex(0);
     loadStatus();
   };
 
@@ -114,14 +124,14 @@ export function LearningPage() {
 
   const handleBackToCourses = () => {
     setAiGeneratedLesson(null);
-    setAiSectionIndex(0);
+    setGeneratedSectionIndex(0);
   };
 
   const handleOpenAiLesson = async (lessonId: number) => {
     const lesson = await openLesson(lessonId);
     if (lesson) {
       setAiGeneratedLesson(lesson);
-      setAiSectionIndex(0);
+      setGeneratedSectionIndex(0);
     }
   };
 
@@ -149,23 +159,24 @@ export function LearningPage() {
           &#10024; Lección generada por IA sobre: {aiGeneratedLesson.topic}
         </p>
       </div>
-      <div className="flex-1 overflow-y-auto px-6 pb-6">
-        {aiSections.length > 0 ? aiSections.map((s, i) => (
-          <SectionCard
-            key={i}
-            section={s}
-            index={i}
-            totalSections={aiSections.length}
-            currentIndex={aiSectionIndex}
-            revealedHints={{}}
-            language={aiGeneratedLesson.language}
-            lessonTitle={parsedAiLesson?.title ?? aiGeneratedLesson.title}
-            level={aiGeneratedLesson.level}
-            onHintReveal={() => {}}
-            onOpenInEditor={() => {}}
-            onSectionComplete={() => setAiSectionIndex(prev => Math.min(prev + 1, aiSections.length - 1))}
-          />
-        )) : (
+      <div id="generated-lesson-content" className="flex-1 overflow-y-auto px-6 pb-6">
+        {totalSections > 0 ? (
+          aiSections[generatedSectionIndex] && (
+            <SectionCard
+              section={aiSections[generatedSectionIndex]}
+              index={generatedSectionIndex}
+              totalSections={totalSections}
+              currentIndex={generatedSectionIndex}
+              revealedHints={{}}
+              language={aiGeneratedLesson.language}
+              lessonTitle={parsedAiLesson?.title ?? aiGeneratedLesson.title}
+              level={aiGeneratedLesson.level}
+              onHintReveal={() => {}}
+              onOpenInEditor={() => {}}
+              onSectionComplete={() => setGeneratedSectionIndex(prev => Math.min(prev + 1, totalSections - 1))}
+            />
+          )
+        ) : (
           <div className="p-8 text-center text-gray-400">
             <p>No se pudo cargar el contenido.</p>
             <button onClick={handleBackToCourses} className="mt-4 text-[#534AB7] underline cursor-pointer">
@@ -174,6 +185,27 @@ export function LearningPage() {
           </div>
         )}
       </div>
+      {totalSections > 0 && (
+        <div className="h-14 border-t border-[#E5E7EB] dark:border-gray-700 flex items-center justify-between px-6 bg-white dark:bg-gray-900 flex-shrink-0">
+          <button
+            onClick={() => setGeneratedSectionIndex(prev => Math.max(prev - 1, 0))}
+            disabled={generatedSectionIndex === 0}
+            className="px-4 py-2 border border-[#E5E7EB] rounded-lg text-[13px] text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#534AB7] hover:text-[#534AB7] dark:border-gray-700 dark:text-gray-400 cursor-pointer"
+          >
+            &larr; Anterior
+          </button>
+          <span className="text-[12px] text-gray-400">
+            Secci&oacute;n {generatedSectionIndex + 1} de {totalSections}
+          </span>
+          <button
+            onClick={() => setGeneratedSectionIndex(prev => Math.min(prev + 1, totalSections - 1))}
+            disabled={generatedSectionIndex === totalSections - 1}
+            className="px-5 py-2 bg-[#534AB7] text-white border-none rounded-lg text-[13px] font-medium disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#3C3489] cursor-pointer"
+          >
+            Siguiente &rarr;
+          </button>
+        </div>
+      )}
     </div>
   );
 

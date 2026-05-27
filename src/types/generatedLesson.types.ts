@@ -24,5 +24,4 @@ export interface GenerationStatus {
 export interface GenerateLessonDto {
     topic: string;
     language: string;
-    level: string;
 }

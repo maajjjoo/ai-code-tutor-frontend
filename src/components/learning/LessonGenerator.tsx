@@ -9,12 +9,6 @@ const LANGUAGES = [
     { id: 'typescript', label: 'TypeScript', color: 'bg-[#6366F1]' },
 ] as const;
 
-const LEVELS = [
-    { id: 'beginner', label: 'Principiante', desc: 'Sin experiencia', icon: '🌱' },
-    { id: 'intermediate', label: 'Intermedio', desc: 'Ya conozco bases', icon: '⚡' },
-    { id: 'advanced', label: 'Avanzado', desc: 'Quiero profundizar', icon: '🚀' },
-] as const;
-
 const PROGRESS_MESSAGES = [
     'Analizando el tema...',
     'Creando explicaciones...',
@@ -43,7 +37,6 @@ export function LessonGenerator({ onLessonReady, onClose }: Props) {
 
     const [topic, setTopic] = useState('');
     const [language, setLanguage] = useState('');
-    const [level, setLevel] = useState('');
     const [activeTab, setActiveTab] = useState<'generate' | 'lessons'>('generate');
     const [progressIndex, setProgressIndex] = useState(0);
 
@@ -60,13 +53,13 @@ export function LessonGenerator({ onLessonReady, onClose }: Props) {
         return () => clearInterval(interval);
     }, [isGenerating]);
 
-    const canSubmit = topic.length >= 3 && language !== '' && level !== '' && !isGenerating;
+    const canSubmit = topic.length >= 3 && language !== '' && !isGenerating;
     const canGenerate = status?.canGenerate ?? true;
 
     const handleGenerate = async () => {
         if (!canSubmit || !canGenerate) return;
         setError(null);
-        const result = await generate({ topic, language, level });
+        const result = await generate({ topic, language });
         if (result) {
             onLessonReady(result);
         }
@@ -148,30 +141,6 @@ export function LessonGenerator({ onLessonReady, onClose }: Props) {
                                     >
                                         <span className={`w-2.5 h-2.5 rounded-full ${lang.color}`} />
                                         {lang.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="mb-4">
-                            <label className="flex items-center gap-2 text-[13px] font-medium text-[#374151] mb-1.5">
-                                <span className="w-5 h-5 rounded-full bg-[#534AB7] text-white text-[11px] font-bold flex items-center justify-center">3</span>
-                                Nivel
-                            </label>
-                            <div className="grid grid-cols-3 gap-2">
-                                {LEVELS.map(lvl => (
-                                    <button
-                                        key={lvl.id}
-                                        onClick={() => setLevel(lvl.id)}
-                                        className={`flex flex-col items-center border rounded-xl p-3 text-center cursor-pointer transition-colors ${
-                                            level === lvl.id
-                                                ? 'border-[#534AB7] bg-[#EEEDFE]'
-                                                : 'border-[#E5E7EB] hover:border-[#D1D5DB]'
-                                        }`}
-                                    >
-                                        <span className="text-lg mb-1">{lvl.icon}</span>
-                                        <span className="text-[12px] font-medium text-[#374151]">{lvl.label}</span>
-                                        <span className="text-[10px] text-[#9CA3AF] mt-0.5">{lvl.desc}</span>
                                     </button>
                                 ))}
                             </div>
