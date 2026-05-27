@@ -55,8 +55,10 @@ export function useLessonGenerator() {
             if (generatedLesson?.id === lessonId) {
                 setGeneratedLesson(null);
             }
-        } catch (err) {
-            console.error('Failed to delete lesson:', err);
+        } catch (err: any) {
+            console.error('Delete failed:', err);
+            const message = err.response?.data?.message || 'Error al eliminar la lecci\u00f3n';
+            alert(message);
         }
     };
 

@@ -221,7 +221,12 @@ export function LearningPage() {
           setAiGeneratedLesson(null);
         }}
         onHome={() => navigate('/')}
-        onGenerateLesson={() => setShowGenerator(true)}
+        onGenerateLesson={() => {
+          setAiGeneratedLesson(null);
+          setGeneratedSectionIndex(0);
+          setShowGenerator(true);
+          loadStatus();
+        }}
         aiLessons={aiLessons}
         onOpenAiLesson={handleOpenAiLesson}
         aiGeneratedToday={status?.generatedToday ?? 0}

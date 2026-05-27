@@ -9,12 +9,19 @@ const LANGUAGES = [
     { id: 'typescript', label: 'TypeScript', color: 'bg-[#6366F1]' },
 ] as const;
 
-const PROGRESS_MESSAGES = [
-    'Analizando el tema...',
-    'Creando explicaciones...',
-    'Preparando ejemplos de código...',
-    'Diseñando el ejercicio...',
-    'Finalizando la lección...',
+const TOPIC_SUGGESTIONS = [
+    'Recursi\u00f3n', 'Herencia y clases',
+    'Manejo de errores', 'Listas y arrays',
+    'Funciones avanzadas', 'Diccionarios',
+    'Bucles y ciclos', 'Programaci\u00f3n orientada a objetos',
+];
+
+const GENERATION_STEPS = [
+    { icon: '\uD83D\uDD0D', text: 'Analizando el tema...' },
+    { icon: '\u270D\uFE0F', text: 'Escribiendo explicaciones...' },
+    { icon: '\uD83D\uDCBB', text: 'Creando ejemplos de c\u00f3digo...' },
+    { icon: '\uD83D\uDCA1', text: 'Dise\u00f1ando el ejercicio...' },
+    { icon: '\u2728', text: 'Finalizando la lecci\u00f3n...' },
 ];
 
 const LANGUAGE_DOT_COLORS: Record<string, string> = {
@@ -38,17 +45,19 @@ export function LessonGenerator({ onLessonReady, onClose }: Props) {
     const [topic, setTopic] = useState('');
     const [language, setLanguage] = useState('');
     const [activeTab, setActiveTab] = useState<'generate' | 'lessons'>('generate');
-    const [progressIndex, setProgressIndex] = useState(0);
+    const [stepIndex, setStepIndex] = useState(0);
 
     useEffect(() => {
         loadStatus();
     }, []);
 
     useEffect(() => {
-        if (!isGenerating) return;
-        setProgressIndex(0);
+        if (!isGenerating) {
+            setStepIndex(0);
+            return;
+        }
         const interval = setInterval(() => {
-            setProgressIndex(prev => (prev + 1) % PROGRESS_MESSAGES.length);
+            setStepIndex(prev => prev < GENERATION_STEPS.length - 1 ? prev + 1 : prev);
         }, 3000);
         return () => clearInterval(interval);
     }, [isGenerating]);
@@ -121,6 +130,18 @@ export function LessonGenerator({ onLessonReady, onClose }: Props) {
                                 className="w-full bg-white border border-[#D1D5DB] rounded-xl px-3 py-2.5 text-[13px] text-[#111827] placeholder-[#9CA3AF] resize-none focus:outline-none focus:border-[#534AB7]"
                             />
                             <div className="text-right text-[11px] text-[#9CA3AF] mt-1">{topic.length}/200</div>
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                                <span className="text-[10px] text-gray-400">Sugerencias:</span>
+                                {TOPIC_SUGGESTIONS.map(suggestion => (
+                                    <span
+                                        key={suggestion}
+                                        onClick={() => { setTopic(suggestion); setError(null); }}
+                                        className="text-[10px] px-2 py-0.5 rounded-full cursor-pointer bg-[#F3F4F6] text-gray-500 hover:bg-[#EEEDFE] hover:text-[#534AB7] transition-colors"
+                                    >
+                                        {suggestion}
+                                    </span>
+                                ))}
+                            </div>
                         </div>
 
                         <div className="mb-4">
@@ -167,11 +188,17 @@ export function LessonGenerator({ onLessonReady, onClose }: Props) {
                         )}
 
                         {isGenerating && (
-                            <div className="flex flex-col items-center gap-4 py-8">
-                                <div className="w-10 h-10 border-4 border-[#EEEDFE] border-t-[#534AB7] rounded-full animate-spin" />
-                                <span className="text-[#534AB7] font-medium text-[14px]">Generando tu lección...</span>
-                                <span className="text-xs text-[#9CA3AF]">{PROGRESS_MESSAGES[progressIndex]}</span>
-                                <span className="text-[11px] text-[#9CA3AF]">Esto puede tomar entre 10 y 20 segundos</span>
+                            <div className="flex flex-col items-center gap-5 py-8 text-center">
+                                <div className="text-5xl animate-bounce">{GENERATION_STEPS[stepIndex].icon}</div>
+                                <div>
+                                    <p className="text-[14px] font-medium text-[#534AB7] mb-1">{GENERATION_STEPS[stepIndex].text}</p>
+                                    <p className="text-[11px] text-gray-400">Esto puede tomar entre 15 y 30 segundos</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    {GENERATION_STEPS.map((_, i) => (
+                                        <div key={i} className={`w-2 h-2 rounded-full transition-all duration-500 ${i <= stepIndex ? 'bg-[#534AB7]' : 'bg-[#E5E7EB]'}`} />
+                                    ))}
+                                </div>
                             </div>
                         )}
 
@@ -243,7 +270,11 @@ export function LessonGenerator({ onLessonReady, onClose }: Props) {
                                             </button>
                                         )}
                                         <button
-                                            onClick={() => deleteLesson(lesson.id)}
+                                            onClick={() => {
+                                                if (window.confirm(`\u00bfEliminar "${lesson.title}"? Esta acci\u00f3n no se puede deshacer.`)) {
+                                                    deleteLesson(lesson.id);
+                                                }
+                                            }}
                                             className="bg-[#FEE2E2] text-[#DC2626] rounded-lg px-3 py-1 text-xs font-medium cursor-pointer hover:bg-[#FECACA] transition-colors"
                                         >
                                             &#128465; Eliminar
