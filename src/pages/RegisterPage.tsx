@@ -55,7 +55,7 @@ export function RegisterPage() {
       login({ id: res.id, username: res.username, email: res.email, createdAt: new Date().toISOString() });
       showToast(UI.ACCOUNT_CREATED, 'success');
       setSuccess(true);
-      setTimeout(() => navigate('/practice'), 1500);
+      setTimeout(() => navigate('/practice', { replace: true }), 1500);
     } catch (err) {
       const msg = getErrorMessage(err);
       const lower = msg.toLowerCase();

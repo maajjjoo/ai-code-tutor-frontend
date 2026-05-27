@@ -31,7 +31,7 @@ export function LoginPage() {
       const res = await loginUser({ email: form.email, password: hashedPassword });
       login({ id: res.id, username: res.username, email: res.email, createdAt: new Date().toISOString() });
       showToast(UI.WELCOME_BACK, 'success');
-      navigate('/');
+      navigate('/', { replace: true });
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
