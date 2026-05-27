@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UI } from '../constants/ui.strings';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { useLearning } from '../hooks/useLearning';
+import { useLessonGenerator } from '../hooks/useLessonGenerator';
 import { LearningSidebar } from '../components/learning/sidebar/LearningSidebar';
 import { LevelSelectionScreen } from '../components/learning/screens/LevelSelectionScreen';
 import { LessonView } from '../components/learning/lesson/LessonView';
@@ -23,6 +24,15 @@ function parseAiSections(contentJson: string): LessonSection[] {
   }
 }
 
+function parseAiLesson(contentJson: string) {
+  try {
+    return JSON.parse(contentJson);
+  } catch (e) {
+    console.error('Failed to parse lesson:', e);
+    return null;
+  }
+}
+
 export function LearningPage() {
   usePageTitle(UI.LEARNING);
   const navigate = useNavigate();
@@ -40,26 +50,45 @@ export function LearningPage() {
     loadLesson,
   } = useLearning();
 
+  const { status, loadStatus, openLesson } = useLessonGenerator();
+
+  useEffect(() => {
+    loadStatus();
+  }, []);
+
   const [showGenerator, setShowGenerator] = useState(false);
   const [aiGeneratedLesson, setAiGeneratedLesson] = useState<GeneratedLesson | null>(null);
   const [aiSectionIndex, setAiSectionIndex] = useState(0);
 
   const aiSections = aiGeneratedLesson ? parseAiSections(aiGeneratedLesson.contentJson) : [];
+  const parsedAiLesson = aiGeneratedLesson ? parseAiLesson(aiGeneratedLesson.contentJson) : null;
 
   const handleLessonReady = (lesson: GeneratedLesson) => {
     setAiGeneratedLesson(lesson);
     setShowGenerator(false);
     setAiSectionIndex(0);
+    loadStatus();
   };
 
   const handleCloseGenerator = () => {
     setShowGenerator(false);
+    loadStatus();
   };
 
   const handleBackToCourses = () => {
     setAiGeneratedLesson(null);
     setAiSectionIndex(0);
   };
+
+  const handleOpenAiLesson = async (lessonId: number) => {
+    const lesson = await openLesson(lessonId);
+    if (lesson) {
+      setAiGeneratedLesson(lesson);
+      setAiSectionIndex(0);
+    }
+  };
+
+  const aiLessons = status?.lessons ?? [];
 
   const generatedLessonView = aiGeneratedLesson && (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -69,7 +98,7 @@ export function LearningPage() {
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2">
             <polyline points="9 18 15 12 9 6"/>
           </svg>
-          <span className="text-[#111827] dark:text-gray-100 font-medium truncate max-w-[200px]">{aiGeneratedLesson.title}</span>
+          <span className="text-[#111827] dark:text-gray-100 font-medium truncate max-w-[200px]">{parsedAiLesson?.title ?? aiGeneratedLesson.title}</span>
         </div>
         <button
           onClick={handleBackToCourses}
@@ -84,7 +113,7 @@ export function LearningPage() {
         </p>
       </div>
       <div className="flex-1 overflow-y-auto px-6 pb-6">
-        {aiSections.map((s, i) => (
+        {aiSections.length > 0 ? aiSections.map((s, i) => (
           <SectionCard
             key={i}
             section={s}
@@ -93,13 +122,20 @@ export function LearningPage() {
             currentIndex={aiSectionIndex}
             revealedHints={{}}
             language={aiGeneratedLesson.language}
-            lessonTitle={aiGeneratedLesson.title}
+            lessonTitle={parsedAiLesson?.title ?? aiGeneratedLesson.title}
             level={aiGeneratedLesson.level}
             onHintReveal={() => {}}
             onOpenInEditor={() => {}}
             onSectionComplete={() => setAiSectionIndex(prev => Math.min(prev + 1, aiSections.length - 1))}
           />
-        ))}
+        )) : (
+          <div className="p-8 text-center text-gray-400">
+            <p>No se pudo cargar el contenido.</p>
+            <button onClick={handleBackToCourses} className="mt-4 text-[#534AB7] underline cursor-pointer">
+              Volver
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -116,6 +152,11 @@ export function LearningPage() {
           setAiGeneratedLesson(null);
         }}
         onHome={() => navigate('/')}
+        onGenerateLesson={() => setShowGenerator(true)}
+        aiLessons={aiLessons}
+        onOpenAiLesson={handleOpenAiLesson}
+        aiGeneratedToday={status?.generatedToday ?? 0}
+        aiDailyLimit={status?.dailyLimit ?? 3}
       />
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
@@ -128,15 +169,6 @@ export function LearningPage() {
           />
         ) : (
           <>
-            <div className="px-4 pt-3 pb-0 shrink-0">
-              <button
-                onClick={() => setShowGenerator(true)}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl border border-[#AFA9EC] bg-[#EEEDFE] text-[#3C3489] text-[12px] font-medium hover:bg-[#CECBF6] cursor-pointer transition-colors"
-              >
-                <span>&#10024;</span>
-                Generar lección con IA
-              </button>
-            </div>
             {viewState === 'idle' && (
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">

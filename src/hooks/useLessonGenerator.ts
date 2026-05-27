@@ -64,8 +64,10 @@ export function useLessonGenerator() {
         try {
             const { data } = await apiClient.get<GeneratedLesson>(`/lessons/generated/${lessonId}`);
             setGeneratedLesson(data);
+            return data;
         } catch (err) {
             console.error('Failed to open lesson:', err);
+            return null;
         }
     };
 
