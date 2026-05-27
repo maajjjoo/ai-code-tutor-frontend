@@ -10,7 +10,6 @@ import { SaveIndicatorBar } from './SaveIndicatorBar';
 import { AutosaveRecoveryBanner } from './AutosaveRecoveryBanner';
 import { VersionHistoryPanel } from './VersionHistoryPanel';
 import { Clock } from 'lucide-react';
-import { storage } from '../../utils/storage';
 
 interface Props {
   editorData: EditorData | null;
