@@ -14,23 +14,34 @@ import { RestartModal } from '../components/learning/modals/RestartModal';
 import type { GeneratedLesson } from '../types/generatedLesson.types';
 import type { LessonSection } from '../types/learning.types';
 
-function parseAiSections(contentJson: string): LessonSection[] {
-  try {
-    const parsed = JSON.parse(contentJson);
-    if (Array.isArray(parsed)) return parsed;
-    return parsed.sections ?? [];
-  } catch {
-    return [];
+function parseContentJson(contentJson: string | object): { title?: string; summary?: string; estimatedMinutes?: number; sections?: LessonSection[] } | null {
+  if (typeof contentJson === 'object' && contentJson !== null) {
+    return contentJson as any;
   }
-}
-
-function parseAiLesson(contentJson: string) {
-  try {
-    return JSON.parse(contentJson);
-  } catch (e) {
-    console.error('Failed to parse lesson:', e);
+  if (typeof contentJson !== 'string') {
     return null;
   }
+  try {
+    return JSON.parse(contentJson);
+  } catch (e1) {
+    console.warn('Direct parse failed, trying fixes...');
+  }
+  try {
+    const fixed = contentJson.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
+    return JSON.parse(fixed);
+  } catch (e2) {
+    console.warn('Fix attempt 1 failed...');
+  }
+  try {
+    const start = contentJson.indexOf('{');
+    const end = contentJson.lastIndexOf('}') + 1;
+    if (start >= 0 && end > start) {
+      return JSON.parse(contentJson.substring(start, end));
+    }
+  } catch (e3) {
+    console.error('All parse attempts failed:', e3);
+  }
+  return null;
 }
 
 export function LearningPage() {
@@ -60,25 +71,8 @@ export function LearningPage() {
   const [aiGeneratedLesson, setAiGeneratedLesson] = useState<GeneratedLesson | null>(null);
   const [aiSectionIndex, setAiSectionIndex] = useState(0);
 
-  useEffect(() => {
-    if (aiGeneratedLesson) {
-      console.log('=== GENERATED LESSON ===');
-      console.log('Full object:', aiGeneratedLesson);
-      console.log('contentJson type:', typeof aiGeneratedLesson.contentJson);
-      console.log('contentJson value:', aiGeneratedLesson.contentJson);
-      console.log('First 200 chars:', String(aiGeneratedLesson.contentJson).substring(0, 200));
-      try {
-        const parsed = JSON.parse(aiGeneratedLesson.contentJson);
-        console.log('Parsed successfully:', parsed);
-        console.log('sections:', parsed.sections);
-      } catch (e) {
-        console.error('Parse error:', e);
-      }
-    }
-  }, [aiGeneratedLesson]);
-
-  const aiSections = aiGeneratedLesson ? parseAiSections(aiGeneratedLesson.contentJson) : [];
-  const parsedAiLesson = aiGeneratedLesson ? parseAiLesson(aiGeneratedLesson.contentJson) : null;
+  const parsedAiLesson = aiGeneratedLesson ? parseContentJson(aiGeneratedLesson.contentJson) : null;
+  const aiSections = parsedAiLesson?.sections ?? [];
 
   const handleLessonReady = (lesson: GeneratedLesson) => {
     setAiGeneratedLesson(lesson);
