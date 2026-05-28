@@ -45,7 +45,7 @@ export const SectionCard = React.memo(function SectionCard({ section, index, cur
 
       {section.type === 'explanation' && <ExplanationSection content={section.content} />}
       {section.type === 'example' && <ExampleSection content={section.content} code={section.code} />}
-      {section.type === 'tip' && <TipSection content={section.content} />}
+      {section.type === 'tip' && <TipSection content={section.content} wrongCode={section.wrongCode} rightCode={section.rightCode} />}
       {section.type === 'exercise' && (
         <ExerciseSection
           prompt={section.prompt}
