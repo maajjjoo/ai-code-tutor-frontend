@@ -220,7 +220,7 @@ export function LessonGenerator({ onLessonReady, onClose }: Props) {
                                     <p className="text-[14px] font-medium text-[#534AB7] mb-1">{GENERATION_STEPS[stepIndex].text}</p>
                                     <p className="text-[11px] text-gray-400 mb-2">
                                         {elapsedSeconds < 30
-                                            ? 'Esto puede tomar entre 20 y 60 segundos'
+                                            ? 'Esto puede tomar entre 30 y 90 segundos'
                                             : elapsedSeconds < 60
                                             ? 'Generando contenido detallado...'
                                             : 'Casi listo, estamos terminando...'}
