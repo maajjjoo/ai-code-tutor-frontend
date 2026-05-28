@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Code2 } from 'lucide-react';
-import { registerUser, getErrorMessage } from '../services/api';
+import { registerUser } from '../services/api';
 import { validateUsername, validateEmail } from '../utils/validation';
 import { hashPassword } from '../utils/hashPassword';
 import { useAuth } from '../context/AuthContext';
@@ -57,14 +57,22 @@ export function RegisterPage() {
       setSuccess(true);
       setTimeout(() => navigate('/practice', { replace: true }), 1500);
     } catch (err) {
-      const msg = getErrorMessage(err);
-      const lower = msg.toLowerCase();
-      if (lower.includes('email') || lower.includes('already registered')) {
-        setErrors(prev => ({ ...prev, email: 'Email already registered' }));
-      } else if (lower.includes('username') || lower.includes('already taken')) {
-        setErrors(prev => ({ ...prev, username: 'Username already taken' }));
+      const axiosError = err as any;
+      const status = axiosError.response?.status;
+      const backendMsg = axiosError.response?.data?.message;
+
+      if (status === 409) {
+        if (backendMsg?.toLowerCase().includes('correo') || backendMsg?.toLowerCase().includes('email')) {
+          setErrors(prev => ({ ...prev, email: 'Este correo ya está registrado. ¿Ya tienes cuenta? Inicia sesión.' }));
+        } else {
+          setErrors(prev => ({ ...prev, username: 'Este nombre de usuario ya está en uso. Prueba con otro.' }));
+        }
+      } else if (status === 400) {
+        setErrors(prev => ({ ...prev, form: backendMsg || 'Verifica que todos los campos sean correctos.' }));
+      } else if (backendMsg) {
+        setErrors(prev => ({ ...prev, form: backendMsg }));
       } else {
-        setErrors(prev => ({ ...prev, form: msg }));
+        setErrors(prev => ({ ...prev, form: 'No pudimos crear tu cuenta. Verifica tu conexión e intenta de nuevo.' }));
       }
     } finally {
       setLoading(false);

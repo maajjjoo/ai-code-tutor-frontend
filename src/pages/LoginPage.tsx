@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Code2 } from 'lucide-react';
-import { loginUser, getErrorMessage } from '../services/api';
+import { loginUser } from '../services/api';
+import { getErrorMessage } from '../utils/errorMessages';
 import { validateEmail } from '../utils/validation';
 import { hashPassword } from '../utils/hashPassword';
 import { useAuth } from '../context/AuthContext';

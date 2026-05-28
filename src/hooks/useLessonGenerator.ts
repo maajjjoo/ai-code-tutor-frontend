@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { GenerationStatus, GenerateLessonDto, GeneratedLesson } from '../types/generatedLesson.types';
 import apiClient from '../services/apiClient';
+import { getErrorMessage } from '../utils/errorMessages';
 
 export function useLessonGenerator() {
     const [status, setStatus] = useState<GenerationStatus | null>(null);
@@ -31,8 +32,7 @@ export function useLessonGenerator() {
             await loadStatus();
             return data;
         } catch (err: any) {
-            const message = err.response?.data?.message || 'Error al generar la lección. Intenta de nuevo.';
-            setError(message);
+            setError(getErrorMessage(err));
             return null;
         } finally {
             setIsGenerating(false);
@@ -57,8 +57,7 @@ export function useLessonGenerator() {
             }
         } catch (err: any) {
             console.error('Delete failed:', err);
-            const message = err.response?.data?.message || 'Error al eliminar la lecci\u00f3n';
-            alert(message);
+            alert(getErrorMessage(err));
         }
     };
 
