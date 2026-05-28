@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { GeneratedLesson } from '../../types/generatedLesson.types';
 import { useLessonGenerator } from '../../hooks/useLessonGenerator';
+import { DeleteLessonModal } from './DeleteLessonModal';
 
 const LANGUAGES = [
     { id: 'python', label: 'Python', color: 'bg-[#3B82F6]' },
@@ -46,6 +47,7 @@ export function LessonGenerator({ onLessonReady, onClose }: Props) {
     const [language, setLanguage] = useState('');
     const [activeTab, setActiveTab] = useState<'generate' | 'lessons'>('generate');
     const [stepIndex, setStepIndex] = useState(0);
+    const [lessonToDelete, setLessonToDelete] = useState<GeneratedLesson | null>(null);
 
     useEffect(() => {
         loadStatus();
@@ -64,6 +66,14 @@ export function LessonGenerator({ onLessonReady, onClose }: Props) {
 
     const canSubmit = topic.length >= 3 && language !== '' && !isGenerating;
     const canGenerate = status?.canGenerate ?? true;
+
+    const handleDeleteClick = (lesson: GeneratedLesson) => { setLessonToDelete(lesson) };
+    const handleDeleteConfirm = async () => {
+        if (!lessonToDelete) return;
+        await deleteLesson(lessonToDelete.id);
+        setLessonToDelete(null);
+    };
+    const handleDeleteCancel = () => { setLessonToDelete(null) };
 
     const handleGenerate = async () => {
         if (!canSubmit || !canGenerate) return;
@@ -270,11 +280,7 @@ export function LessonGenerator({ onLessonReady, onClose }: Props) {
                                             </button>
                                         )}
                                         <button
-                                            onClick={() => {
-                                                if (window.confirm(`\u00bfEliminar "${lesson.title}"? Esta acci\u00f3n no se puede deshacer.`)) {
-                                                    deleteLesson(lesson.id);
-                                                }
-                                            }}
+                                            onClick={() => handleDeleteClick(lesson)}
                                             className="bg-[#FEE2E2] text-[#DC2626] rounded-lg px-3 py-1 text-xs font-medium cursor-pointer hover:bg-[#FECACA] transition-colors"
                                         >
                                             &#128465; Eliminar
@@ -286,6 +292,11 @@ export function LessonGenerator({ onLessonReady, onClose }: Props) {
                     )}
                 </div>
             )}
+            <DeleteLessonModal
+                lesson={lessonToDelete}
+                onConfirm={handleDeleteConfirm}
+                onCancel={handleDeleteCancel}
+            />
         </div>
     );
 }
