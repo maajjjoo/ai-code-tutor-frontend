@@ -10,7 +10,7 @@ export const aiService = {
             headers: { 'Content-Type': 'text/plain' },
         }).then(r => r.data),
 
-    sendChatMessage: (body: { message: string; history: { role: 'user' | 'ai'; content: string }[]; currentCode?: string; language?: string }) =>
+    sendChatMessage: (body: { message: string; history: { role: string; content: string }[]; currentCode?: string; language?: string }) =>
         client.post<{ message: string }>('/chat', body).then(r => r.data),
 
     explainCode: (body: { selectedText: string; language: string; context: string }) =>

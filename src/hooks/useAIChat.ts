@@ -47,13 +47,14 @@ export function useAIChat({ vfs, activeProject }: Params) {
       convId = newConv.id;
     }
 
+    // Build history from messages BEFORE the current one
+    const history = (activeConversation?.messages ?? [])
+      .slice(-10)
+      .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+
     addMessage(convId, { role: 'user', content, timestamp: new Date() });
 
     try {
-      const history = (activeConversation?.messages ?? [])
-        .slice(-10)
-        .map(m => ({ role: m.role === 'assistant' ? 'ai' as const : 'user' as const, content: m.content }));
-
       const res = await sendChatMessage({
         message: content,
         history,

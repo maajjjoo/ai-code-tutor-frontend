@@ -130,7 +130,7 @@ export function AIPanel({ editorData, code, exerciseContext, onAiResponse, width
     setLoading(true);
     sendChatMessage({
       message: helpMessage,
-      history: updated.map(m => ({ role: m.role, content: m.content })),
+      history: buildHistory(updated),
       currentCode: exerciseContext.code,
       language: editorData?.language,
     }).then(res => {
@@ -152,7 +152,7 @@ export function AIPanel({ editorData, code, exerciseContext, onAiResponse, width
 
   // Build history to send to backend
   const buildHistory = (msgs: ChatMessage[]) =>
-    msgs.map(m => ({ role: m.role, content: m.content }));
+    msgs.map(m => ({ role: m.role === 'ai' ? 'assistant' : m.role, content: m.content }));
 
   // Analyze the current editor code
   const handleAnalyze = async () => {
