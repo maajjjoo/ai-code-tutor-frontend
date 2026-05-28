@@ -70,7 +70,7 @@ main();`,
 
 export function InlineExerciseEditor({
   exercisePrompt,
-  hints,
+  hints: _hints,
   language,
   lessonTitle,
   level,
