@@ -22,11 +22,10 @@ interface Props {
   lessonTitle: string;
   level: string;
   onHintReveal: (i: number) => void;
-  onOpenInEditor: (prompt: string, hints: string[]) => void;
   onSectionComplete: () => void;
 }
 
-export const SectionCard = React.memo(function SectionCard({ section, index, currentIndex, revealedHints, language: _language, lessonTitle, level, onHintReveal, onOpenInEditor, onSectionComplete }: Props) {
+export const SectionCard = React.memo(function SectionCard({ section, index, currentIndex, revealedHints, language: _language, lessonTitle, level, onHintReveal, onSectionComplete }: Props) {
   const isLocked = index > currentIndex;
   const tag = TAG[section.type] ?? TAG.explanation;
 
@@ -56,7 +55,6 @@ export const SectionCard = React.memo(function SectionCard({ section, index, cur
           lessonTitle={lessonTitle}
           level={level}
           onSectionComplete={onSectionComplete}
-          onOpenInEditor={onOpenInEditor}
         />
       )}
     </div>

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { ExternalLink, Sparkles, Lightbulb, Heart, ArrowRight, Check, Loader2 } from 'lucide-react';
+import { Sparkles, Lightbulb, Heart, ArrowRight, Check, Loader2 } from 'lucide-react';
 import { UI } from '../../../constants/ui.strings';
 import { verifyExercise } from '../../../services/api';
 
@@ -18,7 +18,6 @@ interface InlineExerciseEditorProps {
   lessonTitle: string;
   level: string;
   onSectionComplete: () => void;
-  onOpenInEditor: (prompt: string, hints: string[]) => void;
 }
 
 const LANGUAGE_CONFIG: Record<string, { color: string; filename: string; starter: string }> = {
@@ -76,9 +75,11 @@ export function InlineExerciseEditor({
   lessonTitle,
   level,
   onSectionComplete,
-  onOpenInEditor,
 }: InlineExerciseEditorProps) {
-  const config = LANGUAGE_CONFIG[language] ?? LANGUAGE_CONFIG.Python;
+  const normalizedLang = Object.keys(LANGUAGE_CONFIG).find(
+    k => k.toLowerCase() === language?.toLowerCase()
+  ) ?? 'Python';
+  const config = LANGUAGE_CONFIG[normalizedLang] ?? LANGUAGE_CONFIG.Python;
   const [code, setCode] = useState(config.starter);
   const [isVerifying, setIsVerifying] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackResult | null>(null);
@@ -159,13 +160,6 @@ export function InlineExerciseEditor({
         <div className="h-11 bg-[#2A2A3E] border-t border-[#333] flex items-center justify-between px-[14px]">
           <span className="text-[11px] text-[#6B7280]">{code.length} caracteres</span>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => onOpenInEditor(exercisePrompt, hints)}
-              className="text-[#6B7280] text-xs hover:text-white cursor-pointer flex items-center gap-1"
-            >
-              <ExternalLink size={12} />
-              {UI.OPEN_IN_EDITOR}
-            </button>
             <button
               onClick={handleVerify}
               disabled={isDisabled}

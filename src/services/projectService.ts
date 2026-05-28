@@ -19,4 +19,7 @@ export const projectService = {
 
     analyzePedagogical: (body: AnalyzeCodePedagogicalRequest) =>
         client.post<CodeAnalysisResponse>('/projects/analyze', body).then(r => r.data),
+
+    deleteProject: (projectId: number) =>
+        client.delete(`/projects/${projectId}`).then(r => r.data),
 };

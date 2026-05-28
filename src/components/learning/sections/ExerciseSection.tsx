@@ -10,7 +10,6 @@ interface Props {
   lessonTitle: string;
   level: string;
   onSectionComplete: () => void;
-  onOpenInEditor: (prompt: string, hints: string[]) => void;
 }
 
 export function ExerciseSection({
@@ -22,7 +21,6 @@ export function ExerciseSection({
   lessonTitle,
   level,
   onSectionComplete,
-  onOpenInEditor,
 }: Props) {
   const hintsLeft = hints.length - hintsRevealed;
 
@@ -65,7 +63,6 @@ export function ExerciseSection({
         lessonTitle={lessonTitle}
         level={level}
         onSectionComplete={onSectionComplete}
-        onOpenInEditor={onOpenInEditor}
       />
     </div>
   );

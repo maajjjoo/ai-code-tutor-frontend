@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type * as Monaco from 'monaco-editor';
-import { createProject, saveSnapshot, getProjectsByUser, loadEditor, getErrorMessage } from '../services/api';
+import { createProject, saveSnapshot, getProjectsByUser, loadEditor, getErrorMessage, deleteProject } from '../services/api';
 import type { Language, ExerciseContext, Project as BackendProject } from '../types';
 import type { VNode } from '../types/vfs';
 import { uid } from '../types/vfs';
@@ -185,10 +185,17 @@ export function useProjectManagement({ vfs, userId, editorRef, monacoRef, active
 
   const handleDeleteProject = async () => {
     if (!deleteTarget) return;
-    storage.remove(`codetutor-project-${deleteTarget.id}-nodes`);
-    setSavedProjects(prev => prev.filter(p => p.id !== deleteTarget.id));
-    setDeleteTarget(null);
-    showToast('Project deleted', 'warning');
+    try {
+      await deleteProject(deleteTarget.id);
+      storage.remove(`codetutor-project-${deleteTarget.id}-nodes`);
+      storage.remove(`active_project`);
+      setSavedProjects(prev => prev.filter(p => p.id !== deleteTarget.id));
+      setDeleteTarget(null);
+      showToast('Project deleted', 'warning');
+    } catch (err) {
+      console.error('Delete failed:', err);
+      showToast(getErrorMessage(err), 'error');
+    }
   };
 
   return {

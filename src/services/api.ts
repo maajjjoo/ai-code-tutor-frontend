@@ -30,6 +30,7 @@ export const getProjectsByUser = projectService.getAll;
 export const loadEditor = projectService.loadEditor;
 export const saveSnapshot = projectService.saveSnapshot;
 export const analyzeCodePedagogical = projectService.analyzePedagogical;
+export const deleteProject = projectService.deleteProject;
 
 export const getTopicsByCategory = lessonService.getTopics;
 export const generateExercise = lessonService.generateExercise;

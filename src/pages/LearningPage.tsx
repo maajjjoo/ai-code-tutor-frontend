@@ -81,7 +81,7 @@ export function LearningPage() {
     handleCourseSelect, handleLevelSelect, handleLevelTabClick,
     handleLessonComplete, handlePrevious, handleNext,
     handleNextLevel, handleHintReveal,
-    handleOpenInEditor, handleStepClick, setIsCompletionModalOpen,
+    handleStepClick, setIsCompletionModalOpen,
     isRestartModalOpen, restartTarget,
     handleRestartClick, handleRestartLevel, setIsRestartModalOpen,
     loadLesson,
@@ -172,7 +172,6 @@ export function LearningPage() {
               lessonTitle={parsedAiLesson?.title ?? aiGeneratedLesson.title}
               level={aiGeneratedLesson.level}
               onHintReveal={() => {}}
-              onOpenInEditor={() => {}}
               onSectionComplete={() => setGeneratedSectionIndex(prev => Math.min(prev + 1, totalSections - 1))}
             />
           )
@@ -286,7 +285,6 @@ export function LearningPage() {
                 onComplete={handleLessonComplete}
                 onStepClick={handleStepClick}
                 onHintReveal={handleHintReveal}
-                onOpenInEditor={handleOpenInEditor}
                 onPracticeClick={() => navigate(`/practice?language=${encodeURIComponent(selectedCourse.name)}`)}
                 onRetry={() => loadLesson(selectedCourse.id, selectedLevel, currentLessonNumber)}
                 onSectionComplete={handleNext}

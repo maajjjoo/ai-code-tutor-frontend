@@ -28,7 +28,6 @@ interface Props {
   onComplete: () => void;
   onStepClick: (i: number) => void;
   onHintReveal: (i: number) => void;
-  onOpenInEditor: (prompt: string, hints: string[]) => void;
   onPracticeClick: () => void;
   onRetry: () => void;
   onSectionComplete: () => void;
@@ -40,7 +39,7 @@ export function LessonView({
   currentSectionIndex, isLoadingLesson, lessonError,
   revealedHints, scrollRef, displayTitle, levelsDone,
   onLevelTabClick, onPrevious, onNext, onComplete, onStepClick,
-  onHintReveal, onOpenInEditor, onPracticeClick,
+  onHintReveal, onPracticeClick,
   onRetry, onSectionComplete, onRestartClick,
 }: Props) {
   const isLoading = isLoadingLesson && !currentLesson;
@@ -148,7 +147,7 @@ export function LessonView({
                 section={s} index={i} totalSections={sections.length}
                 currentIndex={currentSectionIndex} revealedHints={revealedHints}
                 language={course.name} lessonTitle={displayTitle} level={selectedLevel}
-                onHintReveal={onHintReveal} onOpenInEditor={onOpenInEditor}
+                onHintReveal={onHintReveal}
                 onSectionComplete={onSectionComplete}
               />
             </div>
