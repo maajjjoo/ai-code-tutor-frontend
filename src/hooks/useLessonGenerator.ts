@@ -27,12 +27,17 @@ export function useLessonGenerator() {
         setError(null);
         setGeneratedLesson(null);
         try {
-            const { data } = await apiClient.post<GeneratedLesson>('/lessons/generated', dto);
+            const { data } = await apiClient.post<GeneratedLesson>('/lessons/generated', dto, { timeout: 95000 });
             setGeneratedLesson(data);
             await loadStatus();
             return data;
         } catch (err: any) {
-            setError(getErrorMessage(err));
+            const isTimeout = err.code === 'ECONNABORTED' || err.message?.includes('timeout') || err.response?.status === 504 || err.response?.status === 503;
+            if (isTimeout) {
+                setError('La generación tardó demasiado. El tema puede ser muy complejo. Intenta con un tema más específico o vuelve a intentarlo.');
+            } else {
+                setError(getErrorMessage(err));
+            }
             return null;
         } finally {
             setIsGenerating(false);

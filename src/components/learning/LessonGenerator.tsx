@@ -18,11 +18,11 @@ const TOPIC_SUGGESTIONS = [
 ];
 
 const GENERATION_STEPS = [
-    { icon: '\uD83D\uDD0D', text: 'Analizando el tema...' },
-    { icon: '\u270D\uFE0F', text: 'Escribiendo explicaciones...' },
-    { icon: '\uD83D\uDCBB', text: 'Creando ejemplos de c\u00f3digo...' },
-    { icon: '\uD83D\uDCA1', text: 'Dise\u00f1ando el ejercicio...' },
-    { icon: '\u2728', text: 'Finalizando la lecci\u00f3n...' },
+    { icon: '\uD83D\uDD0D', text: 'Analizando el tema...', duration: 8000 },
+    { icon: '\u270D\uFE0F', text: 'Escribiendo las explicaciones...', duration: 15000 },
+    { icon: '\uD83D\uDCBB', text: 'Creando ejemplos de c\u00f3digo...', duration: 20000 },
+    { icon: '\uD83D\uDCA1', text: 'Dise\u00f1ando el ejercicio pr\u00e1ctico...', duration: 15000 },
+    { icon: '\u2728', text: 'Finalizando y revisando la lecci\u00f3n...', duration: 99999 },
 ];
 
 const LANGUAGE_DOT_COLORS: Record<string, string> = {
@@ -48,6 +48,7 @@ export function LessonGenerator({ onLessonReady, onClose }: Props) {
     const [activeTab, setActiveTab] = useState<'generate' | 'lessons'>('generate');
     const [stepIndex, setStepIndex] = useState(0);
     const [lessonToDelete, setLessonToDelete] = useState<GeneratedLesson | null>(null);
+    const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
     useEffect(() => {
         loadStatus();
@@ -56,12 +57,27 @@ export function LessonGenerator({ onLessonReady, onClose }: Props) {
     useEffect(() => {
         if (!isGenerating) {
             setStepIndex(0);
+            setElapsedSeconds(0);
             return;
         }
-        const interval = setInterval(() => {
-            setStepIndex(prev => prev < GENERATION_STEPS.length - 1 ? prev + 1 : prev);
-        }, 3000);
-        return () => clearInterval(interval);
+        const stepInterval = setInterval(() => {
+            setStepIndex(prev => {
+                let next = prev;
+                for (let i = prev + 1; i < GENERATION_STEPS.length; i++) {
+                    if (elapsedSeconds * 1000 >= GENERATION_STEPS.slice(0, i).reduce((sum, s) => sum + s.duration, 0)) {
+                        next = i;
+                    }
+                }
+                return Math.min(next, GENERATION_STEPS.length - 1);
+            });
+        }, 1000);
+        const elapsedInterval = setInterval(() => {
+            setElapsedSeconds(prev => prev + 1);
+        }, 1000);
+        return () => {
+            clearInterval(stepInterval);
+            clearInterval(elapsedInterval);
+        };
     }, [isGenerating]);
 
     const canSubmit = topic.length >= 3 && language !== '' && !isGenerating;
@@ -198,16 +214,29 @@ export function LessonGenerator({ onLessonReady, onClose }: Props) {
                         )}
 
                         {isGenerating && (
-                            <div className="flex flex-col items-center gap-5 py-8 text-center">
+                            <div className="flex flex-col items-center gap-5 py-8 text-center px-4">
                                 <div className="text-5xl animate-bounce">{GENERATION_STEPS[stepIndex].icon}</div>
                                 <div>
                                     <p className="text-[14px] font-medium text-[#534AB7] mb-1">{GENERATION_STEPS[stepIndex].text}</p>
-                                    <p className="text-[11px] text-gray-400">Esto puede tomar entre 15 y 30 segundos</p>
+                                    <p className="text-[11px] text-gray-400 mb-2">
+                                        {elapsedSeconds < 30
+                                            ? 'Esto puede tomar entre 20 y 60 segundos'
+                                            : elapsedSeconds < 60
+                                            ? 'Generando contenido detallado...'
+                                            : 'Casi listo, estamos terminando...'}
+                                    </p>
+                                    <p className="text-[10px] text-gray-300">{elapsedSeconds}s transcurridos</p>
                                 </div>
                                 <div className="flex gap-2">
                                     {GENERATION_STEPS.map((_, i) => (
-                                        <div key={i} className={`w-2 h-2 rounded-full transition-all duration-500 ${i <= stepIndex ? 'bg-[#534AB7]' : 'bg-[#E5E7EB]'}`} />
+                                        <div key={i} className={`w-2 h-2 rounded-full transition-all duration-500 ${
+                                            i < stepIndex ? 'bg-[#534AB7]' : i === stepIndex ? 'bg-[#534AB7] scale-125' : 'bg-[#E5E7EB]'
+                                        }`} />
                                     ))}
+                                </div>
+                                <div className="w-full max-w-[200px] h-1 bg-[#E5E7EB] rounded-full overflow-hidden">
+                                    <div className="h-full bg-[#534AB7] rounded-full transition-all duration-1000"
+                                        style={{ width: `${Math.min((elapsedSeconds / 60) * 100, 95)}%` }} />
                                 </div>
                             </div>
                         )}
