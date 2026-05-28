@@ -33,17 +33,19 @@ export function useLessonGenerator() {
             return data;
         } catch (err: any) {
             const status = err.response?.status;
-            const msg = err.response?.data?.message;
-            const isTimeout = err.code === 'ECONNABORTED' || err.message?.includes('timeout') || err.response?.status === 504 || err.response?.status === 503;
-            if (status === 500 || err.code === 'ECONNABORTED') {
+
+            if (status === 500 ||
+                err.code === 'ECONNABORTED') {
                 setError(
-                    'La IA tuvo dificultades generando la lección. Esto pasa ocasionalmente. ' +
-                    'Presiona "Generar" nuevamente para reintentar.'
+                    'La IA tuvo dificultades generando ' +
+                    'la lección. Presiona "Generar" de ' +
+                    'nuevo para intentarlo otra vez.'
                 );
-            } else if (isTimeout) {
-                setError('La generación tardó demasiado. El tema puede ser muy complejo. Intenta con un tema más específico o vuelve a intentarlo.');
             } else {
-                setError(getErrorMessage(err));
+                setError(
+                    err.response?.data?.message ||
+                    'Error al generar. Intenta de nuevo.'
+                );
             }
             return null;
         } finally {
